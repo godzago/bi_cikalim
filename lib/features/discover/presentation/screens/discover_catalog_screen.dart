@@ -15,7 +15,7 @@ class DiscoverCatalogScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         children: [
           const Text(
-            'Kategori ve aktivite bazli bir kesif duzeni. Her bloktan ilgili listeleme ekranina gecis yapabilirsin.',
+            'Kategori, alt kategori ve aktivite bazli bir kesif duzeni. Buradan daha detayli listelemelere gecilebilir.',
             style: TextStyle(
               color: BiCikalimTheme.textSecondary,
               fontSize: 13,
@@ -27,6 +27,9 @@ class DiscoverCatalogScreen extends StatelessWidget {
             final activities = MockDatabase.getActivitiesForCategory(
               category.id,
             );
+            final subcategories = MockDatabase.getSubcategoriesForCategory(
+              category.id,
+            );
             final venues = MockDatabase.getVenuesForCategory(category.id);
 
             return Card(
@@ -36,23 +39,23 @@ class DiscoverCatalogScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 side: BorderSide(color: Colors.grey.shade100),
               ),
-              child: InkWell(
-                onTap: () => context.push(
-                  Uri(
-                    path: '/discover/results',
-                    queryParameters: {
-                      'categoryId': category.id,
-                      'title': category.name,
-                    },
-                  ).toString(),
-                ),
-                borderRadius: BorderRadius.circular(18),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    InkWell(
+                      onTap: () => context.push(
+                        Uri(
+                          path: '/discover/results',
+                          queryParameters: {
+                            'categoryId': category.id,
+                            'title': category.name,
+                          },
+                        ).toString(),
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
@@ -84,7 +87,7 @@ class DiscoverCatalogScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${venues.length} mekan · ${activities.length} aktivite',
+                                  '${venues.length} mekan · ${subcategories.length} alt kategori · ${activities.length} aktivite',
                                   style: const TextStyle(
                                     color: BiCikalimTheme.textSecondary,
                                     fontSize: 12,
@@ -100,12 +103,28 @@ class DiscoverCatalogScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: activities.take(4).map((activity) {
-                          return Container(
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: subcategories.map((subcategory) {
+                        final venueCount = MockDatabase.getVenuesForSubcategory(
+                          subcategory.id,
+                        ).length;
+                        return InkWell(
+                          onTap: () => context.push(
+                            Uri(
+                              path: '/discover/results',
+                              queryParameters: {
+                                'categoryId': category.id,
+                                'subcategoryId': subcategory.id,
+                                'title': subcategory.name,
+                              },
+                            ).toString(),
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 6,
@@ -115,18 +134,45 @@ class DiscoverCatalogScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              activity.name,
+                              '${subcategory.name} ($venueCount)',
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: BiCikalimTheme.textPrimary,
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: activities.take(4).map((activity) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: BiCikalimTheme.primary.withValues(
+                              alpha: 0.08,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            activity.name,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: BiCikalimTheme.primary,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ),
               ),
             );

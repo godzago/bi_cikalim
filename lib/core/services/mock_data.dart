@@ -235,6 +235,11 @@ class MockDatabase {
       name: 'Karaoke',
     ),
     const ActivitySubcategory(
+      id: 'sosyal_gece',
+      categoryId: 'salon_eglenceleri',
+      name: 'Sosyal Gece',
+    ),
+    const ActivitySubcategory(
       id: 'dart',
       categoryId: 'salon_eglenceleri',
       name: 'Dart',
@@ -439,7 +444,7 @@ class MockDatabase {
       id: 'open_mic_karaoke',
       name: 'Open Mic Karaoke',
       categoryId: 'salon_eglenceleri',
-      subcategoryId: 'karaoke',
+      subcategoryId: 'sosyal_gece',
       description: 'Acik sahnede sarkili sosyal karaoke duzeni.',
       icon: Icons.mic_external_on,
       minPeople: 1,
@@ -1303,6 +1308,90 @@ class MockDatabase {
       sourceType: 'editor',
       status: 'published',
     ),
+    Event(
+      id: 'event_7',
+      venueId: 'venue_10',
+      title: 'Retro Arcade Battle Night',
+      description:
+          'Metal Slug, Street Fighter ve retro arcade skor yarislariyla nostaljik bir gece.',
+      category: 'Retro Arcade',
+      startDate: DateTime.now().add(const Duration(hours: 10)),
+      priceInfo: 'Katilim 120 TL',
+      imageUrl:
+          'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      status: 'published',
+    ),
+    Event(
+      id: 'event_8',
+      venueId: 'venue_11',
+      title: 'Open Mic Karaoke Session',
+      description:
+          'Listeden sarkini sec, sahneye cik ve grup performanslariyla geceyi devral.',
+      category: 'Karaoke',
+      startDate: DateTime.now().add(const Duration(days: 1, hours: 4)),
+      priceInfo: 'Icecek min. harcama',
+      imageUrl:
+          'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      status: 'published',
+    ),
+    Event(
+      id: 'event_9',
+      venueId: 'venue_4',
+      title: 'Gece Maci Organizasyonu',
+      description:
+          'Takim eslestirmeli, hakemli ve skor takibi yapilan gece hali saha seansi.',
+      category: 'Futbol',
+      startDate: DateTime.now().add(const Duration(days: 1, hours: 7)),
+      priceInfo: 'Kisi basi 240 TL',
+      imageUrl:
+          'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      status: 'published',
+    ),
+    Event(
+      id: 'event_10',
+      venueId: 'venue_14',
+      title: 'Reformer Intro Class',
+      description:
+          'Ilk kez reformer deneyecekler icin kucuk grup tanitim ve temel hareket akisi.',
+      category: 'Wellness',
+      startDate: DateTime.now().add(const Duration(days: 2, hours: 1)),
+      priceInfo: 'Katilim 350 TL',
+      imageUrl:
+          'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      status: 'published',
+    ),
+    Event(
+      id: 'event_11',
+      venueId: 'venue_12',
+      title: 'Snooker Ladder Match',
+      description:
+          'Seviye bazli snooker eslesmeleri ve haftalik siralama puani toplanan seri.',
+      category: 'Bilardo',
+      startDate: DateTime.now().add(const Duration(days: 2, hours: 6)),
+      priceInfo: 'Katilim 180 TL',
+      imageUrl:
+          'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      status: 'published',
+    ),
+    Event(
+      id: 'event_12',
+      venueId: 'venue_8',
+      title: 'Commander League Table',
+      description:
+          'Dort kisilik pod formatinda social commander aksami ve mini odul havuzu.',
+      category: 'Kart Oyunlari',
+      startDate: DateTime.now().add(const Duration(days: 3, hours: 3)),
+      priceInfo: 'Masa payi 90 TL',
+      imageUrl:
+          'https://images.unsplash.com/photo-1511988617509-a57c8a288659?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      status: 'published',
+    ),
   ];
 
   static final List<Review> reviews = [
@@ -1404,6 +1493,12 @@ class MockDatabase {
         .toList();
   }
 
+  static List<Activity> getActivitiesForSubcategory(String subcategoryId) {
+    return activities
+        .where((activity) => activity.subcategoryId == subcategoryId)
+        .toList();
+  }
+
   static List<Venue> getVenuesForCategory(String categoryId) {
     final categoryActivityIds = getActivitiesForCategory(
       categoryId,
@@ -1424,6 +1519,49 @@ class MockDatabase {
         .map((venueActivity) => venueActivity.venueId)
         .toSet();
     return venues.where((venue) => venueIds.contains(venue.id)).toList();
+  }
+
+  static List<Venue> getVenuesForSubcategory(String subcategoryId) {
+    final activityIds = getActivitiesForSubcategory(
+      subcategoryId,
+    ).map((activity) => activity.id).toSet();
+    final venueIds = venueActivities
+        .where(
+          (venueActivity) => activityIds.contains(venueActivity.activityId),
+        )
+        .map((venueActivity) => venueActivity.venueId)
+        .toSet();
+    return venues.where((venue) => venueIds.contains(venue.id)).toList();
+  }
+
+  static List<Event> getEventsForVenue(String venueId) {
+    return events.where((event) => event.venueId == venueId).toList();
+  }
+
+  static List<Event> getEventsForCategory(String categoryId) {
+    final activityIds = getActivitiesForCategory(
+      categoryId,
+    ).map((activity) => activity.id).toSet();
+    final venueIds = venueActivities
+        .where(
+          (venueActivity) => activityIds.contains(venueActivity.activityId),
+        )
+        .map((venueActivity) => venueActivity.venueId)
+        .toSet();
+    return events.where((event) => venueIds.contains(event.venueId)).toList();
+  }
+
+  static List<Event> getEventsForSubcategory(String subcategoryId) {
+    final activityIds = getActivitiesForSubcategory(
+      subcategoryId,
+    ).map((activity) => activity.id).toSet();
+    final venueIds = venueActivities
+        .where(
+          (venueActivity) => activityIds.contains(venueActivity.activityId),
+        )
+        .map((venueActivity) => venueActivity.venueId)
+        .toSet();
+    return events.where((event) => venueIds.contains(event.venueId)).toList();
   }
 
   static List<ActivityCategory> searchCategories(String query) {

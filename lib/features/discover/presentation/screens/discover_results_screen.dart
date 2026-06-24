@@ -6,9 +6,10 @@ import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/venue_card.dart';
 
-class DiscoverResultsScreen extends StatelessWidget {
+class DiscoverResultsScreen extends StatefulWidget {
   final String? query;
   final String? categoryId;
+  final String? subcategoryId;
   final String? activityId;
   final String? title;
 
@@ -16,16 +17,37 @@ class DiscoverResultsScreen extends StatelessWidget {
     super.key,
     this.query,
     this.categoryId,
+    this.subcategoryId,
     this.activityId,
     this.title,
   });
 
   @override
+  State<DiscoverResultsScreen> createState() => _DiscoverResultsScreenState();
+}
+
+class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
+  String? _selectedSubcategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.subcategoryId != null) {
+      _selectedSubcategoryId = widget.subcategoryId;
+    } else if (widget.activityId != null) {
+      _selectedSubcategoryId = MockDatabase.getActivityById(
+        widget.activityId!,
+      ).subcategoryId;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final resolvedTitle = _resolveTitle();
-    final matchedCategories = query == null || query!.isEmpty
+    final matchedCategories = widget.query == null || widget.query!.isEmpty
         ? <ActivityCategory>[]
-        : MockDatabase.searchCategories(query!);
+        : MockDatabase.searchCategories(widget.query!);
+    final availableSubcategories = _resolveSubcategories();
     final matchedActivities = _resolveActivities();
     final matchedVenues = _resolveVenues();
 
@@ -42,6 +64,42 @@ class DiscoverResultsScreen extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (availableSubcategories.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const _SectionTitle(title: 'Alt Kategori Filtreleri'),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 38,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _SubcategoryChip(
+                    label: 'Tumu',
+                    isSelected: _selectedSubcategoryId == null,
+                    onTap: () {
+                      setState(() {
+                        _selectedSubcategoryId = null;
+                      });
+                    },
+                  ),
+                  ...availableSubcategories.map((subcategory) {
+                    final venueCount = MockDatabase.getVenuesForSubcategory(
+                      subcategory.id,
+                    ).length;
+                    return _SubcategoryChip(
+                      label: '${subcategory.name} ($venueCount)',
+                      isSelected: _selectedSubcategoryId == subcategory.id,
+                      onTap: () {
+                        setState(() {
+                          _selectedSubcategoryId = subcategory.id;
+                        });
+                      },
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           if (matchedCategories.isNotEmpty) ...[
             const _SectionTitle(title: 'Eslesen Kategoriler'),
@@ -99,43 +157,94 @@ class DiscoverResultsScreen extends StatelessWidget {
   }
 
   String _resolveTitle() {
-    if (title != null && title!.isNotEmpty) {
-      return title!;
+    if (widget.title != null && widget.title!.isNotEmpty) {
+      return widget.title!;
     }
-    if (activityId != null) {
-      return MockDatabase.getActivityById(activityId!).name;
+    if (widget.activityId != null) {
+      return MockDatabase.getActivityById(widget.activityId!).name;
     }
-    if (categoryId != null) {
-      return MockDatabase.getCategoryById(categoryId!).name;
+    if (widget.categoryId != null) {
+      return MockDatabase.getCategoryById(widget.categoryId!).name;
     }
-    if (query != null && query!.isNotEmpty) {
-      return '"$query" aramasi';
+    if (widget.subcategoryId != null) {
+      return MockDatabase.getSubcategoryById(widget.subcategoryId!)?.name ??
+          'Alt Kategori';
+    }
+    if (widget.query != null && widget.query!.isNotEmpty) {
+      return '"${widget.query}" aramasi';
     }
     return 'Kesif Sonuclari';
   }
 
+  List<ActivitySubcategory> _resolveSubcategories() {
+    if (widget.categoryId != null) {
+      return MockDatabase.getSubcategoriesForCategory(widget.categoryId!);
+    }
+    if (widget.subcategoryId != null) {
+      final subcategory = MockDatabase.getSubcategoryById(
+        widget.subcategoryId!,
+      );
+      return subcategory == null ? [] : [subcategory];
+    }
+    if (widget.activityId != null) {
+      final activity = MockDatabase.getActivityById(widget.activityId!);
+      if (activity.subcategoryId == null) {
+        return [];
+      }
+      final subcategory = MockDatabase.getSubcategoryById(
+        activity.subcategoryId,
+      );
+      return subcategory == null ? [] : [subcategory];
+    }
+    return [];
+  }
+
   List<Activity> _resolveActivities() {
-    if (activityId != null) {
-      return [MockDatabase.getActivityById(activityId!)];
+    if (_selectedSubcategoryId != null) {
+      final activities = MockDatabase.getActivitiesForSubcategory(
+        _selectedSubcategoryId!,
+      );
+      if (widget.query != null && widget.query!.isNotEmpty) {
+        final matchedIds = MockDatabase.searchActivities(
+          widget.query!,
+        ).map((activity) => activity.id).toSet();
+        return activities
+            .where((activity) => matchedIds.contains(activity.id))
+            .toList();
+      }
+      return activities;
     }
-    if (categoryId != null) {
-      return MockDatabase.getActivitiesForCategory(categoryId!);
+
+    if (widget.subcategoryId != null) {
+      return MockDatabase.getActivitiesForSubcategory(widget.subcategoryId!);
     }
-    if (query != null && query!.isNotEmpty) {
-      return MockDatabase.searchActivities(query!);
+    if (widget.activityId != null) {
+      return [MockDatabase.getActivityById(widget.activityId!)];
+    }
+    if (widget.categoryId != null) {
+      return MockDatabase.getActivitiesForCategory(widget.categoryId!);
+    }
+    if (widget.query != null && widget.query!.isNotEmpty) {
+      return MockDatabase.searchActivities(widget.query!);
     }
     return [];
   }
 
   List<Venue> _resolveVenues() {
-    if (activityId != null) {
-      return MockDatabase.getVenuesForActivity(activityId!);
+    if (_selectedSubcategoryId != null) {
+      return MockDatabase.getVenuesForSubcategory(_selectedSubcategoryId!);
     }
-    if (categoryId != null) {
-      return MockDatabase.getVenuesForCategory(categoryId!);
+    if (widget.subcategoryId != null) {
+      return MockDatabase.getVenuesForSubcategory(widget.subcategoryId!);
     }
-    if (query != null && query!.isNotEmpty) {
-      return MockDatabase.searchVenues(query!);
+    if (widget.activityId != null) {
+      return MockDatabase.getVenuesForActivity(widget.activityId!);
+    }
+    if (widget.categoryId != null) {
+      return MockDatabase.getVenuesForCategory(widget.categoryId!);
+    }
+    if (widget.query != null && widget.query!.isNotEmpty) {
+      return MockDatabase.searchVenues(widget.query!);
     }
     return MockDatabase.venues;
   }
@@ -200,6 +309,46 @@ class _FilterPill extends StatelessWidget {
             color: BiCikalimTheme.primary,
             fontSize: 12,
             fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SubcategoryChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SubcategoryChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? BiCikalimTheme.primary
+                : BiCikalimTheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : BiCikalimTheme.primary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),

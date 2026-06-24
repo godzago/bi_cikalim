@@ -43,12 +43,15 @@ final GoRouter appRouter = GoRouter(
               builder: (context, state) {
                 final query = state.uri.queryParameters['query'];
                 final categoryId = state.uri.queryParameters['categoryId'];
+                final subcategoryId =
+                    state.uri.queryParameters['subcategoryId'];
                 final activityId = state.uri.queryParameters['activityId'];
                 final title = state.uri.queryParameters['title'];
 
                 return DiscoverResultsScreen(
                   query: query,
                   categoryId: categoryId,
+                  subcategoryId: subcategoryId,
                   activityId: activityId,
                   title: title,
                 );
