@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_menu_card.dart';
-import '../../../../shared/widgets/app_preview_card.dart';
 import '../../../../shared/widgets/app_section_header.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -83,17 +82,6 @@ class ProfileScreen extends StatelessWidget {
                 _buildStatItem('3', 'Başvuru'),
                 _buildStatItem('8', 'Kaydedilen'),
               ],
-            ),
-            const SizedBox(height: 24),
-            AppPreviewCard(
-              icon: Icons.manage_accounts_outlined,
-              title: 'Profil bu sürümde iki rolü birden preview ediyor',
-              description:
-                  'Auth ve rol sistemi geldiğinde bu alan kullanıcı, mekan sahibi ve başvuru durumuna göre farklılaşacak. Şimdilik ürün kararlarını konuşabilmeniz için tek yerde topluyoruz.',
-              primaryActionLabel: 'Rol Geçişlerini Düşün',
-              onPrimaryAction: () {},
-              secondaryText:
-                  'Aynı ekran içinde user ve owner izleri bilinçli olarak birlikte gösteriliyor.',
             ),
             const SizedBox(height: 24),
             const AppSectionHeader(title: 'İşletme Yönetimi & Başvurular'),
@@ -221,7 +209,7 @@ class ProfileScreen extends StatelessWidget {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Mekan ekleme talebi gönderildi!'),
+                          content: Text('Mekan ekleme talebi gönderildi.'),
                           backgroundColor: BiCikalimTheme.success,
                         ),
                       );
@@ -296,7 +284,7 @@ class ProfileScreen extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Mekan sahiplenme talebi başarıyla alındı!',
+                            'Mekan sahiplenme talebi başarıyla alındı.',
                           ),
                           backgroundColor: BiCikalimTheme.success,
                         ),

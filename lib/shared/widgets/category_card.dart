@@ -14,7 +14,7 @@ class CategoryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 92,
+        width: 104,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -50,13 +50,12 @@ class CategoryCard extends StatelessWidget {
                 category.name,
                 style: const TextStyle(
                   color: BiCikalimTheme.textPrimary,
-                  fontSize: 10.5,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
-                overflow: TextOverflow.fade,
-                softWrap: true,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

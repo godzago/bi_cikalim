@@ -5,7 +5,6 @@ import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_filter_chip.dart';
-import '../../../../shared/widgets/app_preview_card.dart';
 import '../../../../shared/widgets/app_section_header.dart';
 import '../../../../shared/widgets/category_card.dart';
 import '../../../../shared/widgets/event_preview_card.dart';
@@ -19,7 +18,7 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  String _selectedFilter = 'Tümü';
+  String _selectedFilter = 'T\u00fcm\u00fc';
   final TextEditingController _searchController = TextEditingController();
   List<Venue> _displayedVenues = List.from(MockDatabase.venues);
   final List<Event> _displayedEvents = List.from(MockDatabase.events);
@@ -39,10 +38,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _displayedVenues = MockDatabase.venues.where((v) {
-        return v.name.toLowerCase().contains(query) ||
-            v.description.toLowerCase().contains(query) ||
-            v.activityTags.any((t) => t.toLowerCase().contains(query));
+      _displayedVenues = MockDatabase.venues.where((venue) {
+        return venue.name.toLowerCase().contains(query) ||
+            venue.description.toLowerCase().contains(query) ||
+            venue.activityTags.any((tag) => tag.toLowerCase().contains(query));
       }).toList();
     });
   }
@@ -50,16 +49,26 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void _applyFilter(String filter) {
     setState(() {
       _selectedFilter = filter;
-      if (filter == 'Tümü') {
+
+      if (filter == 'T\u00fcm\u00fc' || filter == 'Bug\u00fcn A\u00e7\u0131k') {
         _displayedVenues = List.from(MockDatabase.venues);
-      } else if (filter == '4 Kişi') {
-        _displayedVenues = MockDatabase.venues.where((v) {
-          return v.activityTags.contains('Masa Oyunları');
+      } else if (filter == 'Bu Ak\u015fam') {
+        final tonight = DateTime.now().add(const Duration(hours: 12));
+        final venueIds = MockDatabase.events
+            .where((event) => event.startDate.isBefore(tonight))
+            .map((event) => event.venueId)
+            .toSet();
+        _displayedVenues = MockDatabase.venues
+            .where((venue) => venueIds.contains(venue.id))
+            .toList();
+      } else if (filter == '4 Ki\u015fi') {
+        _displayedVenues = MockDatabase.venues.where((venue) {
+          return venue.activityTags.contains('Masa\u00fcst\u00fc Oyunlar') ||
+              venue.activityTags.contains('Bilardo') ||
+              venue.activityTags.contains('Dart');
         }).toList();
-      } else if (filter == 'Bugün Açık') {
-        _displayedVenues = List.from(MockDatabase.venues);
-      } else if (filter == 'Yakınımda') {
-        _displayedVenues = MockDatabase.venues.take(2).toList();
+      } else if (filter == 'Yak\u0131n\u0131mda') {
+        _displayedVenues = MockDatabase.venues.take(3).toList();
       }
     });
   }
@@ -82,7 +91,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'BiÇıkalım',
+                          'Bi\u00c7\u0131kal\u0131m',
                           style: TextStyle(
                             color: BiCikalimTheme.primary,
                             fontSize: 26,
@@ -100,7 +109,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Eskişehir',
+                              'Eski\u015fehir',
                               style: TextStyle(
                                 color: Colors.grey.shade700,
                                 fontSize: 14,
@@ -153,26 +162,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
-                    _buildFilterChip('Tümü'),
-                    _buildFilterChip('Bugün Açık'),
-                    _buildFilterChip('Bu Akşam'),
-                    _buildFilterChip('4 Kişi'),
-                    _buildFilterChip('Yakınımda'),
+                    _buildFilterChip('T\u00fcm\u00fc'),
+                    _buildFilterChip('Bug\u00fcn A\u00e7\u0131k'),
+                    _buildFilterChip('Bu Ak\u015fam'),
+                    _buildFilterChip('4 Ki\u015fi'),
+                    _buildFilterChip('Yak\u0131n\u0131mda'),
                   ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: AppPreviewCard(
-                  icon: Icons.bookmark_added_outlined,
-                  title: 'Kaydetme ve yorumlama sonraki turda açılacak',
-                  description:
-                      'Bu preview sürümünde keşif akışını görüyoruz. Favori, yorum ve kişisel akışlar auth branch’iyle birleşince gerçek davranışına kavuşacak.',
-                  primaryActionLabel: 'Akışı İncele',
-                  onPrimaryAction: () {},
-                  secondaryText:
-                      'Şimdilik buton yerleri bilinçli olarak korunuyor.',
                 ),
               ),
               const SizedBox(height: 24),
@@ -185,12 +180,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: MockDatabase.categories.length,
                   itemBuilder: (context, index) {
-                    final cat = MockDatabase.categories[index];
+                    final category = MockDatabase.categories[index];
                     return CategoryCard(
-                      category: cat,
+                      category: category,
                       onTap: () {
                         setState(() {
-                          _searchController.text = cat.name;
+                          _searchController.text = category.name;
                         });
                       },
                     );
@@ -199,8 +194,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
               const SizedBox(height: 24),
               AppSectionHeader(
-                title: 'Bu Akşam Ne Var?',
-                actionLabel: 'Tümünü Gör',
+                title: 'Bu Ak\u015fam Ne Var?',
+                actionLabel: 'T\u00fcm\u00fcn\u00fc G\u00f6r',
                 onActionTap: () {},
               ),
               const SizedBox(height: 8),
@@ -213,7 +208,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   itemBuilder: (context, index) {
                     final event = _displayedEvents[index];
                     final venue = MockDatabase.venues.firstWhere(
-                      (v) => v.id == event.venueId,
+                      (item) => item.id == event.venueId,
                     );
                     return EventPreviewCard(
                       event: event,
@@ -224,25 +219,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: AppPreviewCard(
-                  icon: Icons.storefront,
-                  title: 'Mekanını görünür yapmak ister misin?',
-                  description:
-                      'İşletme modu, mekan sahiplenme ve etkinlik yönetimi akışlarını bu preview içinde gerçek yerlerinde konuşabilmen için burada tutuyoruz.',
-                  primaryActionLabel: 'İşletme Akışını Gör',
-                  onPrimaryAction: () => context.push('/profile'),
-                  secondaryText: 'MVP kapsamı yarın netleşecek.',
-                ),
-              ),
-              const SizedBox(height: 24),
-              const AppSectionHeader(title: 'Popüler Mekanlar'),
+              const AppSectionHeader(title: 'Pop\u00fcler Mekanlar'),
               const SizedBox(height: 12),
               _displayedVenues.isEmpty
                   ? const AppEmptyState(
                       icon: Icons.search_off,
-                      message: 'Aramanıza uygun mekan bulunamadı.',
+                      message: 'Araman\u0131za uygun mekan bulunamad\u0131.',
                     )
                   : ListView.builder(
                       shrinkWrap: true,

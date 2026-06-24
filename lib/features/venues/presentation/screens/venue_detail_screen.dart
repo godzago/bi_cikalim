@@ -4,7 +4,6 @@ import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
-import '../../../../shared/widgets/app_preview_card.dart';
 import '../../../../shared/widgets/event_list_card.dart';
 
 class VenueDetailScreen extends StatefulWidget {
@@ -30,16 +29,18 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     _tabController = TabController(length: 4, vsync: this);
 
     _venue = MockDatabase.venues.firstWhere(
-      (v) => v.id == widget.venueId,
+      (venue) => venue.id == widget.venueId,
       orElse: () => MockDatabase.venues.first,
     );
 
     _activities = MockDatabase.venueActivities
-        .where((va) => va.venueId == _venue.id)
+        .where((activity) => activity.venueId == _venue.id)
         .toList();
-    _events = MockDatabase.events.where((e) => e.venueId == _venue.id).toList();
+    _events = MockDatabase.events
+        .where((event) => event.venueId == _venue.id)
+        .toList();
     _reviews = MockDatabase.reviews
-        .where((r) => r.venueId == _venue.id)
+        .where((review) => review.venueId == _venue.id)
         .toList();
   }
 
@@ -250,18 +251,6 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppPreviewCard(
-            icon: Icons.store_mall_directory_outlined,
-            title: 'Bu mekanın sahibi misiniz?',
-            description:
-                'Editör eklemesi olan ya da sahiplenme bekleyen mekanlarda burada bir işletme akışı başlayacak. Böylece veri kalitesi ve sahiplik modeli görünür olacak.',
-            primaryActionLabel: 'Sahiplenme Akışını Düşün',
-            onPrimaryAction: () {},
-            secondaryText: _venue.sourceType == 'editor'
-                ? 'Bu preview verisi editör eklemesi olarak işaretli.'
-                : 'Bu preview verisi mekan tarafından yönetiliyor gibi gösteriliyor.',
-          ),
-          const SizedBox(height: 24),
           const Text(
             'Hakkında',
             style: TextStyle(
@@ -357,9 +346,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
       padding: const EdgeInsets.all(20),
       itemCount: _activities.length,
       itemBuilder: (context, index) {
-        final va = _activities[index];
-        final act = MockDatabase.activities.firstWhere(
-          (a) => a.id == va.activityId,
+        final venueActivity = _activities[index];
+        final activity = MockDatabase.activities.firstWhere(
+          (item) => item.id == venueActivity.activityId,
+        );
+        final subcategory = MockDatabase.getSubcategoryById(
+          activity.subcategoryId,
         );
 
         return Card(
@@ -372,6 +364,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -380,7 +373,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    act.icon,
+                    activity.icon,
                     color: BiCikalimTheme.primary,
                     size: 28,
                   ),
@@ -391,10 +384,11 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Text(
-                              act.name,
+                              activity.name,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -404,9 +398,9 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            va.priceInfo,
+                            venueActivity.priceInfo,
                             style: TextStyle(
-                              color: va.isFree
+                              color: venueActivity.isFree
                                   ? BiCikalimTheme.success
                                   : BiCikalimTheme.primary,
                               fontWeight: FontWeight.bold,
@@ -416,8 +410,19 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                         ],
                       ),
                       const SizedBox(height: 4),
+                      if (subcategory != null) ...[
+                        Text(
+                          subcategory.name,
+                          style: const TextStyle(
+                            color: BiCikalimTheme.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                      ],
                       Text(
-                        act.description,
+                        activity.description,
                         style: const TextStyle(
                           color: BiCikalimTheme.textSecondary,
                           fontSize: 13,
@@ -433,31 +438,21 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${act.minPeople}-${act.maxPeople} Kişi',
+                            '${activity.minPeople}-${activity.maxPeople} Kişi',
                             style: const TextStyle(
                               fontSize: 11,
                               color: BiCikalimTheme.textSecondary,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Icon(
-                            Icons.notes,
-                            size: 14,
-                            color: Colors.grey.shade400,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              va.note,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: BiCikalimTheme.textSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
                         ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        venueActivity.note,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: BiCikalimTheme.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -545,16 +540,27 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
         ),
         const Divider(height: 1),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          child: AppPreviewCard(
-            icon: Icons.login_outlined,
-            title: 'Yorum yazma auth ile açılacak',
-            description:
-                'Bu butonun yeri ve önceliği korunuyor. Giriş yapan kullanıcı yorum bırakabilecek, işletme tarafı ise geri bildirimleri bu akış üzerinden takip edecek.',
-            primaryActionLabel: 'Yorum Akışını Konuş',
-            onPrimaryAction: () {},
-            secondaryText:
-                'Preview sürümünde yorumlar sadece okunabilir durumda.',
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Kullanıcı Yorumları',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              TextButton.icon(
+                icon: const Icon(
+                  Icons.rate_review,
+                  size: 16,
+                  color: BiCikalimTheme.primary,
+                ),
+                label: const Text(
+                  'Yorum Yaz',
+                  style: TextStyle(color: BiCikalimTheme.primary),
+                ),
+                onPressed: () {},
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -568,7 +574,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   itemCount: _reviews.length,
                   itemBuilder: (context, index) {
-                    final r = _reviews[index];
+                    final review = _reviews[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Column(
@@ -581,7 +587,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                     .withValues(alpha: 0.08),
                                 radius: 18,
                                 child: Text(
-                                  r.userDisplayName[0],
+                                  review.userDisplayName[0],
                                   style: const TextStyle(
                                     color: BiCikalimTheme.primary,
                                     fontWeight: FontWeight.bold,
@@ -594,7 +600,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      r.userDisplayName,
+                                      review.userDisplayName,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
@@ -605,7 +611,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                         Row(
                                           children: List.generate(5, (index) {
                                             return Icon(
-                                              index < r.rating
+                                              index < review.rating
                                                   ? Icons.star
                                                   : Icons.star_border,
                                               color: BiCikalimTheme.primary,
@@ -626,7 +632,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                             ),
                                           ),
                                           child: Text(
-                                            r.visitedActivityName,
+                                            review.visitedActivityName,
                                             style: TextStyle(
                                               color: Colors.grey.shade700,
                                               fontSize: 8,
@@ -643,7 +649,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            r.comment,
+                            review.comment,
                             style: const TextStyle(
                               color: BiCikalimTheme.textSecondary,
                               fontSize: 13,

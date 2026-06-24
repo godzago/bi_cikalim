@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/mock_data.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
-import '../../../../shared/widgets/app_preview_card.dart';
 import '../../../../shared/widgets/app_segmented_option.dart';
 import '../../../../shared/widgets/event_list_card.dart';
 import '../../../../shared/widgets/venue_card.dart';
@@ -20,26 +19,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final savedVenues = [MockDatabase.venues[0], MockDatabase.venues[2]];
-    final savedEvents = [MockDatabase.events[0]];
+    final savedVenues = [
+      MockDatabase.venues[0],
+      MockDatabase.venues[2],
+      MockDatabase.venues[5],
+    ];
+    final savedEvents = [MockDatabase.events[0], MockDatabase.events[3]];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Kaydedilenler')),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: AppPreviewCard(
-              icon: Icons.lock_outline,
-              title: 'Kaydedilenler auth ile kişiselleşecek',
-              description:
-                  'Şu an burada örnek bir kayıtlı içerik görünümü var. Giriş yapıldığında favoriler kullanıcıya göre senkronlanacak ve gerçek liste oluşacak.',
-              primaryActionLabel: 'Preview Olarak İncele',
-              onPrimaryAction: () {},
-              secondaryText:
-                  'Liste düzeni kasıtlı olarak gerçek akışına yakın tutuldu.',
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
@@ -107,7 +97,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       itemBuilder: (context, index) {
         final event = list[index];
         final venue = MockDatabase.venues.firstWhere(
-          (v) => v.id == event.venueId,
+          (item) => item.id == event.venueId,
         );
 
         return EventListCard(
