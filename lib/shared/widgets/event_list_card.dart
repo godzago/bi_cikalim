@@ -137,6 +137,8 @@ class EventListCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         event.priceInfo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: BiCikalimTheme.success,
                           fontSize: 12,
@@ -148,6 +150,8 @@ class EventListCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: BiCikalimTheme.textPrimary,
                       fontSize: 18,

@@ -115,6 +115,8 @@ class VenueCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   '$activityCount aktivite - ${venue.reviewCount} yorum',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: BiCikalimTheme.textSecondary,
                     fontSize: 11,
@@ -220,6 +222,8 @@ class VenueCard extends StatelessWidget {
       ),
       child: Text(
         tag,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: Colors.grey.shade800,
           fontSize: 10,
@@ -238,6 +242,8 @@ class VenueCard extends StatelessWidget {
       ),
       child: Text(
         tag,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: Colors.grey.shade800,
           fontSize: 9,

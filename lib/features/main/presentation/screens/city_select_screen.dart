@@ -105,11 +105,15 @@ class CitySelectScreen extends StatelessWidget {
                               size: 14,
                             ),
                             SizedBox(width: 4),
-                            Text(
-                              'Porsuk Çayı, Odunpazarı Evleri...',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
+                            Expanded(
+                              child: Text(
+                                'Porsuk Çayı, Odunpazarı Evleri...',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],

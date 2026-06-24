@@ -175,7 +175,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: SizedBox(
-                  height: 108,
+                  height: 124,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -250,7 +250,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 128,
+                height: 144,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
@@ -283,7 +283,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 156,
+                height: 172,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),

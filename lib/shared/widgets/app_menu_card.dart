@@ -39,6 +39,8 @@ class AppMenuCard extends StatelessWidget {
         ),
         title: Text(
           title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.bold,
@@ -47,6 +49,8 @@ class AppMenuCard extends StatelessWidget {
         ),
         subtitle: Text(
           subtitle,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 11,
             color: BiCikalimTheme.textSecondary,

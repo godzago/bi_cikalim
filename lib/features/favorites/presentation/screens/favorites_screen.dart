@@ -34,9 +34,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                _buildToggleTab(0, 'Mekanlar (${savedVenues.length})'),
+                Expanded(
+                  child: _buildToggleTab(0, 'Mekanlar (${savedVenues.length})'),
+                ),
                 const SizedBox(width: 8),
-                _buildToggleTab(1, 'Etkinlikler (${savedEvents.length})'),
+                Expanded(
+                  child: _buildToggleTab(
+                    1,
+                    'Etkinlikler (${savedEvents.length})',
+                  ),
+                ),
               ],
             ),
           ),

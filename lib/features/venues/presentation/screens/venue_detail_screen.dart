@@ -166,8 +166,9 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
                       _buildQuickAction(Icons.directions, 'Yol Tarifi', () {}),
                       _buildQuickAction(Icons.phone, 'Ara', () {}),
@@ -180,6 +181,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             ),
             TabBar(
               controller: _tabController,
+              isScrollable: true,
               labelColor: BiCikalimTheme.primary,
               unselectedLabelColor: BiCikalimTheme.textSecondary,
               indicatorColor: BiCikalimTheme.primary,
@@ -218,6 +220,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
+        width: 88,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -230,6 +233,9 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             const SizedBox(height: 4),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -304,13 +310,22 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: BiCikalimTheme.textSecondary),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: BiCikalimTheme.textSecondary),
+            ),
           ),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
       ),
     );
@@ -474,6 +489,9 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                   const SizedBox(width: 8),
                   Text(
                     item.venueActivity.priceInfo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
                     style: TextStyle(
                       color: item.venueActivity.isFree
                           ? BiCikalimTheme.success
@@ -647,9 +665,14 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Row(
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 6,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
                                       children: [
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: List.generate(5, (index) {
                                             return Icon(
                                               index < review.rating
@@ -660,7 +683,6 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                             );
                                           }),
                                         ),
-                                        const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 6,
@@ -674,6 +696,8 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                           ),
                                           child: Text(
                                             review.visitedActivityName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               color: Colors.grey.shade700,
                                               fontSize: 8,

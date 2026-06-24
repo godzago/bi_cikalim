@@ -15,6 +15,7 @@ class CategoryCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 104,
+        height: 116,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -29,7 +30,7 @@ class CategoryCard extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade100),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -50,7 +51,7 @@ class CategoryCard extends StatelessWidget {
                 category.name,
                 style: const TextStyle(
                   color: BiCikalimTheme.textPrimary,
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,

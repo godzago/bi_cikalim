@@ -133,7 +133,7 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
             const _SectionTitle(title: 'Ilgili Aktiviteler'),
             const SizedBox(height: 10),
             SizedBox(
-              height: 112,
+              height: 124,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: matchedActivities.length,
@@ -320,6 +320,8 @@ class _SubcategoryChip extends StatelessWidget {
           ),
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: isSelected ? Colors.white : BiCikalimTheme.primary,
               fontSize: 12,

@@ -79,6 +79,8 @@ class DiscoverCatalogScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   category.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -88,6 +90,8 @@ class DiscoverCatalogScreen extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   '${venues.length} mekan · ${subcategories.length} alt kategori · ${activities.length} aktivite',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: BiCikalimTheme.textSecondary,
                                     fontSize: 12,
@@ -135,6 +139,8 @@ class DiscoverCatalogScreen extends StatelessWidget {
                             ),
                             child: Text(
                               '${subcategory.name} ($venueCount)',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -163,6 +169,8 @@ class DiscoverCatalogScreen extends StatelessWidget {
                           ),
                           child: Text(
                             activity.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
