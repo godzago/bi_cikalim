@@ -23,7 +23,7 @@ class AppFilterChip extends StatelessWidget {
         label: Text(label),
         onSelected: (_) => onTap(),
         backgroundColor: Colors.white,
-        selectedColor: BiCikalimTheme.primary.withOpacity(0.12),
+        selectedColor: BiCikalimTheme.primary.withValues(alpha: 0.12),
         labelStyle: TextStyle(
           color: isSelected
               ? BiCikalimTheme.primary

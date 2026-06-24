@@ -36,8 +36,8 @@ class EventPreviewCard extends StatelessWidget {
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
               colors: [
-                Colors.black.withOpacity(0.85),
-                Colors.black.withOpacity(0.2),
+                Colors.black.withValues(alpha: 0.85),
+                Colors.black.withValues(alpha: 0.2),
               ],
             ),
           ),

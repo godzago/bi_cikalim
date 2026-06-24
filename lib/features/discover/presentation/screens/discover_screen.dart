@@ -18,10 +18,10 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  String _selectedFilter = 'TÃ¼mÃ¼';
+  String _selectedFilter = 'Tümü';
   final TextEditingController _searchController = TextEditingController();
   List<Venue> _displayedVenues = List.from(MockDatabase.venues);
-  List<Event> _displayedEvents = List.from(MockDatabase.events);
+  final List<Event> _displayedEvents = List.from(MockDatabase.events);
 
   @override
   void initState() {
@@ -49,15 +49,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void _applyFilter(String filter) {
     setState(() {
       _selectedFilter = filter;
-      if (filter == 'TÃ¼mÃ¼') {
+      if (filter == 'Tümü') {
         _displayedVenues = List.from(MockDatabase.venues);
-      } else if (filter == '4 KiÅŸi') {
+      } else if (filter == '4 Kişi') {
         _displayedVenues = MockDatabase.venues.where((v) {
-          return v.activityTags.contains('Masa OyunlarÄ±');
+          return v.activityTags.contains('Masa Oyunları');
         }).toList();
-      } else if (filter == 'BugÃ¼n AÃ§Ä±k') {
+      } else if (filter == 'Bugün Açık') {
         _displayedVenues = List.from(MockDatabase.venues);
-      } else if (filter == 'YakÄ±nÄ±mda') {
+      } else if (filter == 'Yakınımda') {
         _displayedVenues = MockDatabase.venues.take(2).toList();
       }
     });
@@ -81,7 +81,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'BiÃ‡Ä±kalÄ±m',
+                          'BiÇıkalım',
                           style: TextStyle(
                             color: BiCikalimTheme.primary,
                             fontSize: 26,
@@ -99,7 +99,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'EskiÅŸehir',
+                              'Eskişehir',
                               style: TextStyle(
                                 color: Colors.grey.shade700,
                                 fontSize: 14,
@@ -152,11 +152,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
-                    _buildFilterChip('TÃ¼mÃ¼'),
-                    _buildFilterChip('BugÃ¼n AÃ§Ä±k'),
-                    _buildFilterChip('Bu AkÅŸam'),
-                    _buildFilterChip('4 KiÅŸi'),
-                    _buildFilterChip('YakÄ±nÄ±mda'),
+                    _buildFilterChip('Tümü'),
+                    _buildFilterChip('Bugün Açık'),
+                    _buildFilterChip('Bu Akşam'),
+                    _buildFilterChip('4 Kişi'),
+                    _buildFilterChip('Yakınımda'),
                   ],
                 ),
               ),
@@ -164,7 +164,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               const AppSectionHeader(title: 'Aktivite Kategorileri'),
               const SizedBox(height: 12),
               SizedBox(
-                height: 96,
+                height: 108,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -184,8 +184,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
               const SizedBox(height: 24),
               AppSectionHeader(
-                title: 'Bu AkÅŸam Ne Var?',
-                actionLabel: 'TÃ¼mÃ¼nÃ¼ GÃ¶r',
+                title: 'Bu Akşam Ne Var?',
+                actionLabel: 'Tümünü Gör',
                 onActionTap: () {},
               ),
               const SizedBox(height: 8),
@@ -209,12 +209,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const AppSectionHeader(title: 'PopÃ¼ler Mekanlar'),
+              const AppSectionHeader(title: 'Popüler Mekanlar'),
               const SizedBox(height: 12),
               _displayedVenues.isEmpty
                   ? const AppEmptyState(
                       icon: Icons.search_off,
-                      message: 'AramanÄ±za uygun mekan bulunamadÄ±.',
+                      message: 'Aramanıza uygun mekan bulunamadı.',
                     )
                   : ListView.builder(
                       shrinkWrap: true,

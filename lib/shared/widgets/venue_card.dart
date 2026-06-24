@@ -110,7 +110,7 @@ class VenueCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: BiCikalimTheme.primary.withOpacity(0.08),
+                          color: BiCikalimTheme.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(

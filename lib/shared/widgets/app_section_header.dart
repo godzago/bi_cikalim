@@ -21,13 +21,15 @@ class AppSectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: BiCikalimTheme.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Outfit',
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: BiCikalimTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Outfit',
+              ),
             ),
           ),
           if (actionLabel != null && onActionTap != null)
