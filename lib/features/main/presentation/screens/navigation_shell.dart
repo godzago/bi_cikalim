@@ -7,7 +7,7 @@ class NavigationShell extends StatelessWidget {
   const NavigationShell({super.key, required this.child});
 
   int _calculateSelectedIndex(BuildContext context) {
-    final String location = GoRouterState.of(context).uri.toString();
+    final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith('/discover')) return 0;
     if (location.startsWith('/events')) return 1;
     if (location.startsWith('/map')) return 2;
@@ -20,19 +20,19 @@ class NavigationShell extends StatelessWidget {
     switch (index) {
       case 0:
         context.go('/discover');
-        break;
+        return;
       case 1:
         context.go('/events');
-        break;
+        return;
       case 2:
         context.go('/map');
-        break;
+        return;
       case 3:
         context.go('/favorites');
-        break;
+        return;
       case 4:
         context.go('/profile');
-        break;
+        return;
     }
   }
 
@@ -59,7 +59,7 @@ class NavigationShell extends StatelessWidget {
             BottomNavigationBarItem(
               icon: Icon(Icons.explore_outlined),
               activeIcon: Icon(Icons.explore),
-              label: 'Keşfet',
+              label: 'Kesfet',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.event_outlined),

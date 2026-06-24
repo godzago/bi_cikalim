@@ -17,7 +17,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Harita Keşfi')),
+      appBar: AppBar(title: const Text('Harita Kesfi')),
       body: Stack(
         children: [
           Positioned.fill(child: CustomPaint(painter: MapGridPainter())),
@@ -164,7 +164,7 @@ class _MapScreenState extends State<MapScreen> {
                               child: const Row(
                                 children: [
                                   Text(
-                                    'Detaylı İncele',
+                                    'Detayli Incele',
                                     style: TextStyle(
                                       color: BiCikalimTheme.primary,
                                       fontSize: 13,
@@ -202,10 +202,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   IconData _getVenueIcon(String firstTag) {
-    if (firstTag == 'Masa Oyunları') return Icons.casino;
-    if (firstTag == 'Bilardo') return Icons.sports;
-    if (firstTag == 'PS / Konsol') return Icons.sports_esports;
-    if (firstTag == 'Karaoke') return Icons.mic;
+    if (firstTag.contains('Masaustu') || firstTag.contains('FRP')) {
+      return Icons.casino;
+    }
+    if (firstTag.contains('Bilardo') || firstTag.contains('Snooker')) {
+      return Icons.sports;
+    }
+    if (firstTag.contains('Dijital') || firstTag.contains('VR')) {
+      return Icons.sports_esports;
+    }
+    if (firstTag.contains('Karaoke')) return Icons.mic;
+    if (firstTag.contains('Saha')) return Icons.sports_soccer;
     return Icons.store;
   }
 }

@@ -162,7 +162,7 @@ class MockDatabase {
   static final List<ActivityCategory> categories = [
     const ActivityCategory(
       id: 'masaustu_oyunlar',
-      name: 'Masaüstü Oyunlar',
+      name: 'Masaustu Oyunlar',
       icon: Icons.casino,
       order: 1,
     ),
@@ -174,13 +174,13 @@ class MockDatabase {
     ),
     const ActivityCategory(
       id: 'salon_eglenceleri',
-      name: 'Salon Eğlenceleri',
+      name: 'Salon Eglenceleri',
       icon: Icons.celebration,
       order: 3,
     ),
     const ActivityCategory(
       id: 'saha_sporlari',
-      name: 'Saha Sporları',
+      name: 'Saha Sporlari',
       icon: Icons.sports_soccer,
       order: 4,
     ),
@@ -192,7 +192,7 @@ class MockDatabase {
     ),
     const ActivityCategory(
       id: 'macera_deneyim',
-      name: 'Macera & Deneyim',
+      name: 'Macera ve Deneyim',
       icon: Icons.explore,
       order: 6,
     ),
@@ -202,17 +202,17 @@ class MockDatabase {
     const ActivitySubcategory(
       id: 'kutu_oyunlari',
       categoryId: 'masaustu_oyunlar',
-      name: 'Kutu Oyunları',
+      name: 'Kutu Oyunlari',
     ),
     const ActivitySubcategory(
       id: 'kart_oyunlari',
       categoryId: 'masaustu_oyunlar',
-      name: 'Kart Oyunları',
+      name: 'Kart ve Tas Oyunlari',
     ),
     const ActivitySubcategory(
       id: 'frp',
       categoryId: 'masaustu_oyunlar',
-      name: 'FRP / TTRPG',
+      name: 'FRP ve TTRPG',
     ),
     const ActivitySubcategory(
       id: 'konsol',
@@ -222,7 +222,7 @@ class MockDatabase {
     const ActivitySubcategory(
       id: 'vr',
       categoryId: 'dijital_oyunlar',
-      name: 'VR & Simülasyon',
+      name: 'VR ve Simulator',
     ),
     const ActivitySubcategory(
       id: 'bilardo',
@@ -245,9 +245,9 @@ class MockDatabase {
       name: 'Futbol',
     ),
     const ActivitySubcategory(
-      id: 'tenis',
+      id: 'raket',
       categoryId: 'saha_sporlari',
-      name: 'Tenis',
+      name: 'Raket Sporlari',
     ),
     const ActivitySubcategory(
       id: 'fitness',
@@ -255,9 +255,14 @@ class MockDatabase {
       name: 'Fitness',
     ),
     const ActivitySubcategory(
+      id: 'wellness',
+      categoryId: 'bireysel_sporlar',
+      name: 'Wellness Studio',
+    ),
+    const ActivitySubcategory(
       id: 'tirmanis',
       categoryId: 'macera_deneyim',
-      name: 'Tırmanış',
+      name: 'Tirmanis',
     ),
     const ActivitySubcategory(
       id: 'escape_room',
@@ -272,7 +277,7 @@ class MockDatabase {
       name: 'Catan',
       categoryId: 'masaustu_oyunlar',
       subcategoryId: 'kutu_oyunlari',
-      description: 'Kaynak yönetimi ve ticaret odaklı strateji oyunu.',
+      description: 'Kaynak yonetimi ve ticaret odakli strateji oyunu.',
       icon: Icons.landscape,
       minPeople: 3,
       maxPeople: 4,
@@ -289,11 +294,21 @@ class MockDatabase {
       maxPeople: 6,
     ),
     const Activity(
+      id: 'azul',
+      name: 'Azul',
+      categoryId: 'masaustu_oyunlar',
+      subcategoryId: 'kutu_oyunlari',
+      description: 'Kisa sureli ama karar agirligi yuksek kutu oyunu.',
+      icon: Icons.grid_on,
+      minPeople: 2,
+      maxPeople: 4,
+    ),
+    const Activity(
       id: 'tabu',
       name: 'Tabu',
       categoryId: 'masaustu_oyunlar',
       subcategoryId: 'kart_oyunlari',
-      description: 'Kelime anlatma ve takım iletişimi oyunu.',
+      description: 'Kelime anlatma ve takim iletisim oyunu.',
       icon: Icons.forum,
       minPeople: 4,
       maxPeople: 10,
@@ -303,9 +318,19 @@ class MockDatabase {
       name: 'Okey',
       categoryId: 'masaustu_oyunlar',
       subcategoryId: 'kart_oyunlari',
-      description: 'Uzun oturumlara uygun klasik taş oyunu.',
+      description: 'Uzun oturumlara uygun klasik tas oyunu.',
       icon: Icons.grid_view,
       minPeople: 4,
+      maxPeople: 4,
+    ),
+    const Activity(
+      id: 'magic_commander',
+      name: 'Magic Commander',
+      categoryId: 'masaustu_oyunlar',
+      subcategoryId: 'kart_oyunlari',
+      description: 'Koleksiyon kart oyunu icin sosyal format masalari.',
+      icon: Icons.style,
+      minPeople: 2,
       maxPeople: 4,
     ),
     const Activity(
@@ -313,45 +338,25 @@ class MockDatabase {
       name: 'D&D 5e',
       categoryId: 'masaustu_oyunlar',
       subcategoryId: 'frp',
-      description: 'Game master eşli oynanan masaüstü rol yapma deneyimi.',
+      description: 'Game master esli masaustu rol yapma deneyimi.',
       icon: Icons.auto_awesome,
       minPeople: 3,
       maxPeople: 6,
-      aliases: ['Dungeons & Dragons'],
+      aliases: ['Dungeons and Dragons'],
     ),
     const Activity(
-      id: 'amerikan_bilardo',
-      name: 'Amerikan Bilardo',
-      categoryId: 'salon_eglenceleri',
-      subcategoryId: 'bilardo',
-      description: '8 top ve 9 top için uygun klasik bilardo masası.',
-      icon: Icons.sports,
-      minPeople: 2,
-      maxPeople: 4,
-    ),
-    const Activity(
-      id: 'karaoke_odasi',
-      name: 'Özel Karaoke Odası',
-      categoryId: 'salon_eglenceleri',
-      subcategoryId: 'karaoke',
-      description: 'Grup kullanımı için ayrılmış özel karaoke deneyimi.',
-      icon: Icons.music_note,
-      minPeople: 4,
-      maxPeople: 15,
-    ),
-    const Activity(
-      id: 'dart_hedefi',
-      name: 'Elektronik Dart',
-      categoryId: 'salon_eglenceleri',
-      subcategoryId: 'dart',
-      description: 'Skor takibi yapan elektronik dart düzeneği.',
-      icon: Icons.gps_fixed,
-      minPeople: 2,
+      id: 'call_of_cthulhu',
+      name: 'Call of Cthulhu',
+      categoryId: 'masaustu_oyunlar',
+      subcategoryId: 'frp',
+      description: 'Dedektiflik ve gerilim odakli rol yapma oturumlari.',
+      icon: Icons.nightlight,
+      minPeople: 3,
       maxPeople: 6,
     ),
     const Activity(
       id: 'ps5_fc',
-      name: 'PS5 & FC 25',
+      name: 'PS5 and FC 25',
       categoryId: 'dijital_oyunlar',
       subcategoryId: 'konsol',
       description: 'Yeni nesil konsolda futbol ve rekabet deneyimi.',
@@ -365,28 +370,108 @@ class MockDatabase {
       name: 'Nintendo Switch Party',
       categoryId: 'dijital_oyunlar',
       subcategoryId: 'konsol',
-      description: 'Kalabalık gruplar için yarış ve parti oyunları setupı.',
+      description: 'Kalabalik gruplar icin yariş ve party oyunlari.',
       icon: Icons.videogame_asset,
       minPeople: 2,
       maxPeople: 8,
+    ),
+    const Activity(
+      id: 'retro_arcade',
+      name: 'Retro Arcade',
+      categoryId: 'dijital_oyunlar',
+      subcategoryId: 'konsol',
+      description: 'Retro cihazlar ve atari klasiklerini oynama alani.',
+      icon: Icons.gamepad,
+      minPeople: 1,
+      maxPeople: 4,
     ),
     const Activity(
       id: 'vr_shooter',
       name: 'VR Shooter',
       categoryId: 'dijital_oyunlar',
       subcategoryId: 'vr',
-      description: 'Sanal gerçeklikte aksiyon ve takım oyunu deneyimi.',
+      description: 'Sanal gerceklikte aksiyon ve takim oyunu deneyimi.',
       icon: Icons.vrpano,
       minPeople: 1,
       maxPeople: 4,
     ),
     const Activity(
+      id: 'racing_sim',
+      name: 'Racing Simulator',
+      categoryId: 'dijital_oyunlar',
+      subcategoryId: 'vr',
+      description: 'Direksiyon setli araba yarisi simulatoru.',
+      icon: Icons.sports_motorsports,
+      minPeople: 1,
+      maxPeople: 2,
+    ),
+    const Activity(
+      id: 'amerikan_bilardo',
+      name: 'Amerikan Bilardo',
+      categoryId: 'salon_eglenceleri',
+      subcategoryId: 'bilardo',
+      description: '8 top ve 9 top icin uygun klasik masa.',
+      icon: Icons.sports,
+      minPeople: 2,
+      maxPeople: 4,
+    ),
+    const Activity(
+      id: 'snooker',
+      name: 'Snooker',
+      categoryId: 'salon_eglenceleri',
+      subcategoryId: 'bilardo',
+      description: 'Uzun oturumlara uygun tam boy masa kurulumu.',
+      icon: Icons.sports_bar,
+      minPeople: 2,
+      maxPeople: 4,
+    ),
+    const Activity(
+      id: 'karaoke_odasi',
+      name: 'Ozel Karaoke Odasi',
+      categoryId: 'salon_eglenceleri',
+      subcategoryId: 'karaoke',
+      description: 'Grup kullanimi icin ayrilmis ozel karaoke deneyimi.',
+      icon: Icons.music_note,
+      minPeople: 4,
+      maxPeople: 15,
+    ),
+    const Activity(
+      id: 'open_mic_karaoke',
+      name: 'Open Mic Karaoke',
+      categoryId: 'salon_eglenceleri',
+      subcategoryId: 'karaoke',
+      description: 'Acik sahnede sarkili sosyal karaoke duzeni.',
+      icon: Icons.mic_external_on,
+      minPeople: 1,
+      maxPeople: 40,
+    ),
+    const Activity(
+      id: 'dart_hedefi',
+      name: 'Elektronik Dart',
+      categoryId: 'salon_eglenceleri',
+      subcategoryId: 'dart',
+      description: 'Skor takibi yapan elektronik dart duzenegi.',
+      icon: Icons.gps_fixed,
+      minPeople: 2,
+      maxPeople: 6,
+    ),
+    const Activity(
       id: 'hali_saha',
-      name: 'Kapalı Halı Saha',
+      name: 'Kapali Hali Saha',
       categoryId: 'saha_sporlari',
       subcategoryId: 'futbol',
-      description: 'Takım maçı ve organizasyon için uygun halı saha.',
+      description: 'Takim maci ve organizasyon icin uygun hali saha.',
       icon: Icons.sports_soccer,
+      minPeople: 10,
+      maxPeople: 14,
+    ),
+    const Activity(
+      id: 'acik_saha',
+      name: 'Acik Hali Saha',
+      categoryId: 'saha_sporlari',
+      subcategoryId: 'futbol',
+      description: 'Yaz aksamlarina uygun acik saha rezervasyonu.',
+      icon: Icons.sports_soccer_outlined,
       minPeople: 10,
       maxPeople: 14,
     ),
@@ -394,8 +479,18 @@ class MockDatabase {
       id: 'toprak_kort',
       name: 'Toprak Tenis Kortu',
       categoryId: 'saha_sporlari',
-      subcategoryId: 'tenis',
-      description: 'Tekler ve çiftler için toprak zemin kort.',
+      subcategoryId: 'raket',
+      description: 'Tekler ve ciftler icin toprak zemin kort.',
+      icon: Icons.sports_tennis,
+      minPeople: 2,
+      maxPeople: 4,
+    ),
+    const Activity(
+      id: 'padel_court',
+      name: 'Padel Court',
+      categoryId: 'saha_sporlari',
+      subcategoryId: 'raket',
+      description: 'Ciftler odakli padel oyun alani.',
       icon: Icons.sports_tennis,
       minPeople: 2,
       maxPeople: 4,
@@ -405,28 +500,68 @@ class MockDatabase {
       name: 'Fitness Salonu',
       categoryId: 'bireysel_sporlar',
       subcategoryId: 'fitness',
-      description: 'Serbest ağırlık ve kondisyon ekipmanları bulunan salon.',
+      description: 'Serbest agirlik ve kondisyon ekipmanlari bulunan salon.',
       icon: Icons.fitness_center,
       minPeople: 1,
       maxPeople: 30,
     ),
     const Activity(
+      id: 'spinning',
+      name: 'Spinning Studio',
+      categoryId: 'bireysel_sporlar',
+      subcategoryId: 'fitness',
+      description: 'Muzikli grup kondisyon dersleri icin studio setupi.',
+      icon: Icons.directions_bike,
+      minPeople: 6,
+      maxPeople: 18,
+    ),
+    const Activity(
+      id: 'reformer',
+      name: 'Reformer Pilates',
+      categoryId: 'bireysel_sporlar',
+      subcategoryId: 'wellness',
+      description: 'Kucuk grup veya birebir reformer calisma alani.',
+      icon: Icons.self_improvement,
+      minPeople: 1,
+      maxPeople: 6,
+    ),
+    const Activity(
       id: 'boulder',
-      name: 'Boulder Duvarı',
+      name: 'Boulder Duvasi',
       categoryId: 'macera_deneyim',
       subcategoryId: 'tirmanis',
-      description: 'Farklı zorluk derecelerinde indoor tırmanış rotaları.',
+      description: 'Farkli zorluk derecelerinde indoor tirmanis rotalari.',
       icon: Icons.terrain,
       minPeople: 1,
       maxPeople: 12,
+    ),
+    const Activity(
+      id: 'lead_climbing',
+      name: 'Top Rope Tirmanis',
+      categoryId: 'macera_deneyim',
+      subcategoryId: 'tirmanis',
+      description: 'Eslikli uzun rota tirmanis deneyimi.',
+      icon: Icons.hiking,
+      minPeople: 1,
+      maxPeople: 10,
     ),
     const Activity(
       id: 'escape_room',
       name: 'Escape Room',
       categoryId: 'macera_deneyim',
       subcategoryId: 'escape_room',
-      description: 'Takım halinde bulmaca çözmeye dayalı oda kaçış deneyimi.',
+      description: 'Takim halinde bulmaca cozmeye dayali kacis deneyimi.',
       icon: Icons.meeting_room,
+      minPeople: 2,
+      maxPeople: 6,
+    ),
+    const Activity(
+      id: 'detective_room',
+      name: 'Dedektif Oda Senaryosu',
+      categoryId: 'macera_deneyim',
+      subcategoryId: 'escape_room',
+      description: 'Kaniti takip eden hikaye odakli escape room deneyimi.',
+      icon: Icons.search,
       minPeople: 2,
       maxPeople: 6,
     ),
@@ -435,13 +570,13 @@ class MockDatabase {
   static final List<Venue> venues = [
     const Venue(
       id: 'venue_1',
-      name: 'Roll & Play Cafe',
+      name: 'Roll and Play Cafe',
       slug: 'roll-play-cafe',
       description:
-          'Eskişehir’de geniş masaüstü oyun seçkisi, bilardo alanı ve özel karaoke odalarıyla arkadaş grupları için güçlü bir sosyal buluşma noktası.',
-      city: 'Eskişehir',
-      district: 'Odunpazarı',
-      address: 'Akarbaşı Mh., Atatürk Cd. No: 42, Odunpazarı/Eskişehir',
+          'Eskisehirde genis masaustu oyun secimi, bilardo alani ve ozel karaoke odalariyla guclu bir sosyal bulusma noktasi.',
+      city: 'Eskisehir',
+      district: 'Odunpazari',
+      address: 'Akarbasi Mah. Ataturk Cad. No:42 Odunpazari',
       latitude: 39.768,
       longitude: 30.522,
       phone: '+90 222 333 44 55',
@@ -453,17 +588,17 @@ class MockDatabase {
       ownershipStatus: 'claimed',
       averageRating: 4.8,
       reviewCount: 312,
-      activityTags: ['Masaüstü Oyunlar', 'Bilardo', 'Karaoke'],
+      activityTags: ['Masaustu Oyunlar', 'Bilardo', 'Karaoke'],
     ),
     const Venue(
       id: 'venue_2',
-      name: 'Social Lounge Pub & Game',
+      name: 'Social Lounge Pub and Game',
       slug: 'social-lounge',
       description:
-          'Konsol kabinleri, dart alanı ve etkinlik akşamlarıyla genç kitleye hitap eden hibrit oyun-eğlence mekanı.',
-      city: 'Eskişehir',
-      district: 'Tepebaşı',
-      address: 'Hoşnudiye Mh., Vural Sk. No: 12, Tepebaşı/Eskişehir',
+          'Konsol kabinleri, dart alani ve etkinlik aksamlariyla genc kitleye hitap eden hibrit oyun eglence mekani.',
+      city: 'Eskisehir',
+      district: 'Tepebasi',
+      address: 'Hosnudiye Mah. Vural Sok. No:12 Tepebasi',
       latitude: 39.782,
       longitude: 30.518,
       phone: '+90 222 444 55 66',
@@ -482,10 +617,10 @@ class MockDatabase {
       name: 'Meeple Board Game Cafe',
       slug: 'meeple-board-game-cafe',
       description:
-          'Yoğun kutu oyunu envanteri ve düzenli masa oyunu buluşmalarıyla şehirdeki masaüstü oyun odaklı mekanlardan biri.',
-      city: 'Eskişehir',
-      district: 'Odunpazarı',
-      address: 'İstiklal Mah., Adalar Sok. No: 31A, Odunpazarı/Eskişehir',
+          'Yogun kutu oyunu envanteri ve duzenli masa oyunu bulusmalariyla sehirdeki masaustu odakli mekanlardan biri.',
+      city: 'Eskisehir',
+      district: 'Odunpazari',
+      address: 'Istiklal Mah. Adalar Sok. No:31A Odunpazari',
       latitude: 39.772,
       longitude: 30.518,
       phone: '+90 555 706 71 64',
@@ -497,17 +632,17 @@ class MockDatabase {
       ownershipStatus: 'claimed',
       averageRating: 4.9,
       reviewCount: 228,
-      activityTags: ['Masaüstü Oyunlar', 'FRP'],
+      activityTags: ['Masaustu Oyunlar', 'FRP'],
     ),
     const Venue(
       id: 'venue_4',
       name: 'Bento Spor Kompleksi',
       slug: 'bento-spor-kompleksi',
       description:
-          'Kapalı ve açık halı saha, toprak tenis kortları ve sosyal alanlarıyla spor odaklı kompleks.',
-      city: 'Eskişehir',
-      district: 'Odunpazarı',
-      address: 'OSB Yaşam Park, Odunpazarı/Eskişehir',
+          'Kapali ve acik hali saha, tenis kortlari ve sosyal alanlariyla spor odakli kompleks.',
+      city: 'Eskisehir',
+      district: 'Odunpazari',
+      address: 'OSB Yasam Park Odunpazari',
       latitude: 39.742,
       longitude: 30.495,
       phone: '+90 536 726 26 86',
@@ -519,17 +654,17 @@ class MockDatabase {
       ownershipStatus: 'unclaimed',
       averageRating: 4.5,
       reviewCount: 89,
-      activityTags: ['Saha Sporları', 'Tenis'],
+      activityTags: ['Saha Sporlari', 'Tenis'],
     ),
     const Venue(
       id: 'venue_5',
       name: 'XP VR Station',
       slug: 'xp-vr-station',
       description:
-          'Sanal gerçeklik oyunları ve dijital deneyim odaklı özel oyun salonu.',
-      city: 'Eskişehir',
-      district: 'Tepebaşı',
-      address: 'Hoşnudiye Mah., Tepebaşı/Eskişehir',
+          'Sanal gerceklik oyunlari ve dijital deneyim odakli ozel oyun salonu.',
+      city: 'Eskisehir',
+      district: 'Tepebasi',
+      address: 'Hosnudiye Mah. Tepebasi',
       latitude: 39.783,
       longitude: 30.512,
       phone: '+90 222 000 00 00',
@@ -545,13 +680,13 @@ class MockDatabase {
     ),
     const Venue(
       id: 'venue_6',
-      name: 'Boulder Eskişehir',
+      name: 'Boulder Eskisehir',
       slug: 'boulder-eskisehir',
       description:
-          'Indoor boulder ve tırmanış deneyimi sunan topluluk odaklı spor alanı.',
-      city: 'Eskişehir',
-      district: 'Tepebaşı',
-      address: 'Tepebaşı/Eskişehir',
+          'Indoor boulder ve tirmanis deneyimi sunan topluluk odakli spor alani.',
+      city: 'Eskisehir',
+      district: 'Tepebasi',
+      address: 'Fabrikalar Bolgesi Tepebasi',
       latitude: 39.789,
       longitude: 30.501,
       phone: '+90 555 026 26 49',
@@ -563,17 +698,17 @@ class MockDatabase {
       ownershipStatus: 'unclaimed',
       averageRating: 4.7,
       reviewCount: 41,
-      activityTags: ['Macera & Deneyim', 'Bireysel Sporlar'],
+      activityTags: ['Macera ve Deneyim', 'Bireysel Sporlar'],
     ),
     const Venue(
       id: 'venue_7',
       name: 'Kilitli Oda',
       slug: 'kilitli-oda',
       description:
-          'Küçük gruplar için bulmaca çözme ve takım deneyimi odaklı escape room mekanı.',
-      city: 'Eskişehir',
-      district: 'Tepebaşı',
-      address: 'İsmet İnönü-1 Cd. No: 60, Tepebaşı/Eskişehir',
+          'Kucuk gruplar icin bulmaca cozme ve takim deneyimi odakli escape room mekani.',
+      city: 'Eskisehir',
+      district: 'Tepebasi',
+      address: 'Ismet Inonu 1 Cad. No:60 Tepebasi',
       latitude: 39.781,
       longitude: 30.514,
       phone: '+90 544 441 56 32',
@@ -585,7 +720,183 @@ class MockDatabase {
       ownershipStatus: 'unclaimed',
       averageRating: 4.2,
       reviewCount: 38,
-      activityTags: ['Macera & Deneyim', 'Escape Room'],
+      activityTags: ['Macera ve Deneyim', 'Escape Room'],
+    ),
+    const Venue(
+      id: 'venue_8',
+      name: 'Analog House',
+      slug: 'analog-house',
+      description:
+          'Kutu oyunlari, kart oyunlari ve sakin calisma koseleriyle uzun oturumlara uygun kafe.',
+      city: 'Eskisehir',
+      district: 'Adalar',
+      address: 'Porsuk Bulvari No:18 Adalar',
+      latitude: 39.776,
+      longitude: 30.525,
+      phone: '+90 222 219 19 19',
+      instagramUrl: 'https://instagram.com/analoghouseesk',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1511988617509-a57c8a288659?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      verificationStatus: 'unverified',
+      ownershipStatus: 'unclaimed',
+      averageRating: 4.6,
+      reviewCount: 102,
+      activityTags: ['Masaustu Oyunlar', 'Kart Oyunlari'],
+    ),
+    const Venue(
+      id: 'venue_9',
+      name: 'Dungeon Tabletop Hub',
+      slug: 'dungeon-tabletop-hub',
+      description:
+          'FRP oturumlari, miniatur masa duzeni ve uzun kampanyalara uygun rezervasyonlu alanlar sunar.',
+      city: 'Eskisehir',
+      district: 'Doktorlar',
+      address: 'Sivrihisar 1 Cad. No:72 Doktorlar',
+      latitude: 39.779,
+      longitude: 30.519,
+      phone: '+90 552 101 20 20',
+      instagramUrl: 'https://instagram.com/dungeonesk',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1560179406-1c6c60e0dc76?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'venue_owner',
+      verificationStatus: 'verified',
+      ownershipStatus: 'claimed',
+      averageRating: 4.9,
+      reviewCount: 87,
+      activityTags: ['FRP', 'Masaustu Oyunlar'],
+    ),
+    const Venue(
+      id: 'venue_10',
+      name: 'Retro Pixel Cafe',
+      slug: 'retro-pixel-cafe',
+      description:
+          'Retro konsollar, arcade setup ve nostaljik oyun geceleriyle dijital oyun odakli bulusma mekani.',
+      city: 'Eskisehir',
+      district: 'Hosnudiye',
+      address: 'Basin Sehitleri Cad. No:9 Hosnudiye',
+      latitude: 39.784,
+      longitude: 30.516,
+      phone: '+90 553 212 47 47',
+      instagramUrl: 'https://instagram.com/retropixelesk',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      verificationStatus: 'unverified',
+      ownershipStatus: 'unclaimed',
+      averageRating: 4.5,
+      reviewCount: 73,
+      activityTags: ['Dijital Oyunlar', 'Retro Arcade'],
+    ),
+    const Venue(
+      id: 'venue_11',
+      name: 'Loop Karaoke Rooms',
+      slug: 'loop-karaoke-rooms',
+      description:
+          'Saatlik kiralanabilen ozel odalar ve open mic geceleriyle karaoke odakli deneyim sunar.',
+      city: 'Eskisehir',
+      district: 'Baglar',
+      address: 'Baglar Cad. No:27 Baglar',
+      latitude: 39.773,
+      longitude: 30.509,
+      phone: '+90 530 450 45 45',
+      instagramUrl: 'https://instagram.com/loopkaraoke',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      verificationStatus: 'unverified',
+      ownershipStatus: 'unclaimed',
+      averageRating: 4.1,
+      reviewCount: 56,
+      activityTags: ['Karaoke', 'Salon Eglenceleri'],
+    ),
+    const Venue(
+      id: 'venue_12',
+      name: 'Midas Snooker Hall',
+      slug: 'midas-snooker-hall',
+      description:
+          'Snooker ve amerikan bilardo masalariyla seri oyunculara hitap eden klasik salon.',
+      city: 'Eskisehir',
+      district: 'Yenibaglar',
+      address: 'Yenibaglar Mah. No:14 Yenibaglar',
+      latitude: 39.771,
+      longitude: 30.505,
+      phone: '+90 543 330 88 88',
+      instagramUrl: 'https://instagram.com/midassnooker',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      verificationStatus: 'unverified',
+      ownershipStatus: 'unclaimed',
+      averageRating: 4.4,
+      reviewCount: 68,
+      activityTags: ['Bilardo', 'Snooker'],
+    ),
+    const Venue(
+      id: 'venue_13',
+      name: 'Adalar Racket Club',
+      slug: 'adalar-racket-club',
+      description:
+          'Padel ve tenis odakli, ders ve saatlik rezervasyon modeliyle isleyen kulup.',
+      city: 'Eskisehir',
+      district: 'Adalar',
+      address: 'Adalar Park yani',
+      latitude: 39.778,
+      longitude: 30.527,
+      phone: '+90 531 700 00 11',
+      instagramUrl: 'https://instagram.com/adalarracket',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1542144582-1ba00456b5e3?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      verificationStatus: 'unverified',
+      ownershipStatus: 'unclaimed',
+      averageRating: 4.6,
+      reviewCount: 44,
+      activityTags: ['Saha Sporlari', 'Padel'],
+    ),
+    const Venue(
+      id: 'venue_14',
+      name: 'Well Studio Eskisehir',
+      slug: 'well-studio-eskisehir',
+      description:
+          'Reformer, spinning ve kucuk grup dersleriyle daha butik bir spor deneyimi sunar.',
+      city: 'Eskisehir',
+      district: 'Hosnudiye',
+      address: 'Hosnudiye Mah. Isiklar Sok. No:6',
+      latitude: 39.786,
+      longitude: 30.514,
+      phone: '+90 537 112 00 98',
+      instagramUrl: 'https://instagram.com/wellstudioesk',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      verificationStatus: 'unverified',
+      ownershipStatus: 'unclaimed',
+      averageRating: 4.7,
+      reviewCount: 59,
+      activityTags: ['Bireysel Sporlar', 'Wellness'],
+    ),
+    const Venue(
+      id: 'venue_15',
+      name: 'GoalPark Indoor',
+      slug: 'goalpark-indoor',
+      description:
+          'Mac organizasyonu, takim bulma ve gece seanslariyla odaklanan yogun bir hali saha tesisi.',
+      city: 'Eskisehir',
+      district: 'Batikent',
+      address: 'Batikent Spor Alani',
+      latitude: 39.759,
+      longitude: 30.489,
+      phone: '+90 541 700 70 70',
+      instagramUrl: 'https://instagram.com/goalparkindoor',
+      coverImageUrl:
+          'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      verificationStatus: 'unverified',
+      ownershipStatus: 'unclaimed',
+      averageRating: 4.3,
+      reviewCount: 91,
+      activityTags: ['Saha Sporlari', 'Futbol'],
     ),
   ];
 
@@ -594,18 +905,18 @@ class MockDatabase {
       id: 'va_1',
       venueId: 'venue_1',
       activityId: 'monopoly',
-      note: 'Klasik ve büyük kutu versiyonları mevcut.',
+      note: 'Klasik ve buyuk kutu versiyonlari mevcut.',
       isFree: true,
-      priceInfo: 'Ücretsiz',
+      priceInfo: 'Ucretsiz',
       sourceType: 'venue_owner',
     ),
     const VenueActivity(
       id: 'va_2',
       venueId: 'venue_1',
       activityId: 'catan',
-      note: 'Genişleme paketleriyle oynanabilir.',
+      note: 'Genisleme paketleriyle oynanabilir.',
       isFree: false,
-      priceInfo: 'Masa kullanımına dahil',
+      priceInfo: 'Masa kullanimina dahil',
       sourceType: 'venue_owner',
     ),
     const VenueActivity(
@@ -621,7 +932,7 @@ class MockDatabase {
       id: 'va_4',
       venueId: 'venue_1',
       activityId: 'karaoke_odasi',
-      note: 'Özel oda rezervasyonu önerilir.',
+      note: 'Ozel oda rezervasyonu onerilir.',
       isFree: false,
       priceInfo: 'Saatlik 250 TL',
       sourceType: 'venue_owner',
@@ -630,7 +941,7 @@ class MockDatabase {
       id: 'va_5',
       venueId: 'venue_2',
       activityId: 'ps5_fc',
-      note: 'VIP kabinlerde çoklu ekran setupı var.',
+      note: 'VIP kabinlerde coklu ekran setuplari var.',
       isFree: false,
       priceInfo: 'Saatlik 90 TL',
       sourceType: 'editor',
@@ -641,14 +952,14 @@ class MockDatabase {
       activityId: 'dart_hedefi',
       note: 'Elektronik skor takibi mevcut.',
       isFree: true,
-      priceInfo: 'Ücretsiz',
+      priceInfo: 'Ucretsiz',
       sourceType: 'editor',
     ),
     const VenueActivity(
       id: 'va_7',
       venueId: 'venue_2',
       activityId: 'switch_party',
-      note: 'Parti oyunları için ayrılmış couch alanı bulunuyor.',
+      note: 'Couch alanda 8 kisilik party setup var.',
       isFree: false,
       priceInfo: 'Saatlik paket',
       sourceType: 'editor',
@@ -657,90 +968,252 @@ class MockDatabase {
       id: 'va_8',
       venueId: 'venue_3',
       activityId: 'catan',
-      note: 'Öğretici masa desteği veriliyor.',
+      note: 'Ogretici masa destegi veriliyor.',
       isFree: true,
-      priceInfo: 'Ücretsiz',
+      priceInfo: 'Ucretsiz',
       sourceType: 'venue_owner',
     ),
     const VenueActivity(
       id: 'va_9',
       venueId: 'venue_3',
       activityId: 'tabu',
-      note: 'Kalabalık grup için hızlı başlangıç oyunu olarak öneriliyor.',
+      note: 'Kalabalik grup icin hizli baslangic oyunu.',
       isFree: true,
-      priceInfo: 'Ücretsiz',
+      priceInfo: 'Ucretsiz',
       sourceType: 'venue_owner',
     ),
     const VenueActivity(
       id: 'va_10',
       venueId: 'venue_3',
       activityId: 'dnd_5e',
-      note: 'Belirli günlerde GM eşli masa kuruluyor.',
+      note: 'Belirli gunlerde GM esli masa kuruluyor.',
       isFree: false,
-      priceInfo: 'Etkinliğe göre değişir',
+      priceInfo: 'Etkinlige gore degisir',
       sourceType: 'venue_owner',
     ),
     const VenueActivity(
       id: 'va_11',
-      venueId: 'venue_3',
-      activityId: 'okey',
-      note: 'Uzun oturum için sessiz arka masa alanı var.',
-      isFree: true,
-      priceInfo: 'Ücretsiz',
-      sourceType: 'venue_owner',
+      venueId: 'venue_4',
+      activityId: 'hali_saha',
+      note: 'Kapali ve acik saha secenekleri var.',
+      isFree: false,
+      priceInfo: 'Rezervasyonlu kullanim',
+      sourceType: 'editor',
     ),
     const VenueActivity(
       id: 'va_12',
       venueId: 'venue_4',
-      activityId: 'hali_saha',
-      note: 'Kapalı ve açık saha seçenekleri var.',
-      isFree: false,
-      priceInfo: 'Rezervasyonlu kullanım',
-      sourceType: 'editor',
-    ),
-    const VenueActivity(
-      id: 'va_13',
-      venueId: 'venue_4',
       activityId: 'toprak_kort',
-      note: 'Açık ve kapalı kort seçenekleri sunuluyor.',
+      note: 'Aydinlatmali kort secenekleri bulunuyor.',
       isFree: false,
       priceInfo: 'Saatlik kiralama',
       sourceType: 'editor',
     ),
     const VenueActivity(
-      id: 'va_14',
+      id: 'va_13',
       venueId: 'venue_5',
       activityId: 'vr_shooter',
-      note: 'Tekli ve çoklu senaryolar var.',
+      note: 'Tekli ve coklu senaryolar var.',
       isFree: false,
-      priceInfo: 'Seans bazlı ücretlendirme',
+      priceInfo: 'Seans bazli',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_14',
+      venueId: 'venue_5',
+      activityId: 'racing_sim',
+      note: 'Direksiyon setli simulator podlari mevcut.',
+      isFree: false,
+      priceInfo: '20 dk paket',
       sourceType: 'editor',
     ),
     const VenueActivity(
       id: 'va_15',
       venueId: 'venue_6',
       activityId: 'boulder',
-      note: 'Başlangıç ve orta seviye rotalar mevcut.',
+      note: 'Baslangic ve orta seviye rotalar mevcut.',
       isFree: false,
-      priceInfo: 'Günlük giriş',
+      priceInfo: 'Gunluk giris',
       sourceType: 'editor',
     ),
     const VenueActivity(
       id: 'va_16',
       venueId: 'venue_6',
-      activityId: 'fitness_salonu',
-      note: 'Isınma ve kondisyon için destek alanı bulunuyor.',
+      activityId: 'lead_climbing',
+      note: 'Partnerli tirmanis slotlari aciliyor.',
       isFree: false,
-      priceInfo: 'Girişe dahil',
+      priceInfo: 'Seans bazli',
       sourceType: 'editor',
     ),
     const VenueActivity(
       id: 'va_17',
       venueId: 'venue_7',
       activityId: 'escape_room',
-      note: '2-6 kişilik ekiplerle oynanabilir.',
+      note: '2-6 kisilik ekiplerle oynanabilir.',
       isFree: false,
-      priceInfo: 'Oda başı rezervasyon',
+      priceInfo: 'Oda basi rezervasyon',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_18',
+      venueId: 'venue_7',
+      activityId: 'detective_room',
+      note: 'Hikaye odakli yeni sezon senaryosu eklendi.',
+      isFree: false,
+      priceInfo: 'Premium senaryo',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_19',
+      venueId: 'venue_8',
+      activityId: 'azul',
+      note: 'Kisa sureli oyunlar icin raf bolumu ayrilmistir.',
+      isFree: true,
+      priceInfo: 'Ucretsiz',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_20',
+      venueId: 'venue_8',
+      activityId: 'magic_commander',
+      note: 'Kart karsilasma aksamlarinda masa ayrilir.',
+      isFree: false,
+      priceInfo: 'Etkinlik gunu masa payi',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_21',
+      venueId: 'venue_8',
+      activityId: 'okey',
+      note: 'Sessiz arka bolumde uzun oturum duzeni var.',
+      isFree: true,
+      priceInfo: 'Ucretsiz',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_22',
+      venueId: 'venue_9',
+      activityId: 'dnd_5e',
+      note: 'Kampanya masalari haftalik ayni grupla ilerler.',
+      isFree: false,
+      priceInfo: 'Masa basi 300 TL',
+      sourceType: 'venue_owner',
+    ),
+    const VenueActivity(
+      id: 'va_23',
+      venueId: 'venue_9',
+      activityId: 'call_of_cthulhu',
+      note: 'Tek gecelik senaryolar da aciliyor.',
+      isFree: false,
+      priceInfo: 'Oturum basi',
+      sourceType: 'venue_owner',
+    ),
+    const VenueActivity(
+      id: 'va_24',
+      venueId: 'venue_10',
+      activityId: 'retro_arcade',
+      note: 'Jeton sistemi yerine surelik kullanim var.',
+      isFree: false,
+      priceInfo: 'Saatlik 100 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_25',
+      venueId: 'venue_10',
+      activityId: 'switch_party',
+      note: 'Mario Kart ve Smash grup paketleri var.',
+      isFree: false,
+      priceInfo: 'Saatlik 85 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_26',
+      venueId: 'venue_11',
+      activityId: 'karaoke_odasi',
+      note: '3 farkli tema oda secenegi bulunuyor.',
+      isFree: false,
+      priceInfo: 'Saatlik 280 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_27',
+      venueId: 'venue_11',
+      activityId: 'open_mic_karaoke',
+      note: 'Hafta ici acik sahne gecesi yapiliyor.',
+      isFree: true,
+      priceInfo: 'Icecek min. harcama',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_28',
+      venueId: 'venue_12',
+      activityId: 'amerikan_bilardo',
+      note: 'Turnuva gunlerinde erken rezervasyon gerekir.',
+      isFree: false,
+      priceInfo: 'Saatlik 140 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_29',
+      venueId: 'venue_12',
+      activityId: 'snooker',
+      note: '2 tam boy snooker masasi mevcut.',
+      isFree: false,
+      priceInfo: 'Saatlik 160 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_30',
+      venueId: 'venue_13',
+      activityId: 'padel_court',
+      note: 'Online rezervasyon ve ekipman kiralama mevcut.',
+      isFree: false,
+      priceInfo: 'Saatlik 400 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_31',
+      venueId: 'venue_13',
+      activityId: 'toprak_kort',
+      note: 'Kulup uyeleri icin indirimli paketler var.',
+      isFree: false,
+      priceInfo: 'Saatlik 320 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_32',
+      venueId: 'venue_14',
+      activityId: 'reformer',
+      note: '4 kisilik butik studio formatinda ders yapilir.',
+      isFree: false,
+      priceInfo: 'Ders basi',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_33',
+      venueId: 'venue_14',
+      activityId: 'spinning',
+      note: 'Aksam saatlerinde grup dersleri doluyor.',
+      isFree: false,
+      priceInfo: 'Paket uyelik',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_34',
+      venueId: 'venue_15',
+      activityId: 'hali_saha',
+      note: '7v7 ve 8v8 mac organizasyonu icin populer.',
+      isFree: false,
+      priceInfo: 'Saatlik 1800 TL',
+      sourceType: 'editor',
+    ),
+    const VenueActivity(
+      id: 'va_35',
+      venueId: 'venue_15',
+      activityId: 'acik_saha',
+      note: 'Gece seanslari ve haftalik lig duzeni bulunuyor.',
+      isFree: false,
+      priceInfo: 'Saatlik 1500 TL',
       sourceType: 'editor',
     ),
   ];
@@ -749,12 +1222,12 @@ class MockDatabase {
     Event(
       id: 'event_1',
       venueId: 'venue_1',
-      title: 'Quiz Night: Genel Kültür & Sinema',
+      title: 'Quiz Night Genel Kultur ve Sinema',
       description:
-          '4 kişilik takımını kur, ödüllü quiz gecesine katıl ve sürpriz ödüller kazan.',
+          '4 kisilik takimini kur, odullu quiz gecesine katil ve surpriz oduller kazan.',
       category: 'Quiz Night',
       startDate: DateTime.now().add(const Duration(hours: 4)),
-      priceInfo: 'Ücretsiz Giriş',
+      priceInfo: 'Ucretsiz Giris',
       imageUrl:
           'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&q=80&w=1000',
       sourceType: 'venue_owner',
@@ -763,12 +1236,12 @@ class MockDatabase {
     Event(
       id: 'event_2',
       venueId: 'venue_3',
-      title: 'Catan Turnuvası',
+      title: 'Catan Turnuvasi',
       description:
-          'Strateji ve masaüstü oyun meraklılarını bir araya getiren dostluk turnuvası.',
-      category: 'Masaüstü Oyunlar',
+          'Strateji ve masaustu oyun meraklilarini bir araya getiren dostluk turnuvasi.',
+      category: 'Masaustu',
       startDate: DateTime.now().add(const Duration(days: 1, hours: 2)),
-      priceInfo: 'Katılım 50 TL',
+      priceInfo: 'Katilim 50 TL',
       imageUrl:
           'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&q=80&w=1000',
       sourceType: 'venue_owner',
@@ -777,12 +1250,12 @@ class MockDatabase {
     Event(
       id: 'event_3',
       venueId: 'venue_2',
-      title: 'Karaoke Gecesi & Party',
+      title: 'Karaoke Gecesi and Party',
       description:
-          'Açık alanda sahneli karaoke ve grup oyunlarıyla sosyal bir akşam.',
+          'Acik alanda sahneli karaoke ve grup oyunlariyla sosyal bir aksam.',
       category: 'Karaoke',
       startDate: DateTime.now().add(const Duration(hours: 26)),
-      priceInfo: 'Giriş Ücretsiz',
+      priceInfo: 'Giris Ucretsiz',
       imageUrl:
           'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&q=80&w=1000',
       sourceType: 'editor',
@@ -791,14 +1264,42 @@ class MockDatabase {
     Event(
       id: 'event_4',
       venueId: 'venue_6',
-      title: 'Başlangıç Boulder Workshop',
+      title: 'Baslangic Boulder Workshop',
       description:
-          'İlk kez tırmanacaklar için kısa teknik giriş ve eşli rota denemeleri.',
-      category: 'Tırmanış',
+          'Ilk kez tirmanacaklar icin kisa teknik giris ve esli rota denemeleri.',
+      category: 'Tirmanis',
       startDate: DateTime.now().add(const Duration(days: 2, hours: 5)),
-      priceInfo: 'Katılım 180 TL',
+      priceInfo: 'Katilim 180 TL',
       imageUrl:
           'https://images.unsplash.com/photo-1522163182402-834f871fd851?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'editor',
+      status: 'published',
+    ),
+    Event(
+      id: 'event_5',
+      venueId: 'venue_9',
+      title: 'One Shot FRP Aksami',
+      description:
+          'Yeni oyunculara acik, tek oturumluk masaustu rol yapma senaryosu.',
+      category: 'FRP',
+      startDate: DateTime.now().add(const Duration(days: 1, hours: 8)),
+      priceInfo: 'Katilim 220 TL',
+      imageUrl:
+          'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&q=80&w=1000',
+      sourceType: 'venue_owner',
+      status: 'published',
+    ),
+    Event(
+      id: 'event_6',
+      venueId: 'venue_13',
+      title: 'Padel Starter Social',
+      description:
+          'Yeni baslayanlar icin mini ders ve eslesmeli deneme maclari.',
+      category: 'Padel',
+      startDate: DateTime.now().add(const Duration(days: 3)),
+      priceInfo: 'Katilim 300 TL',
+      imageUrl:
+          'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=1000',
       sourceType: 'editor',
       status: 'published',
     ),
@@ -808,20 +1309,20 @@ class MockDatabase {
     Review(
       id: 'r_1',
       venueId: 'venue_1',
-      userDisplayName: 'Ulaş Demirkol',
+      userDisplayName: 'Ulas Demirkol',
       rating: 5,
       comment:
-          'Bilardo masaları çok kaliteli ve karaoke odası arkadaş grubuyla gitmek için gerçekten ideal.',
+          'Bilardo masalari cok kaliteli ve karaoke odasi arkadas grubuyla gitmek icin gercekten ideal.',
       visitedActivityName: 'Amerikan Bilardo',
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
     ),
     Review(
       id: 'r_2',
       venueId: 'venue_1',
-      userDisplayName: 'Merve Altın',
+      userDisplayName: 'Merve Altin',
       rating: 4,
       comment:
-          'Masaüstü oyun seçkisi iyi, özellikle Catan ve Monopoly için geldik. Servis biraz daha hızlı olabilir.',
+          'Masaustu oyun secimi iyi, ozellikle Catan ve Monopoly icin geldik. Servis biraz daha hizli olabilir.',
       visitedActivityName: 'Catan',
       createdAt: DateTime.now().subtract(const Duration(days: 5)),
     ),
@@ -831,19 +1332,29 @@ class MockDatabase {
       userDisplayName: 'Can Kaynak',
       rating: 5,
       comment:
-          'Düzenli oyun geceleri ve öğretici masa kültürü sayesinde yeni oyun öğrenmek kolay.',
+          'Duzenli oyun geceleri ve ogretici masa kulturu sayesinde yeni oyun ogrenmek kolay.',
       visitedActivityName: 'D&D 5e',
       createdAt: DateTime.now().subtract(const Duration(days: 1)),
     ),
     Review(
       id: 'r_4',
       venueId: 'venue_5',
-      userDisplayName: 'Selin Yılmaz',
+      userDisplayName: 'Selin Yilmaz',
       rating: 4,
       comment:
-          'VR deneyimi beklediğimden daha keyifliydi, özellikle grup halinde gidince çok eğlenceli oluyor.',
+          'VR deneyimi bekledigimden daha keyifliydi, ozellikle grup halinde gidince cok eglenceli oluyor.',
       visitedActivityName: 'VR Shooter',
       createdAt: DateTime.now().subtract(const Duration(days: 4)),
+    ),
+    Review(
+      id: 'r_5',
+      venueId: 'venue_9',
+      userDisplayName: 'Ekin Sener',
+      rating: 5,
+      comment:
+          'FRP masalari icin ciddi emek verilmis, DM destegi ve oda duzeni cok iyi.',
+      visitedActivityName: 'Call of Cthulhu',
+      createdAt: DateTime.now().subtract(const Duration(days: 3)),
     ),
   ];
 
@@ -854,5 +1365,104 @@ class MockDatabase {
   static ActivitySubcategory? getSubcategoryById(String? id) {
     if (id == null) return null;
     return subcategories.firstWhere((subcategory) => subcategory.id == id);
+  }
+
+  static Activity getActivityById(String id) {
+    return activities.firstWhere((activity) => activity.id == id);
+  }
+
+  static Venue getVenueById(String id) {
+    return venues.firstWhere((venue) => venue.id == id);
+  }
+
+  static List<VenueActivity> getVenueActivities(String venueId) {
+    return venueActivities
+        .where((venueActivity) => venueActivity.venueId == venueId)
+        .toList();
+  }
+
+  static List<Activity> getActivitiesForVenue(String venueId) {
+    final activityIds = getVenueActivities(
+      venueId,
+    ).map((venueActivity) => venueActivity.activityId).toSet();
+    return activities
+        .where((activity) => activityIds.contains(activity.id))
+        .toList();
+  }
+
+  static List<ActivitySubcategory> getSubcategoriesForCategory(
+    String categoryId,
+  ) {
+    return subcategories
+        .where((subcategory) => subcategory.categoryId == categoryId)
+        .toList();
+  }
+
+  static List<Activity> getActivitiesForCategory(String categoryId) {
+    return activities
+        .where((activity) => activity.categoryId == categoryId)
+        .toList();
+  }
+
+  static List<Venue> getVenuesForCategory(String categoryId) {
+    final categoryActivityIds = getActivitiesForCategory(
+      categoryId,
+    ).map((activity) => activity.id).toSet();
+    final venueIds = venueActivities
+        .where(
+          (venueActivity) =>
+              categoryActivityIds.contains(venueActivity.activityId),
+        )
+        .map((venueActivity) => venueActivity.venueId)
+        .toSet();
+    return venues.where((venue) => venueIds.contains(venue.id)).toList();
+  }
+
+  static List<Venue> getVenuesForActivity(String activityId) {
+    final venueIds = venueActivities
+        .where((venueActivity) => venueActivity.activityId == activityId)
+        .map((venueActivity) => venueActivity.venueId)
+        .toSet();
+    return venues.where((venue) => venueIds.contains(venue.id)).toList();
+  }
+
+  static List<ActivityCategory> searchCategories(String query) {
+    final normalizedQuery = query.toLowerCase();
+    return categories
+        .where(
+          (category) => category.name.toLowerCase().contains(normalizedQuery),
+        )
+        .toList();
+  }
+
+  static List<Activity> searchActivities(String query) {
+    final normalizedQuery = query.toLowerCase();
+    return activities.where((activity) {
+      return activity.name.toLowerCase().contains(normalizedQuery) ||
+          activity.description.toLowerCase().contains(normalizedQuery) ||
+          activity.aliases.any(
+            (alias) => alias.toLowerCase().contains(normalizedQuery),
+          );
+    }).toList();
+  }
+
+  static List<Venue> searchVenues(String query) {
+    final normalizedQuery = query.toLowerCase();
+    return venues.where((venue) {
+      final activityMatches = getActivitiesForVenue(venue.id).any((activity) {
+        return activity.name.toLowerCase().contains(normalizedQuery) ||
+            activity.aliases.any(
+              (alias) => alias.toLowerCase().contains(normalizedQuery),
+            );
+      });
+
+      return venue.name.toLowerCase().contains(normalizedQuery) ||
+          venue.description.toLowerCase().contains(normalizedQuery) ||
+          venue.district.toLowerCase().contains(normalizedQuery) ||
+          venue.activityTags.any(
+            (tag) => tag.toLowerCase().contains(normalizedQuery),
+          ) ||
+          activityMatches;
+    }).toList();
   }
 }
