@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_menu_card.dart';
+import '../../../../shared/widgets/app_preview_card.dart';
 import '../../../../shared/widgets/app_section_header.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -83,7 +84,18 @@ class ProfileScreen extends StatelessWidget {
                 _buildStatItem('8', 'Kaydedilen'),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            AppPreviewCard(
+              icon: Icons.manage_accounts_outlined,
+              title: 'Profil bu sürümde iki rolü birden preview ediyor',
+              description:
+                  'Auth ve rol sistemi geldiğinde bu alan kullanıcı, mekan sahibi ve başvuru durumuna göre farklılaşacak. Şimdilik ürün kararlarını konuşabilmeniz için tek yerde topluyoruz.',
+              primaryActionLabel: 'Rol Geçişlerini Düşün',
+              onPrimaryAction: () {},
+              secondaryText:
+                  'Aynı ekran içinde user ve owner izleri bilinçli olarak birlikte gösteriliyor.',
+            ),
+            const SizedBox(height: 24),
             const AppSectionHeader(title: 'İşletme Yönetimi & Başvurular'),
             const SizedBox(height: 12),
             AppMenuCard(
@@ -98,6 +110,13 @@ class ProfileScreen extends StatelessWidget {
               title: 'Mekan Sahiplen',
               subtitle: 'Editör tarafından eklenen mekanın yönetimini devral.',
               onTap: () => _showClaimVenueSheet(context),
+            ),
+            const SizedBox(height: 12),
+            AppMenuCard(
+              icon: Icons.rule_folder_outlined,
+              title: 'Başvuru Durumu',
+              subtitle: '1 yeni mekan talebi, 1 sahiplenme talebi incelemede.',
+              onTap: () {},
             ),
             const SizedBox(height: 24),
             const AppSectionHeader(title: 'Genel Ayarlar'),

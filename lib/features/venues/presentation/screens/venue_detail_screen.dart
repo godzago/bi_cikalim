@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
-import '../../../../shared/widgets/event_list_card.dart';
 import '../../../../shared/widgets/app_network_image.dart';
+import '../../../../shared/widgets/app_preview_card.dart';
+import '../../../../shared/widgets/event_list_card.dart';
 
 class VenueDetailScreen extends StatefulWidget {
   final String venueId;
@@ -249,6 +250,18 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          AppPreviewCard(
+            icon: Icons.store_mall_directory_outlined,
+            title: 'Bu mekanın sahibi misiniz?',
+            description:
+                'Editör eklemesi olan ya da sahiplenme bekleyen mekanlarda burada bir işletme akışı başlayacak. Böylece veri kalitesi ve sahiplik modeli görünür olacak.',
+            primaryActionLabel: 'Sahiplenme Akışını Düşün',
+            onPrimaryAction: () {},
+            secondaryText: _venue.sourceType == 'editor'
+                ? 'Bu preview verisi editör eklemesi olarak işaretli.'
+                : 'Bu preview verisi mekan tarafından yönetiliyor gibi gösteriliyor.',
+          ),
+          const SizedBox(height: 24),
           const Text(
             'Hakkında',
             style: TextStyle(
@@ -532,27 +545,16 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
         ),
         const Divider(height: 1),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Kullanıcı Yorumları',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextButton.icon(
-                icon: const Icon(
-                  Icons.rate_review,
-                  size: 16,
-                  color: BiCikalimTheme.primary,
-                ),
-                label: const Text(
-                  'Yorum Yaz',
-                  style: TextStyle(color: BiCikalimTheme.primary),
-                ),
-                onPressed: () {},
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          child: AppPreviewCard(
+            icon: Icons.login_outlined,
+            title: 'Yorum yazma auth ile açılacak',
+            description:
+                'Bu butonun yeri ve önceliği korunuyor. Giriş yapan kullanıcı yorum bırakabilecek, işletme tarafı ise geri bildirimleri bu akış üzerinden takip edecek.',
+            primaryActionLabel: 'Yorum Akışını Konuş',
+            onPrimaryAction: () {},
+            secondaryText:
+                'Preview sürümünde yorumlar sadece okunabilir durumda.',
           ),
         ),
         Expanded(
@@ -563,7 +565,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                   padding: EdgeInsets.all(32),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   itemCount: _reviews.length,
                   itemBuilder: (context, index) {
                     final r = _reviews[index];

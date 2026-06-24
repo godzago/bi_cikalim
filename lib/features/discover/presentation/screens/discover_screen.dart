@@ -5,6 +5,7 @@ import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_filter_chip.dart';
+import '../../../../shared/widgets/app_preview_card.dart';
 import '../../../../shared/widgets/app_section_header.dart';
 import '../../../../shared/widgets/category_card.dart';
 import '../../../../shared/widgets/event_preview_card.dart';
@@ -160,6 +161,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: AppPreviewCard(
+                  icon: Icons.bookmark_added_outlined,
+                  title: 'Kaydetme ve yorumlama sonraki turda açılacak',
+                  description:
+                      'Bu preview sürümünde keşif akışını görüyoruz. Favori, yorum ve kişisel akışlar auth branch’iyle birleşince gerçek davranışına kavuşacak.',
+                  primaryActionLabel: 'Akışı İncele',
+                  onPrimaryAction: () {},
+                  secondaryText:
+                      'Şimdilik buton yerleri bilinçli olarak korunuyor.',
+                ),
+              ),
               const SizedBox(height: 24),
               const AppSectionHeader(title: 'Aktivite Kategorileri'),
               const SizedBox(height: 12),
@@ -206,6 +221,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       onTap: () => context.push('/venues/${venue.id}'),
                     );
                   },
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: AppPreviewCard(
+                  icon: Icons.storefront,
+                  title: 'Mekanını görünür yapmak ister misin?',
+                  description:
+                      'İşletme modu, mekan sahiplenme ve etkinlik yönetimi akışlarını bu preview içinde gerçek yerlerinde konuşabilmen için burada tutuyoruz.',
+                  primaryActionLabel: 'İşletme Akışını Gör',
+                  onPrimaryAction: () => context.push('/profile'),
+                  secondaryText: 'MVP kapsamı yarın netleşecek.',
                 ),
               ),
               const SizedBox(height: 24),
