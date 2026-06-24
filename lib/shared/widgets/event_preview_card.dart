@@ -24,7 +24,7 @@ class EventPreviewCard extends StatelessWidget {
         width: 268,
         margin: const EdgeInsets.symmetric(horizontal: 8),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -42,7 +42,7 @@ class EventPreviewCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -60,7 +60,7 @@ class EventPreviewCard extends StatelessWidget {
                         event.category.toUpperCase(),
                         style: const TextStyle(
                           color: Colors.black,
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -70,7 +70,7 @@ class EventPreviewCard extends StatelessWidget {
                       event.title,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Outfit',
                       ),
@@ -88,7 +88,7 @@ class EventPreviewCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            venue.name,
+                            '${venue.name} • ${event.priceInfo}',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,

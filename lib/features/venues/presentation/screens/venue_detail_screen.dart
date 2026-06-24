@@ -89,6 +89,25 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildMetaPill(
+                        Icons.star_rounded,
+                        '${_venue.averageRating} puan',
+                      ),
+                      _buildMetaPill(
+                        Icons.chat_bubble_outline,
+                        '${_venue.reviewCount} yorum',
+                      ),
+                      _buildMetaPill(
+                        Icons.category_outlined,
+                        '${_activities.length} aktivite',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -244,6 +263,32 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMetaPill(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: BiCikalimTheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: BiCikalimTheme.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -513,7 +558,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 11,
-                  height: 1.35,
+                  height: 1.45,
                   color: BiCikalimTheme.textSecondary,
                 ),
               ),

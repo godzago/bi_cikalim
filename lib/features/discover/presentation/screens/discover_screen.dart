@@ -67,45 +67,57 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'BiCikalim',
-                          style: TextStyle(
-                            color: BiCikalimTheme.primary,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Outfit',
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'BiCikalim',
+                            style: TextStyle(
+                              color: BiCikalimTheme.primary,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Outfit',
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              color: BiCikalimTheme.primary,
-                              size: 14,
+                          const SizedBox(height: 2),
+                          Text(
+                            'Bu aksam cikmak icin en hizli rota',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Eskisehir',
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: BiCikalimTheme.primary,
+                                size: 14,
                               ),
-                            ),
-                            const Icon(
-                              Icons.keyboard_arrow_down,
-                              color: BiCikalimTheme.primary,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 4),
+                              Text(
+                                'Eskisehir',
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const Icon(
+                                Icons.keyboard_arrow_down,
+                                color: BiCikalimTheme.primary,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(
@@ -121,20 +133,38 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: InkWell(
-                  onTap: () => context.push('/discover/search'),
-                  borderRadius: BorderRadius.circular(16),
-                  child: IgnorePointer(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Mekan, kategori veya aktivite ara...',
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: BiCikalimTheme.primary,
-                        ),
-                        suffixIcon: const Icon(
-                          Icons.tune,
-                          color: BiCikalimTheme.primary,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white,
+                        BiCikalimTheme.primary.withValues(alpha: 0.04),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: InkWell(
+                    onTap: () => context.push('/discover/search'),
+                    borderRadius: BorderRadius.circular(18),
+                    child: IgnorePointer(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Mekan, kategori veya aktivite ara...',
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: BiCikalimTheme.primary,
+                          ),
+                          suffixIcon: const Icon(
+                            Icons.tune,
+                            color: BiCikalimTheme.primary,
+                          ),
                         ),
                       ),
                     ),
@@ -146,7 +176,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: SizedBox(
-                  height: 40,
+                  height: 44,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -283,7 +313,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 172,
+                height: 176,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
@@ -397,7 +427,14 @@ class _RecommendedVenueCard extends StatelessWidget {
         width: 250,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(
+            colors: [
+              Colors.white,
+              BiCikalimTheme.primary.withValues(alpha: 0.04),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.grey.shade100),
         ),
@@ -449,6 +486,25 @@ class _RecommendedVenueCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 14,
+                        color: BiCikalimTheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${venue.averageRating} · ${venue.district}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: BiCikalimTheme.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

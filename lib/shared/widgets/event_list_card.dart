@@ -56,8 +56,8 @@ class EventListCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.white.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
                       children: [
@@ -86,8 +86,8 @@ class EventListCard extends StatelessWidget {
                   right: 12,
                   child: Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.95),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -119,7 +119,7 @@ class EventListCard extends StatelessWidget {
                               color: BiCikalimTheme.primary.withValues(
                                 alpha: 0.08,
                               ),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
                               event.category,
@@ -141,7 +141,7 @@ class EventListCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: BiCikalimTheme.success,
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -165,6 +165,7 @@ class EventListCard extends StatelessWidget {
                     style: const TextStyle(
                       color: BiCikalimTheme.textSecondary,
                       fontSize: 13,
+                      height: 1.4,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

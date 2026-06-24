@@ -18,15 +18,16 @@ class VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        margin: EdgeInsets.only(bottom: dense ? 10 : 14),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade100),
-        ),
+    return Card(
+      margin: EdgeInsets.only(bottom: dense ? 10 : 14),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade100),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: dense ? _buildDenseCard() : _buildDefaultCard(),
       ),
     );
@@ -54,7 +55,7 @@ class VenueCard extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -173,10 +174,10 @@ class VenueCard extends StatelessWidget {
 
   Widget _buildRatingPill() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -283,6 +284,7 @@ class VenueCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
         ),
         child: const Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.verified, color: Colors.white, size: 10),
             SizedBox(width: 4),

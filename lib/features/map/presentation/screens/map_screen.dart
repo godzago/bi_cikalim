@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/widgets/app_network_image.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -21,6 +22,46 @@ class _MapScreenState extends State<MapScreen> {
       body: Stack(
         children: [
           Positioned.fill(child: CustomPaint(painter: MapGridPainter())),
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.explore_outlined, color: BiCikalimTheme.primary),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Noktalara dokunarak mekanlari hizlica incele.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: BiCikalimTheme.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           ...MockDatabase.venues.map((venue) {
             final xOffset = 200 + (venue.longitude - 30.52) * 4000;
             final yOffset = 300 - (venue.latitude - 39.77) * 4000;
@@ -115,11 +156,10 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          _selectedVenue!.coverImageUrl,
+                        child: AppNetworkImage(
+                          imageUrl: _selectedVenue!.coverImageUrl,
                           width: 80,
                           height: 80,
-                          fit: BoxFit.cover,
                         ),
                       ),
                       const SizedBox(width: 16),

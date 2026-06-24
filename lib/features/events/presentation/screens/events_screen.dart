@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/mock_data.dart';
+import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_segmented_option.dart';
 import '../../../../shared/widgets/event_list_card.dart';
@@ -68,6 +69,49 @@ class _EventsScreenState extends State<EventsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    BiCikalimTheme.primary.withValues(alpha: 0.1),
+                    BiCikalimTheme.primary.withValues(alpha: 0.03),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.event_available,
+                      color: BiCikalimTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '${filteredEvents.length} etkinlik listelendi. Tarih ve kategori secerek akisi daraltabilirsin.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600,
+                        color: BiCikalimTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           SizedBox(
             height: 52,
             child: ListView(
