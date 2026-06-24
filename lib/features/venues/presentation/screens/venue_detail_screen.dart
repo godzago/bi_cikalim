@@ -278,7 +278,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
           _buildInfoRow('Hafta Sonu', '10:00 - 01:00'),
           const SizedBox(height: 24),
           const Text(
-            'Atmosfer Notlari',
+            'Mekan Notlari',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -291,8 +291,8 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             runSpacing: 8,
             children: [
               _buildFeatureChip('Grup dostu'),
-              _buildFeatureChip('Rezervasyonla daha rahat'),
-              _buildFeatureChip('Pre-MVP demo verisi'),
+              _buildFeatureChip('Rezervasyon uygun'),
+              _buildFeatureChip('Aksam saatleri hareketli'),
             ],
           ),
         ],
@@ -358,29 +358,6 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: BiCikalimTheme.primary.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.inventory_2, color: BiCikalimTheme.primary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '${_activities.length} envanter kalemi · ${orderedCategoryIds.length} kategori',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: BiCikalimTheme.textPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
         ...orderedCategoryIds.map((categoryId) {
           final category = MockDatabase.getCategoryById(categoryId);
           final inventory = grouped[categoryId]!;
@@ -393,14 +370,14 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
               side: BorderSide(color: Colors.grey.shade100),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
                           color: BiCikalimTheme.primary.withValues(alpha: 0.08),
                           shape: BoxShape.circle,
@@ -408,37 +385,42 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                         child: Icon(
                           category.icon,
                           color: BiCikalimTheme.primary,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              category.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Outfit',
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${inventory.length} kalem',
-                              style: const TextStyle(
-                                color: BiCikalimTheme.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          category.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Outfit',
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${inventory.length} kalem',
+                        style: const TextStyle(
+                          color: BiCikalimTheme.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  ...inventory.map((item) => _buildInventoryRow(item)),
+                  const SizedBox(height: 10),
+                  ...inventory.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return Column(
+                      children: [
+                        _buildCompactInventoryRow(item),
+                        if (index != inventory.length - 1)
+                          Divider(height: 16, color: Colors.grey.shade100),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
@@ -448,102 +430,79 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     );
   }
 
-  Widget _buildInventoryRow(_InventoryItem item) {
+  Widget _buildCompactInventoryRow(_InventoryItem item) {
     final subcategory = MockDatabase.getSubcategoryById(
       item.activity.subcategoryId,
     );
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(14),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: BiCikalimTheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            item.activity.icon,
+            size: 18,
+            color: BiCikalimTheme.primary,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.activity.name,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: BiCikalimTheme.textPrimary,
-                        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.activity.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: BiCikalimTheme.textPrimary,
                       ),
-                      if (subcategory != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          subcategory.name,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: BiCikalimTheme.primary,
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  item.venueActivity.priceInfo,
-                  style: TextStyle(
-                    color: item.venueActivity.isFree
-                        ? BiCikalimTheme.success
-                        : BiCikalimTheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(width: 8),
+                  Text(
+                    item.venueActivity.priceInfo,
+                    style: TextStyle(
+                      color: item.venueActivity.isFree
+                          ? BiCikalimTheme.success
+                          : BiCikalimTheme.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              item.activity.description,
-              style: const TextStyle(
-                color: BiCikalimTheme.textSecondary,
-                fontSize: 12,
-                height: 1.4,
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(
-                  Icons.people_outline,
-                  size: 14,
+              const SizedBox(height: 3),
+              Text(
+                [
+                  if (subcategory != null) subcategory.name,
+                  '${item.activity.minPeople}-${item.activity.maxPeople} kisi',
+                  item.venueActivity.note,
+                ].join(' - '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
                   color: BiCikalimTheme.textSecondary,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '${item.activity.minPeople}-${item.activity.maxPeople} kisi',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: BiCikalimTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              item.venueActivity.note,
-              style: const TextStyle(
-                fontSize: 11,
-                color: BiCikalimTheme.textSecondary,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

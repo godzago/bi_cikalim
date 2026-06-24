@@ -107,25 +107,34 @@ class EventListCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          event.category,
-                          style: const TextStyle(
-                            color: BiCikalimTheme.primary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: BiCikalimTheme.primary.withValues(
+                                alpha: 0.08,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              event.category,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: BiCikalimTheme.primary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       Text(
                         event.priceInfo,
                         style: const TextStyle(

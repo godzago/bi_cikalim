@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_filter_chip.dart';
 import '../../../../shared/widgets/app_section_header.dart';
 import '../../../../shared/widgets/category_card.dart';
@@ -50,15 +49,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           );
         }).toList();
       } else if (filter == 'Yeni Eklenen') {
-        _displayedVenues = MockDatabase.venues.reversed.take(8).toList();
+        _displayedVenues = MockDatabase.venues.reversed.take(10).toList();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final highlightedVenues = _displayedVenues.take(8).toList();
-    final nearbyActivities = _collectNearbyActivities();
+    final featuredVenues = _displayedVenues.take(8).toList();
+    final recommendedVenues = _buildRecommendedVenues();
 
     return Scaffold(
       body: SafeArea(
@@ -164,52 +163,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: BiCikalimTheme.primary.withValues(alpha: 0.07),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Kesif akisina gore duzenlendi',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Outfit',
-                                color: BiCikalimTheme.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '${MockDatabase.venues.length} mekan ve ${MockDatabase.events.length} etkinlik yatay rail duzeninde hazir.',
-                              style: const TextStyle(
-                                color: BiCikalimTheme.textSecondary,
-                                fontSize: 13,
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      FilledButton(
-                        onPressed: () => context.push('/discover/catalog'),
-                        child: const Text('Katalog'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
                 padding: const EdgeInsets.only(top: 24),
                 child: AppSectionHeader(
                   title: 'Aktivite Kategorileri',
@@ -297,72 +250,75 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 120,
-                child: highlightedVenues.isEmpty
-                    ? const AppEmptyState(
-                        icon: Icons.storefront,
-                        message: 'Gosterilecek mekan bulunamadi.',
-                      )
-                    : ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                        itemCount: highlightedVenues.length,
-                        separatorBuilder: (_, index) =>
-                            const SizedBox(width: 10),
-                        itemBuilder: (context, index) {
-                          final venue = highlightedVenues[index];
-                          return SizedBox(
-                            width: 252,
-                            child: VenueCard(
-                              venue: venue,
-                              dense: true,
-                              onTap: () => context.push('/venues/${venue.id}'),
-                            ),
-                          );
-                        },
-                      ),
+                height: 128,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  itemCount: featuredVenues.length,
+                  separatorBuilder: (_, index) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final venue = featuredVenues[index];
+                    return _FeaturedVenueRailCard(
+                      venue: venue,
+                      onTap: () => context.push('/venues/${venue.id}'),
+                    );
+                  },
+                ),
               ),
             ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(top: 24),
                 child: AppSectionHeader(
-                  title: 'Yakindaki Aktiviteler',
+                  title: 'Senin Icin',
                   actionLabel: 'Tumunu Gor',
-                  onActionTap: () => context.push('/discover/catalog'),
+                  onActionTap: () => context.push(
+                    Uri(
+                      path: '/discover/results',
+                      queryParameters: {'title': 'Senin Icin'},
+                    ).toString(),
+                  ),
                 ),
               ),
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 132,
+                height: 156,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                  itemCount: nearbyActivities.length,
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  itemCount: recommendedVenues.length,
                   separatorBuilder: (_, index) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
-                    final activity = nearbyActivities[index];
-                    final venueCount = MockDatabase.getVenuesForActivity(
-                      activity.id,
-                    ).length;
-                    return _NearbyActivityCard(
-                      activity: activity,
-                      venueCount: venueCount,
-                      onTap: () {
-                        context.push(
-                          Uri(
-                            path: '/discover/results',
-                            queryParameters: {
-                              'activityId': activity.id,
-                              'title': activity.name,
-                            },
-                          ).toString(),
-                        );
-                      },
+                    final item = recommendedVenues[index];
+                    return _RecommendedVenueCard(
+                      venue: item.venue,
+                      reason: item.reason,
+                      onTap: () => context.push('/venues/${item.venue.id}'),
                     );
                   },
                 ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: AppSectionHeader(
+                  title: 'Daha Fazla Mekan',
+                  actionLabel: '${_displayedVenues.length} sonuc',
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final venue = _displayedVenues[index];
+                  return VenueCard(
+                    venue: venue,
+                    onTap: () => context.push('/venues/${venue.id}'),
+                  );
+                }, childCount: _displayedVenues.length),
               ),
             ),
           ],
@@ -371,20 +327,23 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  List<Activity> _collectNearbyActivities() {
-    final venueIds = _displayedVenues.take(5).map((venue) => venue.id).toList();
-    final seen = <String>{};
-    final result = <Activity>[];
+  List<_RecommendedVenueItem> _buildRecommendedVenues() {
+    final pool = _displayedVenues.take(6).toList();
+    final reasons = [
+      'Kucuk grup planlari icin uygun',
+      'Bu aksam etkinlik akisina yakin',
+      'Masaustu ve sosyal deneyim dengeli',
+      'Hafta ici rahat rezervasyon bulunur',
+      'Etkinlik ve mekan akisi birlikte guclu',
+      'Yeni denemelik bir rota olabilir',
+    ];
 
-    for (final venueId in venueIds) {
-      for (final activity in MockDatabase.getActivitiesForVenue(venueId)) {
-        if (seen.add(activity.id)) {
-          result.add(activity);
-        }
-      }
-    }
-
-    return result.take(8).toList();
+    return List.generate(pool.length, (index) {
+      return _RecommendedVenueItem(
+        venue: pool[index],
+        reason: reasons[index % reasons.length],
+      );
+    });
   }
 
   Widget _buildFilterChip(String label) {
@@ -396,75 +355,102 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 }
 
-class _NearbyActivityCard extends StatelessWidget {
-  final Activity activity;
-  final int venueCount;
+class _FeaturedVenueRailCard extends StatelessWidget {
+  final Venue venue;
   final VoidCallback onTap;
 
-  const _NearbyActivityCard({
-    required this.activity,
-    required this.venueCount,
+  const _FeaturedVenueRailCard({required this.venue, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 250,
+      child: VenueCard(venue: venue, dense: true, onTap: onTap),
+    );
+  }
+}
+
+class _RecommendedVenueItem {
+  final Venue venue;
+  final String reason;
+
+  const _RecommendedVenueItem({required this.venue, required this.reason});
+}
+
+class _RecommendedVenueCard extends StatelessWidget {
+  final Venue venue;
+  final String reason;
+  final VoidCallback onTap;
+
+  const _RecommendedVenueCard({
+    required this.venue,
+    required this.reason,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final category = MockDatabase.getCategoryById(activity.categoryId);
-
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        width: 176,
+        width: 250,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.grey.shade100),
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                activity.icon,
-                color: BiCikalimTheme.primary,
-                size: 18,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                venue.coverImageUrl,
+                width: 72,
+                height: 72,
+                fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              activity.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: BiCikalimTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              category.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
-                color: BiCikalimTheme.textSecondary,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '$venueCount mekanda var',
-              style: const TextStyle(
-                color: BiCikalimTheme.primary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    venue.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Outfit',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    reason,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.35,
+                      color: BiCikalimTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    venue.activityTags.take(2).join(' - '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: BiCikalimTheme.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
