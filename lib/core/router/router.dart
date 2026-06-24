@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/main/presentation/screens/splash_screen.dart';
 import '../../features/main/presentation/screens/city_select_screen.dart';
@@ -13,10 +12,7 @@ import '../../features/venues/presentation/screens/venue_detail_screen.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   routes: [
-    GoRoute(
-      path: '/splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     GoRoute(
       path: '/city-select',
       builder: (context, state) => const CitySelectScreen(),
@@ -34,10 +30,7 @@ final GoRouter appRouter = GoRouter(
           path: '/events',
           builder: (context, state) => const EventsScreen(),
         ),
-        GoRoute(
-          path: '/map',
-          builder: (context, state) => const MapScreen(),
-        ),
+        GoRoute(path: '/map', builder: (context, state) => const MapScreen()),
         GoRoute(
           path: '/favorites',
           builder: (context, state) => const FavoritesScreen(),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/theme.dart';
+
 import '../../../../core/services/mock_data.dart';
+import '../../../../core/theme/theme.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -16,25 +17,13 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Harita Keşfi'),
-      ),
+      appBar: AppBar(title: const Text('Harita Keşfi')),
       body: Stack(
         children: [
-          // Custom Painter Mock Map Background
-          Positioned.fill(
-            child: CustomPaint(
-              painter: MapGridPainter(),
-            ),
-          ),
-          
-          // Map Pins
+          Positioned.fill(child: CustomPaint(painter: MapGridPainter())),
           ...MockDatabase.venues.map((venue) {
-            // Mapping lat-long offset to local screen coordinates
-            // Eskişehir central coordinates: 39.77, 30.52
             final xOffset = 200 + (venue.longitude - 30.52) * 4000;
             final yOffset = 300 - (venue.latitude - 39.77) * 4000;
-            
             final isSelected = _selectedVenue?.id == venue.id;
 
             return Positioned(
@@ -53,31 +42,40 @@ class _MapScreenState extends State<MapScreen> {
                       duration: const Duration(milliseconds: 250),
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isSelected ? BiCikalimTheme.primary : Colors.white,
+                        color: isSelected
+                            ? BiCikalimTheme.primary
+                            : Colors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                         ],
                         border: Border.all(
-                          color: isSelected ? Colors.white : BiCikalimTheme.primary,
+                          color: isSelected
+                              ? Colors.white
+                              : BiCikalimTheme.primary,
                           width: 2,
                         ),
                       ),
                       child: Icon(
                         _getVenueIcon(venue.activityTags.first),
-                        color: isSelected ? Colors.white : BiCikalimTheme.primary,
+                        color: isSelected
+                            ? Colors.white
+                            : BiCikalimTheme.primary,
                         size: 20,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.75),
+                        color: Colors.black.withValues(alpha: 0.75),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -94,8 +92,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
             );
           }),
-
-          // Selected Venue Info Card (Bottom Sheet Overlay)
           if (_selectedVenue != null)
             Positioned(
               bottom: 20,
@@ -103,12 +99,12 @@ class _MapScreenState extends State<MapScreen> {
               right: 20,
               child: Card(
                 elevation: 6,
-                shadowColor: Colors.black.withOpacity(0.15),
+                shadowColor: Colors.black.withValues(alpha: 0.15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
                       ClipRRect(
@@ -137,7 +133,11 @@ class _MapScreenState extends State<MapScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.star, color: BiCikalimTheme.primary, size: 14),
+                                const Icon(
+                                  Icons.star,
+                                  color: BiCikalimTheme.primary,
+                                  size: 14,
+                                ),
                                 const SizedBox(width: 2),
                                 Text(
                                   '${_selectedVenue!.averageRating}',
@@ -172,7 +172,11 @@ class _MapScreenState extends State<MapScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 4),
-                                  Icon(Icons.arrow_forward, color: BiCikalimTheme.primary, size: 14),
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    color: BiCikalimTheme.primary,
+                                    size: 14,
+                                  ),
                                 ],
                               ),
                             ),
@@ -206,7 +210,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-// Custom Painter to draw a clean map representation of Eskişehir center
 class MapGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -224,10 +227,11 @@ class MapGridPainter extends CustomPainter {
 
     final paintBackground = Paint()..color = const Color(0xFFF1EFE9);
 
-    // Draw background
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paintBackground);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      paintBackground,
+    );
 
-    // Draw Porsuk River (Wavy flow through the screen)
     final riverPath = Path();
     riverPath.moveTo(0, size.height * 0.45);
     riverPath.cubicTo(
@@ -240,20 +244,16 @@ class MapGridPainter extends CustomPainter {
     );
     canvas.drawPath(riverPath, paintRiver);
 
-    // Draw Streets
-    // Main Avenue
     canvas.drawLine(
       Offset(size.width * 0.15, 0),
       Offset(size.width * 0.85, size.height),
       paintRoad,
     );
-    // Cross street
     canvas.drawLine(
       Offset(0, size.height * 0.3),
       Offset(size.width, size.height * 0.7),
       paintRoad,
     );
-    // Vertical street
     canvas.drawLine(
       Offset(size.width * 0.5, 0),
       Offset(size.width * 0.5, size.height),

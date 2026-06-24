@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/widgets/app_menu_card.dart';
 
 class CitySelectScreen extends StatelessWidget {
   const CitySelectScreen({super.key});
@@ -10,7 +12,7 @@ class CitySelectScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -25,11 +27,8 @@ class CitySelectScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 40),
-              // Eskişehir Pilot City Card
               GestureDetector(
-                onTap: () {
-                  context.go('/discover');
-                },
+                onTap: () => context.go('/discover'),
                 child: Container(
                   height: 180,
                   decoration: BoxDecoration(
@@ -42,7 +41,7 @@ class CitySelectScreen extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -55,8 +54,8 @@ class CitySelectScreen extends StatelessWidget {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.8),
-                          Colors.black.withOpacity(0.2),
+                          Colors.black.withValues(alpha: 0.8),
+                          Colors.black.withValues(alpha: 0.2),
                         ],
                       ),
                     ),
@@ -68,7 +67,10 @@ class CitySelectScreen extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: BiCikalimTheme.primary,
                                 borderRadius: BorderRadius.circular(6),
@@ -97,7 +99,11 @@ class CitySelectScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         const Row(
                           children: [
-                            Icon(Icons.location_on, color: Colors.white70, size: 14),
+                            Icon(
+                              Icons.location_on,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Porsuk Çayı, Odunpazarı Evleri...',
@@ -114,7 +120,6 @@ class CitySelectScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              // Other Cities (Passive / Coming soon)
               const Text(
                 'Yakında Eklenecek Şehirler',
                 style: TextStyle(
@@ -127,10 +132,19 @@ class CitySelectScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Expanded(
                 child: ListView(
-                  children: [
-                    _buildComingSoonCity(context, 'İstanbul', 'Tarih, kültür ve sınırsız mekan...'),
-                    _buildComingSoonCity(context, 'Ankara', 'Başkentteki gizli eğlence noktaları...'),
-                    _buildComingSoonCity(context, 'İzmir', 'Ege esintili samimi aktiviteler...'),
+                  children: const [
+                    _ComingSoonCity(
+                      name: 'İstanbul',
+                      subtitle: 'Tarih, kültür ve sınırsız mekan...',
+                    ),
+                    _ComingSoonCity(
+                      name: 'Ankara',
+                      subtitle: 'Başkentteki gizli eğlence noktaları...',
+                    ),
+                    _ComingSoonCity(
+                      name: 'İzmir',
+                      subtitle: 'Ege esintili samimi aktiviteler...',
+                    ),
                   ],
                 ),
               ),
@@ -140,33 +154,22 @@ class CitySelectScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildComingSoonCity(BuildContext context, String name, String subtitle) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        title: Text(
-          name,
-          style: const TextStyle(
-            color: BiCikalimTheme.textSecondary,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Outfit',
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(
-            color: BiCikalimTheme.textLight,
-            fontSize: 12,
-          ),
-        ),
+class _ComingSoonCity extends StatelessWidget {
+  final String name;
+  final String subtitle;
+
+  const _ComingSoonCity({required this.name, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppMenuCard(
+        icon: Icons.location_city,
+        title: name,
+        subtitle: subtitle,
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -182,6 +185,7 @@ class CitySelectScreen extends StatelessWidget {
             ),
           ),
         ),
+        onTap: () {},
       ),
     );
   }
