@@ -114,7 +114,7 @@ class VenueCard extends StatelessWidget {
                 _buildLocationRow(fontSize: 11),
                 const SizedBox(height: 6),
                 Text(
-                  '$activityCount aktivite · ${venue.reviewCount} yorum',
+                  '$activityCount aktivite - ${venue.reviewCount} yorum',
                   style: const TextStyle(
                     color: BiCikalimTheme.textSecondary,
                     fontSize: 11,

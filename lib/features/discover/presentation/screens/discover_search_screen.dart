@@ -146,7 +146,7 @@ class _DiscoverSearchScreenState extends State<DiscoverSearchScreen> {
                   icon: Icons.storefront,
                   title: venue.name,
                   subtitle:
-                      '${venue.district} · ${venue.activityTags.take(2).join(' · ')}',
+                      '${venue.district} - ${venue.activityTags.take(2).join(' - ')}',
                   onTap: () => context.push('/venues/${venue.id}'),
                 );
               }),

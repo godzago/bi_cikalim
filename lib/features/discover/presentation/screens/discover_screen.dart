@@ -21,14 +21,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String _selectedFilter = 'Tumu';
   late List<Venue> _displayedVenues;
 
-  final List<Activity> _featuredActivities = [
-    MockDatabase.getActivityById('catan'),
-    MockDatabase.getActivityById('karaoke_odasi'),
-    MockDatabase.getActivityById('padel_court'),
-    MockDatabase.getActivityById('dnd_5e'),
-    MockDatabase.getActivityById('vr_shooter'),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -65,6 +57,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final highlightedVenues = _displayedVenues.take(8).toList();
+    final nearbyActivities = _collectNearbyActivities();
+
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -183,7 +178,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Veri daha gorunur hale geldi',
+                              'Kesif akisina gore duzenlendi',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -193,7 +188,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              '${MockDatabase.venues.length} mekan, ${MockDatabase.activities.length} aktivite ve kategori bazli kesif akisi hazir.',
+                              '${MockDatabase.venues.length} mekan ve ${MockDatabase.events.length} etkinlik yatay rail duzeninde hazir.',
                               style: const TextStyle(
                                 color: BiCikalimTheme.textSecondary,
                                 fontSize: 13,
@@ -206,7 +201,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       const SizedBox(width: 14),
                       FilledButton(
                         onPressed: () => context.push('/discover/catalog'),
-                        child: const Text('Kesfet'),
+                        child: const Text('Katalog'),
                       ),
                     ],
                   ),
@@ -257,48 +252,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 24),
                 child: AppSectionHeader(
-                  title: 'One Cikan Aktiviteler',
-                  actionLabel: 'Aktivite Listele',
-                  onActionTap: () => context.push('/discover/catalog'),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: _featuredActivities.map((activity) {
-                    final category = MockDatabase.getCategoryById(
-                      activity.categoryId,
-                    );
-                    return _ActivityFilterCard(
-                      activity: activity,
-                      categoryName: category.name,
-                      onTap: () {
-                        context.push(
-                          Uri(
-                            path: '/discover/results',
-                            queryParameters: {
-                              'activityId': activity.id,
-                              'title': activity.name,
-                            },
-                          ).toString(),
-                        );
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 24),
-                child: AppSectionHeader(
                   title: 'Bu Aksam Ne Var?',
                   actionLabel: 'Tumunu Gor',
-                  onActionTap: () {},
+                  onActionTap: () => context.go('/events'),
                 ),
               ),
             ),
@@ -328,37 +284,107 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 24),
                 child: AppSectionHeader(
-                  title: 'Mekan Listesi',
-                  actionLabel: '${_displayedVenues.length} sonuc',
-                  onActionTap: () {},
+                  title: 'One Cikan Mekanlar',
+                  actionLabel: 'Tumunu Gor',
+                  onActionTap: () => context.push(
+                    Uri(
+                      path: '/discover/results',
+                      queryParameters: {'title': 'Tum Mekanlar'},
+                    ).toString(),
+                  ),
                 ),
               ),
             ),
-            if (_displayedVenues.isEmpty)
-              const SliverToBoxAdapter(
-                child: AppEmptyState(
-                  icon: Icons.search_off,
-                  message: 'Bu filtreye uygun mekan bulunamadi.',
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final venue = _displayedVenues[index];
-                    return VenueCard(
-                      venue: venue,
-                      dense: true,
-                      onTap: () => context.push('/venues/${venue.id}'),
-                    );
-                  }, childCount: _displayedVenues.length),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 120,
+                child: highlightedVenues.isEmpty
+                    ? const AppEmptyState(
+                        icon: Icons.storefront,
+                        message: 'Gosterilecek mekan bulunamadi.',
+                      )
+                    : ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                        itemCount: highlightedVenues.length,
+                        separatorBuilder: (_, index) =>
+                            const SizedBox(width: 10),
+                        itemBuilder: (context, index) {
+                          final venue = highlightedVenues[index];
+                          return SizedBox(
+                            width: 252,
+                            child: VenueCard(
+                              venue: venue,
+                              dense: true,
+                              onTap: () => context.push('/venues/${venue.id}'),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: AppSectionHeader(
+                  title: 'Yakindaki Aktiviteler',
+                  actionLabel: 'Tumunu Gor',
+                  onActionTap: () => context.push('/discover/catalog'),
                 ),
               ),
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 132,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  itemCount: nearbyActivities.length,
+                  separatorBuilder: (_, index) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    final activity = nearbyActivities[index];
+                    final venueCount = MockDatabase.getVenuesForActivity(
+                      activity.id,
+                    ).length;
+                    return _NearbyActivityCard(
+                      activity: activity,
+                      venueCount: venueCount,
+                      onTap: () {
+                        context.push(
+                          Uri(
+                            path: '/discover/results',
+                            queryParameters: {
+                              'activityId': activity.id,
+                              'title': activity.name,
+                            },
+                          ).toString(),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  List<Activity> _collectNearbyActivities() {
+    final venueIds = _displayedVenues.take(5).map((venue) => venue.id).toList();
+    final seen = <String>{};
+    final result = <Activity>[];
+
+    for (final venueId in venueIds) {
+      for (final activity in MockDatabase.getActivitiesForVenue(venueId)) {
+        if (seen.add(activity.id)) {
+          result.add(activity);
+        }
+      }
+    }
+
+    return result.take(8).toList();
   }
 
   Widget _buildFilterChip(String label) {
@@ -370,24 +396,26 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 }
 
-class _ActivityFilterCard extends StatelessWidget {
+class _NearbyActivityCard extends StatelessWidget {
   final Activity activity;
-  final String categoryName;
+  final int venueCount;
   final VoidCallback onTap;
 
-  const _ActivityFilterCard({
+  const _NearbyActivityCard({
     required this.activity,
-    required this.categoryName,
+    required this.venueCount,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final category = MockDatabase.getCategoryById(activity.categoryId);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 158,
+        width: 176,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -405,32 +433,34 @@ class _ActivityFilterCard extends StatelessWidget {
               ),
               child: Icon(
                 activity.icon,
-                size: 20,
                 color: BiCikalimTheme.primary,
+                size: 18,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               activity.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: BiCikalimTheme.textPrimary,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
-              categoryName,
+              category.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 11,
                 color: BiCikalimTheme.textSecondary,
               ),
             ),
-            const SizedBox(height: 8),
+            const Spacer(),
             Text(
-              '${MockDatabase.getVenuesForActivity(activity.id).length} mekanda var',
+              '$venueCount mekanda var',
               style: const TextStyle(
                 color: BiCikalimTheme.primary,
                 fontSize: 11,

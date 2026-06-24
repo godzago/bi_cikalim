@@ -29,16 +29,15 @@ class DiscoverResultsScreen extends StatefulWidget {
 class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
   String? _selectedSubcategoryId;
 
+  bool get _showsCategoryFilters =>
+      widget.activityId == null &&
+      widget.categoryId != null &&
+      _resolveSubcategories().isNotEmpty;
+
   @override
   void initState() {
     super.initState();
-    if (widget.subcategoryId != null) {
-      _selectedSubcategoryId = widget.subcategoryId;
-    } else if (widget.activityId != null) {
-      _selectedSubcategoryId = MockDatabase.getActivityById(
-        widget.activityId!,
-      ).subcategoryId;
-    }
+    _selectedSubcategoryId = widget.subcategoryId;
   }
 
   @override
@@ -57,16 +56,14 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         children: [
           Text(
-            '${matchedVenues.length} mekan · ${matchedActivities.length} aktivite',
+            '${matchedVenues.length} mekan - ${matchedActivities.length} aktivite',
             style: const TextStyle(
               color: BiCikalimTheme.textSecondary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (availableSubcategories.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const _SectionTitle(title: 'Alt Kategori Filtreleri'),
+          if (_showsCategoryFilters) ...[
             const SizedBox(height: 12),
             SizedBox(
               height: 38,
@@ -74,7 +71,7 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
                 scrollDirection: Axis.horizontal,
                 children: [
                   _SubcategoryChip(
-                    label: 'Tumu',
+                    label: 'Tum alt kategoriler',
                     isSelected: _selectedSubcategoryId == null,
                     onTap: () {
                       setState(() {
@@ -100,10 +97,10 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
               ),
             ),
           ],
-          const SizedBox(height: 16),
           if (matchedCategories.isNotEmpty) ...[
+            const SizedBox(height: 16),
             const _SectionTitle(title: 'Eslesen Kategoriler'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -114,28 +111,8 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 24),
           ],
-          if (matchedActivities.isNotEmpty) ...[
-            const _SectionTitle(title: 'Aktivite Envanteri'),
-            const SizedBox(height: 12),
-            ...matchedActivities.map((activity) {
-              final subcategory = MockDatabase.getSubcategoryById(
-                activity.subcategoryId,
-              );
-              final venueCount = MockDatabase.getVenuesForActivity(
-                activity.id,
-              ).length;
-
-              return _ActivityListTile(
-                activity: activity,
-                subtitle: subcategory?.name ?? 'Genel aktivite',
-                trailingText: '$venueCount mekan',
-                onTap: () => _openActivity(context, activity),
-              );
-            }),
-            const SizedBox(height: 24),
-          ],
+          const SizedBox(height: 18),
           const _SectionTitle(title: 'Mekanlar'),
           const SizedBox(height: 12),
           if (matchedVenues.isEmpty)
@@ -151,6 +128,33 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
                 onTap: () => context.push('/venues/${venue.id}'),
               );
             }),
+          if (matchedActivities.isNotEmpty && widget.activityId == null) ...[
+            const SizedBox(height: 18),
+            const _SectionTitle(title: 'Ilgili Aktiviteler'),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 112,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: matchedActivities.length,
+                separatorBuilder: (_, index) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final activity = matchedActivities[index];
+                  final subcategory = MockDatabase.getSubcategoryById(
+                    activity.subcategoryId,
+                  );
+                  return _ActivityRailCard(
+                    activity: activity,
+                    subtitle: subcategory?.name ?? 'Genel aktivite',
+                    venueCount: MockDatabase.getVenuesForActivity(
+                      activity.id,
+                    ).length,
+                    onTap: () => _openActivity(context, activity),
+                  );
+                },
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -180,46 +184,18 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
     if (widget.categoryId != null) {
       return MockDatabase.getSubcategoriesForCategory(widget.categoryId!);
     }
-    if (widget.subcategoryId != null) {
-      final subcategory = MockDatabase.getSubcategoryById(
-        widget.subcategoryId!,
-      );
-      return subcategory == null ? [] : [subcategory];
-    }
-    if (widget.activityId != null) {
-      final activity = MockDatabase.getActivityById(widget.activityId!);
-      if (activity.subcategoryId == null) {
-        return [];
-      }
-      final subcategory = MockDatabase.getSubcategoryById(
-        activity.subcategoryId,
-      );
-      return subcategory == null ? [] : [subcategory];
-    }
     return [];
   }
 
   List<Activity> _resolveActivities() {
-    if (_selectedSubcategoryId != null) {
-      final activities = MockDatabase.getActivitiesForSubcategory(
-        _selectedSubcategoryId!,
-      );
-      if (widget.query != null && widget.query!.isNotEmpty) {
-        final matchedIds = MockDatabase.searchActivities(
-          widget.query!,
-        ).map((activity) => activity.id).toSet();
-        return activities
-            .where((activity) => matchedIds.contains(activity.id))
-            .toList();
-      }
-      return activities;
-    }
-
-    if (widget.subcategoryId != null) {
-      return MockDatabase.getActivitiesForSubcategory(widget.subcategoryId!);
-    }
     if (widget.activityId != null) {
       return [MockDatabase.getActivityById(widget.activityId!)];
+    }
+    if (_selectedSubcategoryId != null) {
+      return MockDatabase.getActivitiesForSubcategory(_selectedSubcategoryId!);
+    }
+    if (widget.subcategoryId != null) {
+      return MockDatabase.getActivitiesForSubcategory(widget.subcategoryId!);
     }
     if (widget.categoryId != null) {
       return MockDatabase.getActivitiesForCategory(widget.categoryId!);
@@ -231,14 +207,14 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
   }
 
   List<Venue> _resolveVenues() {
+    if (widget.activityId != null) {
+      return MockDatabase.getVenuesForActivity(widget.activityId!);
+    }
     if (_selectedSubcategoryId != null) {
       return MockDatabase.getVenuesForSubcategory(_selectedSubcategoryId!);
     }
     if (widget.subcategoryId != null) {
       return MockDatabase.getVenuesForSubcategory(widget.subcategoryId!);
-    }
-    if (widget.activityId != null) {
-      return MockDatabase.getVenuesForActivity(widget.activityId!);
     }
     if (widget.categoryId != null) {
       return MockDatabase.getVenuesForCategory(widget.categoryId!);
@@ -356,82 +332,78 @@ class _SubcategoryChip extends StatelessWidget {
   }
 }
 
-class _ActivityListTile extends StatelessWidget {
+class _ActivityRailCard extends StatelessWidget {
   final Activity activity;
   final String subtitle;
-  final String trailingText;
+  final int venueCount;
   final VoidCallback onTap;
 
-  const _ActivityListTile({
+  const _ActivityRailCard({
     required this.activity,
     required this.subtitle,
-    required this.trailingText,
+    required this.venueCount,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.grey.shade100),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  activity.icon,
-                  color: BiCikalimTheme.primary,
-                  size: 20,
-                ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 184,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade100),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: BiCikalimTheme.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      activity.name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: BiCikalimTheme.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: BiCikalimTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Icon(
+                activity.icon,
+                color: BiCikalimTheme.primary,
+                size: 18,
               ),
-              const SizedBox(width: 12),
-              Text(
-                trailingText,
-                style: const TextStyle(
-                  color: BiCikalimTheme.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              activity.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: BiCikalimTheme.textPrimary,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                color: BiCikalimTheme.textSecondary,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '$venueCount mekanda var',
+              style: const TextStyle(
+                color: BiCikalimTheme.primary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ),
     );
