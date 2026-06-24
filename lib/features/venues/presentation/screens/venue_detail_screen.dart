@@ -4,6 +4,7 @@ import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/event_list_card.dart';
+import '../../../../shared/widgets/app_network_image.dart';
 
 class VenueDetailScreen extends StatefulWidget {
   final String venueId;
@@ -61,7 +62,9 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.network(_venue.coverImageUrl, fit: BoxFit.cover),
+                    Positioned.fill(
+                      child: AppNetworkImage(imageUrl: _venue.coverImageUrl),
+                    ),
                     DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(

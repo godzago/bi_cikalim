@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/services/mock_data.dart';
 import '../../core/theme/theme.dart';
+import 'app_network_image.dart';
 
 class EventListCard extends StatelessWidget {
   final Event event;
@@ -40,11 +41,10 @@ class EventListCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
-                  child: Image.network(
-                    event.imageUrl,
+                  child: AppNetworkImage(
+                    imageUrl: event.imageUrl,
                     height: 152,
                     width: double.infinity,
-                    fit: BoxFit.cover,
                   ),
                 ),
                 Positioned(
@@ -161,16 +161,11 @@ class EventListCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Container(
+                      AppNetworkImage(
+                        imageUrl: venue.coverImageUrl,
                         width: 32,
                         height: 32,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: NetworkImage(venue.coverImageUrl),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       const SizedBox(width: 8),
                       Expanded(

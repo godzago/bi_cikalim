@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/services/mock_data.dart';
 import '../../core/theme/theme.dart';
+import 'app_network_image.dart';
 
 class VenueCard extends StatelessWidget {
   final Venue venue;
@@ -29,11 +30,10 @@ class VenueCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
-                  child: Image.network(
-                    venue.coverImageUrl,
+                  child: AppNetworkImage(
+                    imageUrl: venue.coverImageUrl,
                     height: 136,
                     width: double.infinity,
-                    fit: BoxFit.cover,
                   ),
                 ),
                 Positioned(
