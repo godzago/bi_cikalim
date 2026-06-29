@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -51,7 +52,7 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -82,7 +83,7 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -95,8 +96,8 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.8),
-                          Colors.black.withOpacity(0.2),
+                          Colors.black.withValues(alpha: 0.8),
+                          Colors.black.withValues(alpha: 0.2),
                         ],
                       ),
                     ),
@@ -140,13 +141,21 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
                         const SizedBox(height: 4),
                         const Row(
                           children: [
-                            Icon(Icons.location_on, color: Colors.white70, size: 14),
+                            Icon(
+                              Icons.location_on,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
                             SizedBox(width: 4),
-                            Text(
-                              'Porsuk Çayı, Odunpazarı Evleri...',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
+                            Expanded(
+                              child: Text(
+                                'Porsuk Çayı, Odunpazarı Evleri...',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],
@@ -196,6 +205,7 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
       ),
     );
   }
+}
 
   Widget _buildComingSoonCity(String name, String subtitle) {
     return Card(
@@ -238,6 +248,7 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
             ),
           ),
         ),
+        onTap: () {},
       ),
     );
   }

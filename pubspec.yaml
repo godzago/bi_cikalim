@@ -20,6 +20,7 @@ dependencies:
 
   # Routing
   go_router: ^17.3.0
+  cached_network_image: ^3.4.1
 
   # Firebase — tüm paketler birlikte uyumlu v4.x (KGP uyarısını çözer)
   firebase_core: ^4.0.0

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/theme.dart';
+
 import '../../../../core/services/mock_data.dart';
+import '../../../../core/theme/theme.dart';
+import '../../../../shared/widgets/app_network_image.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -16,25 +18,53 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Harita Keşfi'),
-      ),
+      appBar: AppBar(title: const Text('Harita Kesfi')),
       body: Stack(
         children: [
-          // Custom Painter Mock Map Background
-          Positioned.fill(
-            child: CustomPaint(
-              painter: MapGridPainter(),
+          Positioned.fill(child: CustomPaint(painter: MapGridPainter())),
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.explore_outlined, color: BiCikalimTheme.primary),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Noktalara dokunarak mekanlari hizlica incele.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: BiCikalimTheme.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          
-          // Map Pins
           ...MockDatabase.venues.map((venue) {
-            // Mapping lat-long offset to local screen coordinates
-            // Eskişehir central coordinates: 39.77, 30.52
             final xOffset = 200 + (venue.longitude - 30.52) * 4000;
             final yOffset = 300 - (venue.latitude - 39.77) * 4000;
-            
             final isSelected = _selectedVenue?.id == venue.id;
 
             return Positioned(
@@ -53,39 +83,53 @@ class _MapScreenState extends State<MapScreen> {
                       duration: const Duration(milliseconds: 250),
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: isSelected ? BiCikalimTheme.primary : Colors.white,
+                        color: isSelected
+                            ? BiCikalimTheme.primary
+                            : Colors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                         ],
                         border: Border.all(
-                          color: isSelected ? Colors.white : BiCikalimTheme.primary,
+                          color: isSelected
+                              ? Colors.white
+                              : BiCikalimTheme.primary,
                           width: 2,
                         ),
                       ),
                       child: Icon(
                         _getVenueIcon(venue.activityTags.first),
-                        color: isSelected ? Colors.white : BiCikalimTheme.primary,
+                        color: isSelected
+                            ? Colors.white
+                            : BiCikalimTheme.primary,
                         size: 20,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.75),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        venue.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 96),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.75),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          venue.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -94,8 +138,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
             );
           }),
-
-          // Selected Venue Info Card (Bottom Sheet Overlay)
           if (_selectedVenue != null)
             Positioned(
               bottom: 20,
@@ -103,21 +145,21 @@ class _MapScreenState extends State<MapScreen> {
               right: 20,
               child: Card(
                 elevation: 6,
-                shadowColor: Colors.black.withOpacity(0.15),
+                shadowColor: Colors.black.withValues(alpha: 0.15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          _selectedVenue!.coverImageUrl,
+                        child: AppNetworkImage(
+                          imageUrl: _selectedVenue!.coverImageUrl,
                           width: 80,
                           height: 80,
-                          fit: BoxFit.cover,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -128,6 +170,8 @@ class _MapScreenState extends State<MapScreen> {
                           children: [
                             Text(
                               _selectedVenue!.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -137,7 +181,11 @@ class _MapScreenState extends State<MapScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.star, color: BiCikalimTheme.primary, size: 14),
+                                const Icon(
+                                  Icons.star,
+                                  color: BiCikalimTheme.primary,
+                                  size: 14,
+                                ),
                                 const SizedBox(width: 2),
                                 Text(
                                   '${_selectedVenue!.averageRating}',
@@ -149,6 +197,8 @@ class _MapScreenState extends State<MapScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   _selectedVenue!.district,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: BiCikalimTheme.textSecondary,
@@ -164,7 +214,7 @@ class _MapScreenState extends State<MapScreen> {
                               child: const Row(
                                 children: [
                                   Text(
-                                    'Detaylı İncele',
+                                    'Detayli Incele',
                                     style: TextStyle(
                                       color: BiCikalimTheme.primary,
                                       fontSize: 13,
@@ -172,7 +222,11 @@ class _MapScreenState extends State<MapScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 4),
-                                  Icon(Icons.arrow_forward, color: BiCikalimTheme.primary, size: 14),
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    color: BiCikalimTheme.primary,
+                                    size: 14,
+                                  ),
                                 ],
                               ),
                             ),
@@ -198,15 +252,21 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   IconData _getVenueIcon(String firstTag) {
-    if (firstTag == 'Masa Oyunları') return Icons.casino;
-    if (firstTag == 'Bilardo') return Icons.sports;
-    if (firstTag == 'PS / Konsol') return Icons.sports_esports;
-    if (firstTag == 'Karaoke') return Icons.mic;
+    if (firstTag.contains('Masaustu') || firstTag.contains('FRP')) {
+      return Icons.casino;
+    }
+    if (firstTag.contains('Bilardo') || firstTag.contains('Snooker')) {
+      return Icons.sports;
+    }
+    if (firstTag.contains('Dijital') || firstTag.contains('VR')) {
+      return Icons.sports_esports;
+    }
+    if (firstTag.contains('Karaoke')) return Icons.mic;
+    if (firstTag.contains('Saha')) return Icons.sports_soccer;
     return Icons.store;
   }
 }
 
-// Custom Painter to draw a clean map representation of Eskişehir center
 class MapGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -224,10 +284,11 @@ class MapGridPainter extends CustomPainter {
 
     final paintBackground = Paint()..color = const Color(0xFFF1EFE9);
 
-    // Draw background
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paintBackground);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      paintBackground,
+    );
 
-    // Draw Porsuk River (Wavy flow through the screen)
     final riverPath = Path();
     riverPath.moveTo(0, size.height * 0.45);
     riverPath.cubicTo(
@@ -240,20 +301,16 @@ class MapGridPainter extends CustomPainter {
     );
     canvas.drawPath(riverPath, paintRiver);
 
-    // Draw Streets
-    // Main Avenue
     canvas.drawLine(
       Offset(size.width * 0.15, 0),
       Offset(size.width * 0.85, size.height),
       paintRoad,
     );
-    // Cross street
     canvas.drawLine(
       Offset(0, size.height * 0.3),
       Offset(size.width, size.height * 0.7),
       paintRoad,
     );
-    // Vertical street
     canvas.drawLine(
       Offset(size.width * 0.5, 0),
       Offset(size.width * 0.5, size.height),
