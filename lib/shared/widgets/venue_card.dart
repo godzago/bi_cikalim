@@ -160,7 +160,7 @@ class VenueCard extends StatelessWidget {
               color: BiCikalimTheme.textPrimary,
               fontSize: fontSize,
               fontWeight: FontWeight.bold,
-              fontFamily: 'Outfit',
+              
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

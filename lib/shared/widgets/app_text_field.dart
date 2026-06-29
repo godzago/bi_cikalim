@@ -47,7 +47,7 @@ class _AppTextFieldState extends State<AppTextField> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: BiCikalimTheme.textPrimary,
-            fontFamily: 'Outfit',
+            
           ),
         ),
         const SizedBox(height: 6),

@@ -1,4 +1,5 @@
 /// Uygulama genelinde kullanılan özel exception sınıfları.
+library;
 
 /// Auth işlemlerinde fırlatılan exception.
 class AuthException implements Exception {
@@ -11,19 +12,19 @@ class AuthException implements Exception {
   String toString() => 'AuthException($code): $message';
 }
 
-/// Firestore işlemlerinde fırlatılan exception.
-class FirestoreException implements Exception {
+/// Servis/API işlemlerinde fırlatılan exception.
+class ServiceException implements Exception {
   final String message;
   final String? code;
 
-  const FirestoreException({required this.message, this.code});
+  const ServiceException({required this.message, this.code});
 
   @override
-  String toString() => 'FirestoreException($code): $message';
+  String toString() => 'ServiceException($code): $message';
 }
 
-/// Firebase Auth hata kodlarını Türkçe mesajlara dönüştürür.
-String mapFirebaseAuthError(String code) {
+/// Hata mesajı çevirisi (ileride backend hata kodları için).
+String mapAuthError(String code) {
   switch (code) {
     case 'user-not-found':
       return 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.';

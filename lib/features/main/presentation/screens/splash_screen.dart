@@ -1,18 +1,17 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../auth/presentation/providers/user_session_provider.dart';
 
 /// Uygulama başlangıç splash ekranı.
-/// Animasyon sonrası auth state'e göre yönlendirir:
+/// Animasyon sonrası session state'e göre yönlendirir:
 /// - Giriş yapılmamış → Onboarding
-/// - Giriş yapılmış, şehir seçilmemiş → CitySelect
-/// - Giriş yapılmış, şehir seçilmiş → Discover
+/// - Normal kullanıcı → Discover
+/// - Mekan sahibi → Venue Owner Panel
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -52,36 +51,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     });
   }
 
-  /// Auth state'e göre yönlendirme kararı verir.
-  Future<void> _navigate() async {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-
+  /// Session state'e göre yönlendirme kararı verir.
+  void _navigate() {
     if (!mounted) return;
 
-    if (currentUser == null) {
-      // Giriş yapılmamış → Onboarding
-      context.go(AppConstants.onboardingRoute);
-      return;
-    }
+    final userType = ref.read(userTypeProvider);
 
-    // Giriş yapılmış → Firestore profili kontrol et
-    try {
-      final repo = ref.read(authRepositoryProvider);
-      final userProfile = await repo.getUserProfile(currentUser.uid);
-
-      if (!mounted) return;
-
-      if (userProfile == null || (userProfile.city?.isEmpty ?? true)) {
-        // Şehir seçilmemiş → CitySelect
-        context.go(AppConstants.citySelectRoute);
-      } else {
-        // Her şey tamam → Discover
+    switch (userType) {
+      case UserType.normalUser:
         context.go(AppConstants.discoverRoute);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      // Firestore hatası durumunda güvenli yol: onboarding
-      context.go(AppConstants.onboardingRoute);
+      case UserType.venueOwner:
+        context.go('/venue-owner');
+      case null:
+        context.go(AppConstants.onboardingRoute);
     }
   }
 
@@ -131,7 +113,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     fontSize: 42,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
-                    fontFamily: 'Outfit',
+                    
                   ),
                 ),
                 const SizedBox(height: 8),

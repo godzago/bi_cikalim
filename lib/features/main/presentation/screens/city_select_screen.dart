@@ -1,14 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Şehir seçimi ekranı.
-/// Kullanıcının şehrini Firestore'a kaydeder ve Discover'a yönlendirir.
+/// Firebase bağımlılığı kaldırıldı. Şehir seçimi ileride FastAPI üzerinden kaydedilecek.
 class CitySelectScreen extends ConsumerStatefulWidget {
   const CitySelectScreen({super.key});
 
@@ -20,31 +18,11 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
   bool _isLoading = false;
 
   Future<void> _selectCity(String city) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      // Kullanıcı giriş yapmamışsa auth'a yönlendir
-      if (mounted) context.go(AppConstants.signInRoute);
-      return;
-    }
-
     setState(() => _isLoading = true);
-    try {
-      await ref.read(authControllerProvider.notifier).updateCity(user.uid, city);
-      if (!mounted) return;
-      context.go(AppConstants.discoverRoute);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Şehir kaydedilirken bir hata oluştu.'),
-          backgroundColor: BiCikalimTheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
-    }
+    // TODO: FastAPI backend entegrasyonunda şehir kaydedilecek.
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+    context.go(AppConstants.discoverRoute);
   }
 
   @override
@@ -70,7 +48,8 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
 
               // Eskişehir — Pilot City Card
               GestureDetector(
-                onTap: _isLoading ? null : () => _selectCity(AppConstants.pilotCity),
+                onTap:
+                    _isLoading ? null : () => _selectCity(AppConstants.pilotCity),
                 child: Container(
                   height: 180,
                   decoration: BoxDecoration(
@@ -135,7 +114,7 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
                             color: Colors.white,
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'Outfit',
+                            
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -186,16 +165,25 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
                   color: BiCikalimTheme.textPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  fontFamily: 'Outfit',
+                  
                 ),
               ),
               const SizedBox(height: 12),
               Expanded(
                 child: ListView(
                   children: [
-                    _buildComingSoonCity('İstanbul', 'Tarih, kültür ve sınırsız mekan...'),
-                    _buildComingSoonCity('Ankara', 'Başkentteki gizli eğlence noktaları...'),
-                    _buildComingSoonCity('İzmir', 'Ege esintili samimi aktiviteler...'),
+                    _buildComingSoonCity(
+                      'İstanbul',
+                      'Tarih, kültür ve sınırsız mekan...',
+                    ),
+                    _buildComingSoonCity(
+                      'Ankara',
+                      'Başkentteki gizli eğlence noktaları...',
+                    ),
+                    _buildComingSoonCity(
+                      'İzmir',
+                      'Ege esintili samimi aktiviteler...',
+                    ),
                   ],
                 ),
               ),
@@ -205,7 +193,6 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
       ),
     );
   }
-}
 
   Widget _buildComingSoonCity(String name, String subtitle) {
     return Card(
@@ -223,7 +210,7 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
             color: BiCikalimTheme.textSecondary,
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            fontFamily: 'Outfit',
+            
           ),
         ),
         subtitle: Text(

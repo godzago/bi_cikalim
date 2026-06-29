@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Firestore `users` collection document modeli.
+/// Uygulama kullanıcı modeli.
+/// Firestore bağımlılığı kaldırıldı — artık pure Dart.
+/// İleride FastAPI backend'inden gelecek response'a göre güncellenecek.
 class AppUser {
   final String id;
   final String displayName;
@@ -24,7 +24,7 @@ class AppUser {
     required this.updatedAt,
   });
 
-  /// Firestore'dan gelen Map'i AppUser'a dönüştürür.
+  /// Map'i AppUser'a dönüştürür (API response için).
   factory AppUser.fromMap(String id, Map<String, dynamic> map) {
     return AppUser(
       id: id,
@@ -34,12 +34,16 @@ class AppUser {
       city: map['city'] as String?,
       avatarUrl: map['avatarUrl'] as String?,
       roles: List<String>.from(map['roles'] as List? ?? ['user']),
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: map['createdAt'] != null
+          ? DateTime.tryParse(map['createdAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.tryParse(map['updatedAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
-  /// AppUser'ı Firestore'a yazılabilir Map'e dönüştürür.
+  /// AppUser'ı API'ye gönderilebilir Map'e dönüştürür.
   Map<String, dynamic> toMap() {
     return {
       'displayName': displayName,
@@ -48,8 +52,8 @@ class AppUser {
       'city': city,
       'avatarUrl': avatarUrl,
       'roles': roles,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 

@@ -28,7 +28,7 @@ class AppSectionHeader extends StatelessWidget {
                 color: BiCikalimTheme.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Outfit',
+                
               ),
             ),
           ),

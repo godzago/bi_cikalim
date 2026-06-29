@@ -5,7 +5,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
-import '../providers/auth_providers.dart';
+
 
 /// Şifremi unuttum ekranı.
 /// E-posta adresi girerek şifre sıfırlama linki alır.
@@ -35,9 +35,8 @@ class _ForgotPasswordScreenState
 
     setState(() => _isLoading = true);
     try {
-      await ref
-          .read(authControllerProvider.notifier)
-          .resetPassword(_emailController.text);
+      // TODO: FastAPI backend entegrasyonunda gerçek şifre sıfırlama olacak.
+      await Future.delayed(const Duration(milliseconds: 500));
 
       if (!mounted) return;
       setState(() {
@@ -97,7 +96,7 @@ class _ForgotPasswordScreenState
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: BiCikalimTheme.primary.withOpacity(0.08),
+                color: BiCikalimTheme.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -115,7 +114,7 @@ class _ForgotPasswordScreenState
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: BiCikalimTheme.textPrimary,
-              fontFamily: 'Outfit',
+              
             ),
           ),
           const SizedBox(height: 8),
@@ -178,7 +177,7 @@ class _ForgotPasswordScreenState
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: BiCikalimTheme.success.withOpacity(0.1),
+            color: BiCikalimTheme.success.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -195,7 +194,7 @@ class _ForgotPasswordScreenState
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: BiCikalimTheme.textPrimary,
-            fontFamily: 'Outfit',
+            
           ),
           textAlign: TextAlign.center,
         ),

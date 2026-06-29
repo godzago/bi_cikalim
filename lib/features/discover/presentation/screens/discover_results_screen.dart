@@ -256,7 +256,7 @@ class _SectionTitle extends StatelessWidget {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        fontFamily: 'Outfit',
+        
       ),
     );
   }

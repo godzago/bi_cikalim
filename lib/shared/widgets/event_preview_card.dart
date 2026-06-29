@@ -72,7 +72,7 @@ class EventPreviewCard extends StatelessWidget {
                         color: Colors.white,
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'Outfit',
+                        
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

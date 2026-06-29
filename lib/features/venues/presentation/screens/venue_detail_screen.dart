@@ -117,7 +117,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'Outfit',
+                            
                           ),
                         ),
                       ),
@@ -208,7 +208,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
-                fontFamily: 'Outfit',
+                
               ),
               tabs: const [
                 Tab(text: 'Genel'),
@@ -304,7 +304,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              fontFamily: 'Outfit',
+              
             ),
           ),
           const SizedBox(height: 8),
@@ -321,7 +321,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              fontFamily: 'Outfit',
+              
             ),
           ),
           const SizedBox(height: 12),
@@ -333,7 +333,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              fontFamily: 'Outfit',
+              
             ),
           ),
           const SizedBox(height: 12),
@@ -455,7 +455,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'Outfit',
+                            
                           ),
                         ),
                       ),
@@ -603,7 +603,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                       color: BiCikalimTheme.primary,
-                      fontFamily: 'Outfit',
+                      
                     ),
                   ),
                   Row(

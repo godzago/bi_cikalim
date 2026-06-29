@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../providers/user_session_provider.dart';
 
 /// Uygulama onboarding ekranı.
-/// 3 slaytlı animasyonlu tanıtım + Giriş Yap / Kayıt Ol butonları.
-class OnboardingScreen extends StatefulWidget {
+/// 3 slaytlı animasyonlu tanıtım + Kullanıcı / Mekan Sahibi ayrımı.
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isLoading = false;
 
   static const _slides = [
     _OnboardingSlide(
@@ -29,14 +32,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       emoji: '🎯',
       title: 'Etkinlikleri Kaçırma',
       description:
-          'Quiz geceleri, karaoke gecesi, turnuvalar…\nYakınındaki etkinlikleri anında öğren.',
+          'Masa oyunu geceleri, karaoke, turnuvalar…\nYakınındaki etkinlikleri anında öğren.',
       color: Color(0xFFFFF8F0),
     ),
     _OnboardingSlide(
-      emoji: '🏪',
-      title: 'Mekanını Sahiplen',
+      emoji: '🎮',
+      title: 'Aktiviteye Göre Mekan Bul',
       description:
-          'İşletme sahibi misin? Mekanını ekle,\naktivitelerini paylaş, müşterilerine ulaş.',
+          'Catan mı, bilardo mu, karaoke mi?\nAktiviteyi seç, mekanı biz gösterelim.',
       color: Color(0xFFF0F8FF),
     ),
   ];
@@ -45,6 +48,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _continueAsUser() async {
+    setState(() => _isLoading = true);
+    await ref.read(userSessionProvider.notifier).signInAsUser();
+    if (mounted) context.go(AppConstants.discoverRoute);
+  }
+
+  Future<void> _continueAsVenueOwner() async {
+    setState(() => _isLoading = true);
+    await ref.read(userSessionProvider.notifier).signInAsVenueOwner();
+    if (mounted) context.go('/venue-owner');
   }
 
   @override
@@ -60,7 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: () => context.go(AppConstants.signInRoute),
+                onPressed: _isLoading ? null : _continueAsUser,
                 child: const Text(
                   'Geç',
                   style: TextStyle(
@@ -104,45 +119,38 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
             const SizedBox(height: 40),
 
-            // Giriş / Kayıt Butonları
+            // Kullanıcı Tipi Seçimi
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Giriş Yap
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: () => context.go(AppConstants.signInRoute),
-                      child: const Text('Giriş Yap'),
-                    ),
+                  // Kullanıcı Olarak Devam Et
+                  _UserTypeButton(
+                    id: 'btn_continue_as_user',
+                    icon: Icons.explore_outlined,
+                    title: 'Kullanıcı Olarak Devam Et',
+                    subtitle: 'Mekan, aktivite ve etkinlik keşfet',
+                    isPrimary: true,
+                    isLoading: _isLoading,
+                    onTap: _continueAsUser,
                   ),
                   const SizedBox(height: 12),
-                  // Kayıt Ol
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: () => context.go(AppConstants.signUpRoute),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: BiCikalimTheme.primary,
-                        side: const BorderSide(color: BiCikalimTheme.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Outfit',
-                        ),
-                      ),
-                      child: const Text('Hesap Oluştur'),
-                    ),
+
+                  // Mekan Sahibi
+                  _UserTypeButton(
+                    id: 'btn_continue_as_venue_owner',
+                    icon: Icons.storefront_outlined,
+                    title: 'Mekan Sahibiyim',
+                    subtitle: 'Mekanımı ekle, aktivitelerimi paylaş',
+                    isPrimary: false,
+                    isLoading: _isLoading,
+                    onTap: _continueAsVenueOwner,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+
                   Text(
-                    'Kayıt olarak Kullanım Koşulları\'nı kabul etmiş olursunuz.',
+                    'Devam ederek Kullanım Koşulları\'nı kabul etmiş olursunuz.',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey.shade500,
@@ -169,7 +177,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Emoji illustration area
           AnimatedContainer(
             duration: const Duration(milliseconds: 400),
             width: 180,
@@ -192,7 +199,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: BiCikalimTheme.textPrimary,
-              fontFamily: 'Outfit',
+              
             ),
             textAlign: TextAlign.center,
           ),
@@ -211,6 +218,125 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Kullanıcı Tipi Butonu
+// ---------------------------------------------------------------------------
+
+class _UserTypeButton extends StatelessWidget {
+  final String id;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool isPrimary;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const _UserTypeButton({
+    required this.id,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isPrimary,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      key: ValueKey(id),
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: isPrimary ? BiCikalimTheme.primary : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isPrimary
+                  ? BiCikalimTheme.primary
+                  : Colors.grey.shade200,
+            ),
+            boxShadow: isPrimary
+                ? [
+                    BoxShadow(
+                      color: BiCikalimTheme.primary.withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isPrimary
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : BiCikalimTheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: isPrimary
+                      ? Colors.white
+                      : BiCikalimTheme.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        
+                        color: isPrimary
+                            ? Colors.white
+                            : BiCikalimTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isPrimary
+                            ? Colors.white.withValues(alpha: 0.8)
+                            : BiCikalimTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: isPrimary
+                    ? Colors.white.withValues(alpha: 0.7)
+                    : Colors.grey.shade400,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Slide Model
+// ---------------------------------------------------------------------------
 
 class _OnboardingSlide {
   final String emoji;

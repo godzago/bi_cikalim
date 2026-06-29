@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class BiCikalimTheme {
   static const Color primary = Color(0xFFFF5722);
@@ -18,6 +19,8 @@ class BiCikalimTheme {
   static const Color error = Color(0xFFE53935);
 
   static ThemeData get lightTheme {
+    final baseTextTheme = GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme);
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
@@ -27,27 +30,27 @@ class BiCikalimTheme {
         surface: surface,
       ),
       scaffoldBackgroundColor: background,
-      appBarTheme: const AppBarTheme(
+      fontFamily: GoogleFonts.poppins().fontFamily,
+      appBarTheme: AppBarTheme(
         backgroundColor: surface,
         elevation: 0,
         centerTitle: false,
-        iconTheme: IconThemeData(color: textPrimary),
-        titleTextStyle: TextStyle(
+        iconTheme: const IconThemeData(color: textPrimary),
+        titleTextStyle: GoogleFonts.poppins(
           color: textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          fontFamily: 'Outfit',
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surface,
         selectedItemColor: primary,
         unselectedItemColor: textLight,
-        selectedLabelStyle: TextStyle(
+        selectedLabelStyle: GoogleFonts.poppins(
           fontWeight: FontWeight.w600,
           fontSize: 12,
         ),
-        unselectedLabelStyle: TextStyle(
+        unselectedLabelStyle: GoogleFonts.poppins(
           fontWeight: FontWeight.w400,
           fontSize: 12,
         ),
@@ -60,45 +63,55 @@ class BiCikalimTheme {
         shadowColor: Colors.black.withValues(alpha: 0.05),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-          color: textPrimary,
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Outfit',
+      textTheme: baseTextTheme.copyWith(
+        headlineLarge: GoogleFonts.poppins(
+          textStyle: baseTextTheme.headlineLarge?.copyWith(
+            color: textPrimary,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        headlineMedium: TextStyle(
-          color: textPrimary,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Outfit',
+        headlineMedium: GoogleFonts.poppins(
+          textStyle: baseTextTheme.headlineMedium?.copyWith(
+            color: textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        titleLarge: TextStyle(
-          color: textPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Outfit',
+        titleLarge: GoogleFonts.poppins(
+          textStyle: baseTextTheme.titleLarge?.copyWith(
+            color: textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600, // SemiBold
+          ),
         ),
-        titleMedium: TextStyle(
-          color: textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Outfit',
+        titleMedium: GoogleFonts.poppins(
+          textStyle: baseTextTheme.titleMedium?.copyWith(
+            color: textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600, // SemiBold
+          ),
         ),
-        bodyLarge: TextStyle(
-          color: textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.normal,
+        bodyLarge: GoogleFonts.poppins(
+          textStyle: baseTextTheme.bodyLarge?.copyWith(
+            color: textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.normal, // Regular
+          ),
         ),
-        bodyMedium: TextStyle(
-          color: textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.normal,
+        bodyMedium: GoogleFonts.poppins(
+          textStyle: baseTextTheme.bodyMedium?.copyWith(
+            color: textSecondary,
+            fontSize: 14,
+            fontWeight: FontWeight.normal, // Regular
+          ),
         ),
-        bodySmall: TextStyle(
-          color: textLight,
-          fontSize: 12,
-          fontWeight: FontWeight.normal,
+        bodySmall: GoogleFonts.poppins(
+          textStyle: baseTextTheme.bodySmall?.copyWith(
+            color: textLight,
+            fontSize: 12,
+            fontWeight: FontWeight.normal, // Regular
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -110,10 +123,9 @@ class BiCikalimTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
+          textStyle: GoogleFonts.poppins(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Outfit',
+            fontWeight: FontWeight.w600, // SemiBold
           ),
         ),
       ),
@@ -136,7 +148,11 @@ class BiCikalimTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primary, width: 1.5),
         ),
-        hintStyle: const TextStyle(color: textLight, fontSize: 14),
+        hintStyle: GoogleFonts.poppins(
+          color: textLight,
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+        ),
       ),
     );
   }

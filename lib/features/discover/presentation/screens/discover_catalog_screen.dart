@@ -84,7 +84,7 @@ class DiscoverCatalogScreen extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    fontFamily: 'Outfit',
+                                    
                                   ),
                                 ),
                                 const SizedBox(height: 4),

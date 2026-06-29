@@ -5,7 +5,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
-import '../providers/auth_providers.dart';
+import '../providers/user_session_provider.dart';
 
 /// Yeni kullanıcı kayıt ekranı.
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -37,11 +37,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await ref.read(authControllerProvider.notifier).signUpWithEmail(
-            email: _emailController.text,
-            password: _passwordController.text,
-            displayName: _nameController.text.trim(),
-          );
+      // TODO: FastAPI backend entegrasyonunda aktif edilecek.
+      await ref.read(userSessionProvider.notifier).signInAsUser();
 
       if (!mounted) return;
       // Kayıt sonrası şehir seçimine yönlendir
@@ -95,7 +92,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: BiCikalimTheme.textPrimary,
-                    fontFamily: 'Outfit',
+                    
                   ),
                 ),
                 const SizedBox(height: 8),

@@ -44,7 +44,7 @@ class AppMenuCard extends StatelessWidget {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.bold,
-            fontFamily: 'Outfit',
+            
           ),
         ),
         subtitle: Text(

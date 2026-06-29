@@ -175,7 +175,7 @@ class _MapScreenState extends State<MapScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                fontFamily: 'Outfit',
+                                
                               ),
                             ),
                             const SizedBox(height: 4),
