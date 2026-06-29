@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // users collection
+    // Kullanıcı sadece kendi dokümanını okuyup güncelleyebilir.
+    // Admin/editor rolleri ileride custom claims veya roles alanıyla yönetilecek.
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      // Kendi profilini okuyabilir
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Kendi profilini oluşturabilir (kayıt akışında)
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && isValidUserDocument(request.resource.data);
+
+      // Kendi profilini güncelleyebilir
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && isValidUserUpdate(request.resource.data);
+
+      // Silme izni yok (şimdilik)
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // venues collection
+    // MVP'de editör tarafından ekleniyor.
+    // Public read, write sadece admin/editöre (ileride custom claims ile).
+    // -------------------------------------------------------------------------
+    match /venues/{venueId} {
+      // Yayınlanmış mekanlar herkese açık
+      allow read: if resource.data.status == 'published' || request.auth != null;
+
+      // Şimdilik write kapalı (Admin Firebase Console'dan ekleyecek)
+      // İleride: allow write: if hasRole('editor') || hasRole('admin');
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // events collection
+    // Yayınlanmış etkinlikler herkese açık.
+    // -------------------------------------------------------------------------
+    match /events/{eventId} {
+      allow read: if resource.data.status == 'published' || request.auth != null;
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // reviews collection
+    // Giriş yapmış kullanıcılar okuyabilir.
+    // Kullanıcı kendi yorumunu yazabilir.
+    // -------------------------------------------------------------------------
+    match /reviews/{reviewId} {
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if request.auth != null
+                             && resource.data.userId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // Yardımcı Fonksiyonlar
+    // -------------------------------------------------------------------------
+
+    /// Geçerli bir kullanıcı dokümanı mı?
+    function isValidUserDocument(data) {
+      return data.keys().hasAll(['displayName', 'email', 'roles', 'createdAt', 'updatedAt'])
+          && data.roles is list
+          && data.email is string
+          && data.displayName is string;
+    }
+
+    /// Geçerli bir kullanıcı güncellemesi mi?
+    function isValidUserUpdate(data) {
+      // Rol değiştirme girişimini engelle (admin değilse)
+      return !data.diff(resource.data).affectedKeys().hasAny(['roles', 'id']);
+    }
+
+    /// Kullanıcının belirli rolü var mı? (ileride kullanılacak)
+    function hasRole(role) {
+      return request.auth != null
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny([role]);
+    }
+  }
+}

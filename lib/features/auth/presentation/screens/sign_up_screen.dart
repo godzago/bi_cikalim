@@ -1,0 +1,232 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/theme/theme.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/app_text_field.dart';
+import '../providers/auth_providers.dart';
+
+/// Yeni kullanıcı kayıt ekranı.
+class SignUpScreen extends ConsumerStatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signUp() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authControllerProvider.notifier).signUpWithEmail(
+            email: _emailController.text,
+            password: _passwordController.text,
+            displayName: _nameController.text.trim(),
+          );
+
+      if (!mounted) return;
+      // Kayıt sonrası şehir seçimine yönlendir
+      context.go(AppConstants.citySelectRoute);
+    } catch (e) {
+      if (!mounted) return;
+      _showError(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: BiCikalimTheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: BiCikalimTheme.background,
+      appBar: AppBar(
+        backgroundColor: BiCikalimTheme.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.go(AppConstants.signInRoute),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+
+                // Başlık
+                const Text(
+                  'Hesap Oluştur',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: BiCikalimTheme.textPrimary,
+                    fontFamily: 'Outfit',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'BiÇıkalım\'a katıl ve şehrindeki\naktiviteleri keşfetmeye başla! 🚀',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: BiCikalimTheme.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Ad Soyad
+                AppTextField(
+                  label: 'Ad Soyad',
+                  hintText: 'Adın ve soyadın',
+                  controller: _nameController,
+                  prefixIcon: Icons.person_outline,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'İsim boş olamaz.';
+                    if (v.trim().length < 2) return 'İsim en az 2 karakter olmalıdır.';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // E-posta
+                AppTextField(
+                  label: 'E-posta Adresi',
+                  hintText: 'ornek@email.com',
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.email_outlined,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'E-posta boş olamaz.';
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
+                      return 'Geçerli bir e-posta adresi girin.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Şifre
+                AppTextField(
+                  label: 'Şifre',
+                  hintText: 'En az 6 karakter',
+                  controller: _passwordController,
+                  isPassword: true,
+                  prefixIcon: Icons.lock_outline,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Şifre boş olamaz.';
+                    if (v.length < 6) return 'Şifre en az 6 karakter olmalıdır.';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Şifre Tekrar
+                AppTextField(
+                  label: 'Şifre Tekrar',
+                  hintText: 'Şifreni tekrar gir',
+                  controller: _confirmPasswordController,
+                  isPassword: true,
+                  prefixIcon: Icons.lock_outline,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _signUp(),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Şifre tekrar boş olamaz.';
+                    if (v != _passwordController.text) return 'Şifreler eşleşmiyor.';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // Kayıt Ol Butonu
+                PrimaryButton(
+                  label: 'Hesap Oluştur',
+                  onPressed: _signUp,
+                  isLoading: _isLoading,
+                ),
+                const SizedBox(height: 20),
+
+                // Kullanım Koşulları
+                Center(
+                  child: Text(
+                    'Kaydolarak Gizlilik Politikası\'nı ve\nKullanım Koşulları\'nı kabul etmiş olursunuz.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                      height: 1.6,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Giriş Yap yönlendirmesi
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Zaten hesabın var mı?  ',
+                      style: TextStyle(
+                        color: BiCikalimTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.go(AppConstants.signInRoute),
+                      child: const Text(
+                        'Giriş Yap',
+                        style: TextStyle(
+                          color: BiCikalimTheme.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
