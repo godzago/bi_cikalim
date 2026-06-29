@@ -1,9 +1,50 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
-class CitySelectScreen extends StatelessWidget {
+/// Şehir seçimi ekranı.
+/// Kullanıcının şehrini Firestore'a kaydeder ve Discover'a yönlendirir.
+class CitySelectScreen extends ConsumerStatefulWidget {
   const CitySelectScreen({super.key});
+
+  @override
+  ConsumerState<CitySelectScreen> createState() => _CitySelectScreenState();
+}
+
+class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
+  bool _isLoading = false;
+
+  Future<void> _selectCity(String city) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // Kullanıcı giriş yapmamışsa auth'a yönlendir
+      if (mounted) context.go(AppConstants.signInRoute);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authControllerProvider.notifier).updateCity(user.uid, city);
+      if (!mounted) return;
+      context.go(AppConstants.discoverRoute);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Şehir kaydedilirken bir hata oluştu.'),
+          backgroundColor: BiCikalimTheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +66,10 @@ class CitySelectScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 40),
-              // Eskişehir Pilot City Card
+
+              // Eskişehir — Pilot City Card
               GestureDetector(
-                onTap: () {
-                  context.go('/discover');
-                },
+                onTap: _isLoading ? null : () => _selectCity(AppConstants.pilotCity),
                 child: Container(
                   height: 180,
                   decoration: BoxDecoration(
@@ -68,7 +108,10 @@ class CitySelectScreen extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: BiCikalimTheme.primary,
                                 borderRadius: BorderRadius.circular(6),
@@ -113,8 +156,21 @@ class CitySelectScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // Loading indicator
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: BiCikalimTheme.primary,
+                    ),
+                  ),
+                ),
+
               const SizedBox(height: 20),
-              // Other Cities (Passive / Coming soon)
+
+              // Yakında Eklenecek Şehirler
               const Text(
                 'Yakında Eklenecek Şehirler',
                 style: TextStyle(
@@ -128,9 +184,9 @@ class CitySelectScreen extends StatelessWidget {
               Expanded(
                 child: ListView(
                   children: [
-                    _buildComingSoonCity(context, 'İstanbul', 'Tarih, kültür ve sınırsız mekan...'),
-                    _buildComingSoonCity(context, 'Ankara', 'Başkentteki gizli eğlence noktaları...'),
-                    _buildComingSoonCity(context, 'İzmir', 'Ege esintili samimi aktiviteler...'),
+                    _buildComingSoonCity('İstanbul', 'Tarih, kültür ve sınırsız mekan...'),
+                    _buildComingSoonCity('Ankara', 'Başkentteki gizli eğlence noktaları...'),
+                    _buildComingSoonCity('İzmir', 'Ege esintili samimi aktiviteler...'),
                   ],
                 ),
               ),
@@ -141,7 +197,7 @@ class CitySelectScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildComingSoonCity(BuildContext context, String name, String subtitle) {
+  Widget _buildComingSoonCity(String name, String subtitle) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
