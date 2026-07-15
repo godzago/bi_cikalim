@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../providers/user_session_provider.dart';
@@ -22,6 +23,26 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedCredentials();
+  }
+
+  Future<void> _loadRememberedCredentials() async {
+    final credentials = await ApiClient.instance.getRememberedCredentials();
+    final email = credentials['email'];
+    final password = credentials['password'];
+    if (email != null && password != null) {
+      setState(() {
+        _emailController.text = email;
+        _passwordController.text = password;
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -34,13 +55,32 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      // TODO: FastAPI backend entegrasyonunda aktif edilecek.
-      await ref.read(userSessionProvider.notifier).signInAsUser();
+      await ref.read(userSessionProvider.notifier).signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      // Beni Hatırla işaretliyse bilgileri kaydeder, değilse temizler
+      if (_rememberMe) {
+        await ApiClient.instance.saveRememberedCredentials(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+      } else {
+        await ApiClient.instance.clearRememberedCredentials();
+      }
+
       if (!mounted) return;
-      context.go(AppConstants.discoverRoute);
+      
+      final userType = ref.read(userTypeProvider);
+      if (userType == UserType.venueOwner) {
+        context.go('/venue-owner');
+      } else {
+        context.go(AppConstants.discoverRoute);
+      }
     } catch (e) {
       if (!mounted) return;
-      _showError(e.toString());
+      _showError(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -64,6 +104,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       backgroundColor: BiCikalimTheme.background,
       appBar: AppBar(
         title: const Text('Giriş Yap'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.go(AppConstants.onboardingRoute),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -91,7 +135,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 const SizedBox(height: 16),
                 AppTextField(
                   label: 'Şifre',
-                  hintText: 'En az 6 karakter',
+                  hintText: 'En az 8 karakter',
                   controller: _passwordController,
                   isPassword: true,
                   prefixIcon: Icons.lock_outline,
@@ -102,11 +146,65 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Checkbox(
+                        value: _rememberMe,
+                        activeColor: BiCikalimTheme.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _rememberMe = value ?? false;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Beni Hatırla',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: BiCikalimTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
                 PrimaryButton(
                   label: 'Giriş Yap',
                   onPressed: _signIn,
                   isLoading: _isLoading,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Hesabın yok mu?  ',
+                      style: TextStyle(
+                        color: BiCikalimTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.go(AppConstants.signUpRoute),
+                      child: const Text(
+                        'Kayıt Ol',
+                        style: TextStyle(
+                          color: BiCikalimTheme.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

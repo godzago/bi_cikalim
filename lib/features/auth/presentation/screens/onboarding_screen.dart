@@ -50,16 +50,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     super.dispose();
   }
 
-  Future<void> _continueAsUser() async {
+  Future<void> _skipOnboarding() async {
     setState(() => _isLoading = true);
-    await ref.read(userSessionProvider.notifier).signInAsUser();
-    if (mounted) context.go(AppConstants.discoverRoute);
+    try {
+      await ref.read(userSessionProvider.notifier).signInAsMockUser();
+      if (mounted) context.go(AppConstants.discoverRoute);
+    } catch (e) {
+      // ignore
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  Future<void> _continueAsVenueOwner() async {
-    setState(() => _isLoading = true);
-    await ref.read(userSessionProvider.notifier).signInAsVenueOwner();
-    if (mounted) context.go('/venue-owner');
+  void _continueAsUser() {
+    context.go(AppConstants.signInRoute);
+  }
+
+  void _continueAsVenueOwner() {
+    context.go(AppConstants.signInRoute);
   }
 
   @override
@@ -75,7 +83,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: _isLoading ? null : _continueAsUser,
+                onPressed: _isLoading ? null : _skipOnboarding,
                 child: const Text(
                   'Geç',
                   style: TextStyle(

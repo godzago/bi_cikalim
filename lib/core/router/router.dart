@@ -1,6 +1,8 @@
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/venue_owner_screen.dart';
+import '../../features/auth/presentation/screens/sign_in_screen.dart';
+import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/main/presentation/screens/splash_screen.dart';
 import '../../features/main/presentation/screens/city_select_screen.dart';
 import '../../features/main/presentation/screens/navigation_shell.dart';
@@ -30,6 +32,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
+    ),
+
+    // Sign In
+    GoRoute(
+      path: '/sign-in',
+      builder: (context, state) => const SignInScreen(),
+    ),
+
+    // Sign Up
+    GoRoute(
+      path: '/sign-up',
+      builder: (context, state) => const SignUpScreen(),
     ),
 
     // Mekan Sahibi Panel (Placeholder)

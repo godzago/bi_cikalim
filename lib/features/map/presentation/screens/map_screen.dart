@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 
+/// Gerçek OpenStreetMap (Google Maps Yol görünümü tasarımı ile) entegre edilmiş harita ekranı.
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -14,14 +17,125 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   Venue? _selectedVenue;
+  final MapController _mapController = MapController();
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Harita Kesfi')),
+      appBar: AppBar(title: const Text('Harita Keşfi')),
       body: Stack(
         children: [
-          Positioned.fill(child: CustomPaint(painter: MapGridPainter())),
+          // FlutterMap ile gerçek harita çizimi (Google Maps Stili ile)
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: const LatLng(39.7767, 30.5206), // Eskişehir pilot şehri koordinatları
+              initialZoom: 14.0,
+              minZoom: 10.0,
+              maxZoom: 18.0,
+              onTap: (tapPosition, point) {
+                if (_selectedVenue != null) {
+                  setState(() {
+                    _selectedVenue = null;
+                  });
+                }
+              },
+            ),
+            children: [
+              // Google Maps Yol Görünümü Kiremitleri (Tile Layer)
+              TileLayer(
+                urlTemplate: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                userAgentPackageName: 'com.godzago.bi_cikalim',
+              ),
+              // Mekan Pinleri (Marker Layer)
+              MarkerLayer(
+                markers: MockDatabase.venues.map((venue) {
+                  final isSelected = _selectedVenue?.id == venue.id;
+                  final latLng = LatLng(venue.latitude, venue.longitude);
+
+                  return Marker(
+                    point: latLng,
+                    width: 100,
+                    height: 80,
+                    alignment: Alignment.topCenter,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedVenue = venue;
+                        });
+                        // Haritayı seçilen mekana ortala
+                        _mapController.move(latLng, _mapController.camera.zoom);
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? BiCikalimTheme.primary
+                                  : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: isSelected
+                                    ? Colors.white
+                                    : BiCikalimTheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              _getVenueIcon(venue.activityTags.first),
+                              color: isSelected
+                                  ? Colors.white
+                                  : BiCikalimTheme.primary,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.75),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              venue.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          
+          // Üst Bilgilendirme Bandı
           Positioned(
             top: 16,
             left: 16,
@@ -49,7 +163,7 @@ class _MapScreenState extends State<MapScreen> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Noktalara dokunarak mekanlari hizlica incele.',
+                        'Haritada gezerek yakındaki mekanları keşfedin.',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -62,82 +176,8 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
-          ...MockDatabase.venues.map((venue) {
-            final xOffset = 200 + (venue.longitude - 30.52) * 4000;
-            final yOffset = 300 - (venue.latitude - 39.77) * 4000;
-            final isSelected = _selectedVenue?.id == venue.id;
 
-            return Positioned(
-              left: xOffset,
-              top: yOffset,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedVenue = venue;
-                  });
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? BiCikalimTheme.primary
-                            : Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: isSelected
-                              ? Colors.white
-                              : BiCikalimTheme.primary,
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        _getVenueIcon(venue.activityTags.first),
-                        color: isSelected
-                            ? Colors.white
-                            : BiCikalimTheme.primary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 96),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.75),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          venue.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+          // Alt Mekan Detay Kartı (Mekan seçildiğinde açılır)
           if (_selectedVenue != null)
             Positioned(
               bottom: 20,
@@ -175,7 +215,6 @@ class _MapScreenState extends State<MapScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -214,7 +253,7 @@ class _MapScreenState extends State<MapScreen> {
                               child: const Row(
                                 children: [
                                   Text(
-                                    'Detayli Incele',
+                                    'Detaylı İncele',
                                     style: TextStyle(
                                       color: BiCikalimTheme.primary,
                                       fontSize: 13,
@@ -265,59 +304,4 @@ class _MapScreenState extends State<MapScreen> {
     if (firstTag.contains('Saha')) return Icons.sports_soccer;
     return Icons.store;
   }
-}
-
-class MapGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paintRoad = Paint()
-      ..color = Colors.grey.shade200
-      ..strokeWidth = 24
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final paintRiver = Paint()
-      ..color = Colors.lightBlue.shade100
-      ..strokeWidth = 32
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final paintBackground = Paint()..color = const Color(0xFFF1EFE9);
-
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      paintBackground,
-    );
-
-    final riverPath = Path();
-    riverPath.moveTo(0, size.height * 0.45);
-    riverPath.cubicTo(
-      size.width * 0.25,
-      size.height * 0.35,
-      size.width * 0.5,
-      size.height * 0.65,
-      size.width,
-      size.height * 0.55,
-    );
-    canvas.drawPath(riverPath, paintRiver);
-
-    canvas.drawLine(
-      Offset(size.width * 0.15, 0),
-      Offset(size.width * 0.85, size.height),
-      paintRoad,
-    );
-    canvas.drawLine(
-      Offset(0, size.height * 0.3),
-      Offset(size.width, size.height * 0.7),
-      paintRoad,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.5, 0),
-      Offset(size.width * 0.5, size.height),
-      paintRoad,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

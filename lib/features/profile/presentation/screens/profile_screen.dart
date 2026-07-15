@@ -16,10 +16,10 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userType = ref.watch(userTypeProvider);
+    final user = ref.watch(currentUserProvider);
 
-    // Mock kullanıcı bilgileri — ileride API'den gelecek
-    const mockDisplayName = 'Misafir Kullanıcı';
-    const mockEmail = 'kullanici@bicikalim.com';
+    final displayName = user?.displayName ?? 'Misafir Kullanıcı';
+    final email = user?.email ?? 'kullanici@bicikalim.com';
 
     return Scaffold(
       appBar: AppBar(
@@ -59,19 +59,18 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  const Text(
-                    mockDisplayName,
-                    style: TextStyle(
+                  Text(
+                    displayName,
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      
                     ),
                   ),
                   const SizedBox(height: 4),
 
-                  const Text(
-                    mockEmail,
-                    style: TextStyle(
+                  Text(
+                    email,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: BiCikalimTheme.textSecondary,
                     ),

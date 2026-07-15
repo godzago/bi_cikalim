@@ -18,6 +18,7 @@ class SignUpScreen extends ConsumerStatefulWidget {
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -26,6 +27,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -37,8 +39,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // TODO: FastAPI backend entegrasyonunda aktif edilecek.
-      await ref.read(userSessionProvider.notifier).signInAsUser();
+      await ref.read(userSessionProvider.notifier).signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        username: _usernameController.text.trim(),
+        fullName: _nameController.text.trim(),
+      );
 
       if (!mounted) return;
       // Kayıt sonrası şehir seçimine yönlendir
@@ -121,6 +127,21 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Kullanıcı Adı
+                AppTextField(
+                  label: 'Kullanıcı Adı',
+                  hintText: 'zago',
+                  controller: _usernameController,
+                  prefixIcon: Icons.alternate_email,
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Kullanıcı adı boş olamaz.';
+                    if (v.trim().length < 3) return 'Kullanıcı adı en az 3 karakter olmalıdır.';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 // E-posta
                 AppTextField(
                   label: 'E-posta Adresi',
@@ -142,14 +163,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 // Şifre
                 AppTextField(
                   label: 'Şifre',
-                  hintText: 'En az 6 karakter',
+                  hintText: 'En az 8 karakter',
                   controller: _passwordController,
                   isPassword: true,
                   prefixIcon: Icons.lock_outline,
                   textInputAction: TextInputAction.next,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Şifre boş olamaz.';
-                    if (v.length < 6) return 'Şifre en az 6 karakter olmalıdır.';
+                    if (v.length < 8) return 'Şifre en az 8 karakter olmalıdır.';
                     return null;
                   },
                 ),

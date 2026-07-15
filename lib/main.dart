@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/theme.dart';
 import 'core/router/router.dart';
+import 'core/config/api_config_loader.dart';
 
 /// Uygulama giriş noktası.
 /// Firebase bağımlılıkları kaldırıldı.
-/// Backend: İleride FastAPI + PostgreSQL + PostGIS entegre edilecek.
+/// Backend: FastAPI + PostgreSQL + PostGIS entegrasyonu.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Localhost API yapılandırmasını yükle
+  await ApiConfigLoader.initialize();
 
   runApp(
     const ProviderScope(

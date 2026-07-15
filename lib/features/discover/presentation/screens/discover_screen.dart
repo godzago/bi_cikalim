@@ -87,45 +87,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Sol Kısım: Başlık & Şehir Seçimi
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'BiÇıkalım',
-                style: TextStyle(
-                  color: BiCikalimTheme.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 26,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    color: BiCikalimTheme.primary,
-                    size: 13,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Eskişehir',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  const Icon(
-                    Icons.keyboard_arrow_down,
-                    color: BiCikalimTheme.primary,
-                    size: 14,
-                  ),
-                ],
-              ),
-            ],
+          // Sol Kısım: Başlık
+          const Text(
+            'BiÇıkalım',
+            style: TextStyle(
+              color: BiCikalimTheme.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 26,
+              height: 1.2,
+            ),
           ),
           // Sağ Kısım: Sade Profil İkonu
           GestureDetector(
