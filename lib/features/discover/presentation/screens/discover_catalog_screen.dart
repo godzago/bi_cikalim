@@ -1,191 +1,157 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/services/mock_data.dart';
+import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/api_models.dart';
+import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_refreshable_content.dart';
 
-class DiscoverCatalogScreen extends StatelessWidget {
+class DiscoverCatalogScreen extends ConsumerWidget {
   const DiscoverCatalogScreen({super.key});
 
+  Future<void> _refresh(WidgetRef ref) async {
+    ref
+      ..invalidate(categoriesProvider)
+      ..invalidate(subcategoriesProvider);
+    await ref.read(categoriesProvider.future);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(categoriesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Tum Kategoriler')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        children: [
-          const Text(
-            'Kategori, alt kategori ve aktivite bazli bir kesif duzeni. Buradan daha detayli listelemelere gecilebilir.',
-            style: TextStyle(
-              color: BiCikalimTheme.textSecondary,
-              fontSize: 13,
-              height: 1.4,
+      appBar: AppBar(title: const Text('Tüm Kategoriler')),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeOutCubic,
+        child: categoriesAsync.when(
+          loading: () => AppRefreshableContent(
+            key: const ValueKey('categories-loading'),
+            onRefresh: () => _refresh(ref),
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, _) => AppRefreshableContent(
+            key: const ValueKey('categories-error'),
+            onRefresh: () => _refresh(ref),
+            child: AppEmptyState(
+              icon: Icons.cloud_off,
+              message: 'Kategoriler yüklenemedi.\n$error',
             ),
           ),
-          const SizedBox(height: 20),
-          ...MockDatabase.categories.map((category) {
-            final activities = MockDatabase.getActivitiesForCategory(
-              category.id,
-            );
-            final subcategories = MockDatabase.getSubcategoriesForCategory(
-              category.id,
-            );
-            final venues = MockDatabase.getVenuesForCategory(category.id);
-
-            return Card(
-              margin: const EdgeInsets.only(bottom: 14),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: Colors.grey.shade100),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    InkWell(
-                      onTap: () => context.push(
-                        Uri(
-                          path: '/discover/results',
-                          queryParameters: {
-                            'categoryId': category.id,
-                            'title': category.name,
-                          },
-                        ).toString(),
+          data: (categories) => RefreshIndicator(
+            key: const ValueKey('categories-content'),
+            color: BiCikalimTheme.primary,
+            onRefresh: () => _refresh(ref),
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ExpansionTile(
+                    leading: CircleAvatar(
+                      backgroundColor: BiCikalimTheme.primary.withValues(
+                        alpha: 0.1,
                       ),
-                      borderRadius: BorderRadius.circular(18),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: BiCikalimTheme.primary.withValues(
-                                alpha: 0.08,
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              category.icon,
-                              color: BiCikalimTheme.primary,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  category.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${venues.length} mekan · ${subcategories.length} alt kategori · ${activities.length} aktivite',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: BiCikalimTheme.textSecondary,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                        ],
+                      child: Icon(
+                        category.iconData,
+                        color: BiCikalimTheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: subcategories.map((subcategory) {
-                        final venueCount = MockDatabase.getVenuesForSubcategory(
-                          subcategory.id,
-                        ).length;
-                        return InkWell(
-                          onTap: () => context.push(
-                            Uri(
-                              path: '/discover/results',
-                              queryParameters: {
-                                'categoryId': category.id,
-                                'subcategoryId': subcategory.id,
-                                'title': subcategory.name,
-                              },
-                            ).toString(),
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${subcategory.name} ($venueCount)',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: BiCikalimTheme.textPrimary,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                    title: Text(
+                      category.name,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: activities.take(4).map((activity) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: BiCikalimTheme.primary.withValues(
-                              alpha: 0.08,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            activity.name,
+                    subtitle: category.description == null
+                        ? null
+                        : Text(
+                            category.description!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: BiCikalimTheme.primary,
-                            ),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.storefront_outlined),
+                        title: const Text('Bu kategorideki tüm mekanlar'),
+                        onTap: () => _openResults(
+                          context,
+                          'categorySlug',
+                          category.slug,
+                          category.name,
+                        ),
+                      ),
+                      _Subcategories(category: category),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _openResults(
+    BuildContext context,
+    String key,
+    String slug,
+    String title,
+  ) {
+    context.push(
+      Uri(
+        path: '/discover/results',
+        queryParameters: {key: slug, 'title': title},
+      ).toString(),
+    );
+  }
+}
+
+class _Subcategories extends ConsumerWidget {
+  final ApiCategory category;
+
+  const _Subcategories({required this.category});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncValue = ref.watch(subcategoriesProvider(category.slug));
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeOutCubic,
+      child: asyncValue.when(
+        loading: () => const Padding(
+          key: ValueKey('subcategories-loading'),
+          padding: EdgeInsets.all(16),
+          child: LinearProgressIndicator(),
+        ),
+        error: (_, _) => const ListTile(
+          key: ValueKey('subcategories-error'),
+          title: Text('Alt kategoriler yüklenemedi'),
+        ),
+        data: (items) => Column(
+          key: const ValueKey('subcategories-content'),
+          children: items
+              .map(
+                (item) => ListTile(
+                  contentPadding: const EdgeInsets.only(left: 72, right: 20),
+                  title: Text(item.name),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => DiscoverCatalogScreen._openResults(
+                    context,
+                    'subcategorySlug',
+                    item.slug,
+                    item.name,
+                  ),
                 ),
-              ),
-            );
-          }),
-        ],
+              )
+              .toList(),
+        ),
       ),
     );
   }

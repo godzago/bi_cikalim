@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
+import 'app_pressable_scale.dart';
 
-/// Kategori kartı — görsel/icon destekli, dokunması kolay, mobil ergonomiye uygun.
-/// Her kategoriye sabit gradyan renk atanır.
+/// API kategori bilgisini gösteren modern keşif kartı.
 class CategoryCard extends StatelessWidget {
   final ApiCategory category;
   final VoidCallback onTap;
@@ -19,129 +19,116 @@ class CategoryCard extends StatelessWidget {
     this.margin = const EdgeInsets.only(right: 10),
   });
 
-  /// Kategori ID'sine göre gradyan renk çifti döner.
-  static List<Color> _gradientFor(String categoryId) {
-    switch (categoryId) {
-      case 'masaustu_oyunlar':
-        return [const Color(0xFFFF7043), const Color(0xFFFF5722)];
-      case 'dijital_oyunlar':
-        return [const Color(0xFF7E57C2), const Color(0xFF5C35C4)];
-      case 'salon_eglenceleri':
-        return [const Color(0xFFEF5350), const Color(0xFFB71C1C)];
-      case 'saha_sporlari':
-        return [const Color(0xFF26A69A), const Color(0xFF00796B)];
-      case 'bireysel_sporlar':
-        return [const Color(0xFF42A5F5), const Color(0xFF1565C0)];
-      case 'macera_deneyim':
-        return [const Color(0xFFFFCA28), const Color(0xFFF57F17)];
-      default:
-        return [BiCikalimTheme.primary, BiCikalimTheme.primaryDark];
-    }
-  }
-
-  /// Kategori ID'sine göre açıklama metni döner.
-  static String _subtitleFor(String categoryId) {
-    switch (categoryId) {
-      case 'masaustu_oyunlar':
-        return 'Catan, Tabu, Azul…';
-      case 'dijital_oyunlar':
-        return 'PS5, Switch, VR…';
-      case 'salon_eglenceleri':
-        return 'Bilardo, Karaoke…';
-      case 'saha_sporlari':
-        return 'Halı saha, Tenis…';
-      case 'bireysel_sporlar':
-        return 'Fitness, Yoga…';
-      case 'macera_deneyim':
-        return 'Boulder, Escape…';
-      default:
-        return '';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final gradient = _gradientFor(category.id);
-    final subtitle = _subtitleFor(category.id);
+    final description = category.description?.trim();
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedScale(
-        scale: 1.0,
-        duration: const Duration(milliseconds: 150),
+    return AppPressableScale(
+      child: GestureDetector(
+        onTap: onTap,
         child: Container(
           width: width,
           margin: margin,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: BiCikalimTheme.primary.withValues(alpha: 0.1),
             ),
-            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: gradient[0].withValues(alpha: 0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: 0.045),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Stack(
             children: [
-              // Dekoratif daire
               Positioned(
-                right: -16,
-                top: -16,
+                right: -22,
+                bottom: -24,
                 child: Container(
-                  width: 70,
-                  height: 70,
+                  width: 82,
+                  height: 82,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: BiCikalimTheme.primary.withValues(alpha: 0.045),
                     shape: BoxShape.circle,
                   ),
                 ),
               ),
-              // İçerik
               Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
+                padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // İkon
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        category.icon,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                BiCikalimTheme.primary,
+                                BiCikalimTheme.primaryDark,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: BiCikalimTheme.primary.withValues(
+                                  alpha: 0.2,
+                                ),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            category.icon,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: BiCikalimTheme.primary.withValues(
+                              alpha: 0.07,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_outward_rounded,
+                            color: BiCikalimTheme.primary,
+                            size: 15,
+                          ),
+                        ),
+                      ],
                     ),
                     const Spacer(),
-                    // Kategori adı
                     Text(
                       category.name,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        
+                        color: BiCikalimTheme.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                         height: 1.2,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 3),
+                    if (description != null && description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
                       Text(
-                        subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
+                        description,
+                        style: const TextStyle(
+                          color: BiCikalimTheme.textSecondary,
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
                         ),

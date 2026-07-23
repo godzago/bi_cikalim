@@ -1,280 +1,201 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/services/mock_data.dart';
+import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 
-class DiscoverSearchScreen extends StatefulWidget {
+class DiscoverSearchScreen extends ConsumerStatefulWidget {
   const DiscoverSearchScreen({super.key});
 
   @override
-  State<DiscoverSearchScreen> createState() => _DiscoverSearchScreenState();
+  ConsumerState<DiscoverSearchScreen> createState() =>
+      _DiscoverSearchScreenState();
 }
 
-class _DiscoverSearchScreenState extends State<DiscoverSearchScreen> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-    _controller.addListener(() => setState(() {}));
-  }
+class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
+  final TextEditingController _controller = TextEditingController();
+  Timer? _debounce;
+  String _query = '';
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) setState(() => _query = value.trim());
+    });
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final query = _controller.text.trim();
-    final categories = query.isEmpty
-        ? <ActivityCategory>[]
-        : MockDatabase.searchCategories(query);
-    final activities = query.isEmpty
-        ? <Activity>[]
-        : MockDatabase.searchActivities(query);
-    final venues = query.isEmpty
-        ? <Venue>[]
-        : MockDatabase.searchVenues(query).take(6).toList();
+    final selectedCity = ref.watch(selectedCityProvider).value;
+    final provider = _query.length < 2
+        ? null
+        : searchResultsProvider(
+            SearchFilters(
+              query: _query,
+              citySlug: selectedCity?.slug,
+              limit: 8,
+            ),
+          );
+    final resultAsync = provider == null ? null : ref.watch(provider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ara')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        children: [
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (value) => _openQueryResults(context, value),
-            decoration: InputDecoration(
-              hintText: 'Mekan, kategori veya aktivite ara...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: query.isEmpty
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: _controller.clear,
-                    ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          if (query.isEmpty) ...[
-            const Text(
-              'Denemek icin: Catan, karaoke, padel, FRP, bilardo',
-              style: TextStyle(
-                color: BiCikalimTheme.textSecondary,
-                fontSize: 13,
+      body: RefreshIndicator(
+        color: BiCikalimTheme.primary,
+        onRefresh: () async {
+          if (provider != null) {
+            ref.invalidate(provider);
+            await ref.read(provider.future);
+          } else {
+            ref.invalidate(selectedCityProvider);
+            await ref.read(selectedCityProvider.future);
+          }
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          children: [
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              onChanged: _onChanged,
+              decoration: InputDecoration(
+                hintText: 'Aktivite, mekan veya etkinlik ara...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _controller.text.isEmpty
+                    ? null
+                    : IconButton(
+                        onPressed: () {
+                          _controller.clear();
+                          _debounce?.cancel();
+                          setState(() => _query = '');
+                        },
+                        icon: const Icon(Icons.clear),
+                      ),
               ),
             ),
-            const SizedBox(height: 24),
-            _QuickSearchGrid(
-              onTap: (label) {
-                _controller.text = label;
-                _controller.selection = TextSelection.fromPosition(
-                  TextPosition(offset: _controller.text.length),
-                );
-              },
-            ),
-          ] else if (categories.isEmpty &&
-              activities.isEmpty &&
-              venues.isEmpty) ...[
-            const AppEmptyState(
-              icon: Icons.search_off,
-              message: 'Aramana uygun sonuc bulunamadi.',
-            ),
-          ] else ...[
-            if (categories.isNotEmpty) ...[
-              const _SearchSectionTitle(title: 'Kategoriler'),
-              const SizedBox(height: 10),
-              ...categories.map((category) {
-                return _SearchRow(
-                  icon: category.icon,
-                  title: category.name,
-                  subtitle:
-                      '${MockDatabase.getVenuesForCategory(category.id).length} mekan',
-                  onTap: () {
-                    context.push(
-                      Uri(
-                        path: '/discover/results',
-                        queryParameters: {
-                          'categoryId': category.id,
-                          'title': category.name,
-                        },
-                      ).toString(),
-                    );
-                  },
-                );
-              }),
-              const SizedBox(height: 16),
-            ],
-            if (activities.isNotEmpty) ...[
-              const _SearchSectionTitle(title: 'Aktiviteler'),
-              const SizedBox(height: 10),
-              ...activities.take(8).map((activity) {
-                final venuesForActivity = MockDatabase.getVenuesForActivity(
-                  activity.id,
-                );
-                return _SearchRow(
-                  icon: activity.icon,
-                  title: activity.name,
-                  subtitle: '${venuesForActivity.length} mekanda var',
-                  onTap: () {
-                    context.push(
-                      Uri(
-                        path: '/discover/results',
-                        queryParameters: {
-                          'activityId': activity.id,
-                          'title': activity.name,
-                        },
-                      ).toString(),
-                    );
-                  },
-                );
-              }),
-              const SizedBox(height: 16),
-            ],
-            if (venues.isNotEmpty) ...[
-              const _SearchSectionTitle(title: 'Mekanlar'),
-              const SizedBox(height: 10),
-              ...venues.map((venue) {
-                return _SearchRow(
-                  icon: Icons.storefront,
-                  title: venue.name,
-                  subtitle:
-                      '${venue.district} - ${venue.activityTags.take(2).join(' - ')}',
-                  onTap: () => context.push('/venues/${venue.id}'),
-                );
-              }),
-            ],
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () => _openQueryResults(context, query),
-              child: Text('"$query" icin tum sonuclari gor'),
-            ),
+            const SizedBox(height: 18),
+            if (_query.length < 2)
+              const Text(
+                'Aramak için en az iki karakter yaz.',
+                style: TextStyle(color: BiCikalimTheme.textSecondary),
+              )
+            else
+              resultAsync!.when(
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (error, _) => AppEmptyState(
+                  icon: Icons.cloud_off,
+                  message: 'Arama yapılamadı.\n$error',
+                ),
+                data: _buildResults,
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResults(ApiSearchResult result) {
+    if (result.total == 0) {
+      return const AppEmptyState(
+        icon: Icons.search_off,
+        message: 'Aramana uygun sonuç bulunamadı.',
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (result.taxonomy.isNotEmpty) ...[
+          const _SectionTitle('Aktiviteler ve kategoriler'),
+          ...result.taxonomy.map(_buildTaxonomyRow),
+          const SizedBox(height: 16),
         ],
-      ),
-    );
-  }
-
-  void _openQueryResults(BuildContext context, String rawQuery) {
-    final value = rawQuery.trim();
-    if (value.isEmpty) return;
-    context.push(
-      Uri(
-        path: '/discover/results',
-        queryParameters: {'query': value, 'title': '"$value" aramasi'},
-      ).toString(),
-    );
-  }
-}
-
-class _QuickSearchGrid extends StatelessWidget {
-  final ValueChanged<String> onTap;
-
-  const _QuickSearchGrid({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    const items = ['Masaustu', 'Bilardo', 'Karaoke', 'Padel', 'VR', 'FRP'];
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: items.map((item) {
-        return InkWell(
-          onTap: () => onTap(item),
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Text(
-              item,
-              style: const TextStyle(
-                color: BiCikalimTheme.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+        if (result.venues.isNotEmpty) ...[
+          const _SectionTitle('Mekanlar'),
+          ...result.venues.map(
+            (venue) => ListTile(
+              leading: const Icon(Icons.storefront_outlined),
+              title: Text(venue.name),
+              subtitle: Text(
+                venue.shortDescription ?? venue.city.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
+              onTap: () => context.push('/venues/${venue.slug}'),
             ),
           ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _SearchSectionTitle extends StatelessWidget {
-  final String title;
-
-  const _SearchSectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
-        
-      ),
-    );
-  }
-}
-
-class _SearchRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _SearchRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.grey.shade100),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-            shape: BoxShape.circle,
+          const SizedBox(height: 16),
+        ],
+        if (result.events.isNotEmpty) ...[
+          const _SectionTitle('Etkinlikler'),
+          ...result.events.map(
+            (event) => ListTile(
+              leading: const Icon(Icons.event_outlined),
+              title: Text(event.title),
+              subtitle: Text(event.city.name),
+              onTap: () => context.push('/events/${event.slug}'),
+            ),
           ),
-          child: Icon(icon, color: BiCikalimTheme.primary, size: 18),
-        ),
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          subtitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTaxonomyRow(ApiSearchTaxonomyItem item) {
+    final scope = switch (item.type) {
+      'category' => 'categorySlug',
+      'sub_category' || 'subcategory' => 'subcategorySlug',
+      _ => 'activitySlug',
+    };
+    return ListTile(
+      leading: Icon(
+        scope == 'activitySlug'
+            ? Icons.sports_esports
+            : Icons.category_outlined,
+      ),
+      title: Text(item.name),
+      subtitle: Text(item.type),
+      onTap: () => context.push(
+        Uri(
+          path: '/discover/results',
+          queryParameters: {scope: item.slug, 'title': item.name},
+        ).toString(),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
       ),
     );
   }

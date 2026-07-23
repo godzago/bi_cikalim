@@ -48,7 +48,6 @@ class AppPreviewCard extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: BiCikalimTheme.textPrimary,
-                
               ),
             ),
             const SizedBox(height: 6),

@@ -1,17 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
 /// Uygulama başlangıç splash ekranı.
-/// Animasyon sonrası session state'e göre yönlendirir:
-/// - Giriş yapılmamış → Onboarding
-/// - Normal kullanıcı → Discover
-/// - Mekan sahibi → Venue Owner Panel
+///
+/// Native splash ile aynı görselden başlar, hafifçe büyür ve sonraki ekrana
+/// geçmeden önce yumuşak biçimde kaybolur.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -21,37 +20,52 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  Timer? _navigationTimer;
+  late final AnimationController _controller;
+  late final Animation<double> _opacityAnimation;
+  late final Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2600),
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween<double>(1), weight: 72),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 28,
+      ),
+    ]).animate(_controller);
 
     _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+      begin: 1,
+      end: 1.035,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    _controller.forward();
-
-    _navigationTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) _navigate();
-    });
+    unawaited(_completeSplash());
   }
 
-  /// Session state'e göre yönlendirme kararı verir.
+  Future<void> _completeSplash() async {
+    try {
+      await Future.wait<void>([
+        _controller.forward().orCancel,
+        ref.read(userSessionProvider.future),
+      ], eagerError: true);
+    } on TickerCanceled {
+      return;
+    }
+
+    if (mounted) {
+      _navigate();
+    }
+  }
+
   void _navigate() {
     if (!mounted) return;
 
@@ -69,7 +83,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   void dispose() {
-    _navigationTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -77,65 +90,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BiCikalimTheme.primary,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.explore,
-                    size: 80,
-                    color: BiCikalimTheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'BiÇıkalım',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                    
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Şehrindeki Eğlenceyi Keşfet',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 48),
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-              ],
+      backgroundColor: const Color(0xFFFC4228),
+      body: FadeTransition(
+        opacity: _opacityAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: SizedBox.expand(
+            child: Image.asset(
+              'assets/splash.png',
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.high,
             ),
           ),
         ),

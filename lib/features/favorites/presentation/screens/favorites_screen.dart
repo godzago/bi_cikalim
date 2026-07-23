@@ -6,6 +6,7 @@ import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../../shared/widgets/app_segmented_option.dart';
 import '../../../../shared/widgets/event_list_card.dart';
 import '../../../../shared/widgets/venue_card.dart';
@@ -19,6 +20,16 @@ class FavoritesScreen extends ConsumerStatefulWidget {
 
 class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   int _selectedTab = 0;
+
+  Future<void> _refreshVenues() async {
+    ref.invalidate(favoriteVenuesProvider);
+    await ref.read(favoriteVenuesProvider.future);
+  }
+
+  Future<void> _refreshEvents() async {
+    ref.invalidate(favoriteEventsProvider);
+    await ref.read(favoriteEventsProvider.future);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,16 +47,18 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                 Expanded(
                   child: favoriteVenuesAsync.when(
                     loading: () => _buildToggleTab(0, 'Mekanlar (...)'),
-                    error: (_, __) => _buildToggleTab(0, 'Mekanlar (Hata)'),
-                    data: (list) => _buildToggleTab(0, 'Mekanlar (${list.length})'),
+                    error: (_, _) => _buildToggleTab(0, 'Mekanlar (Hata)'),
+                    data: (list) =>
+                        _buildToggleTab(0, 'Mekanlar (${list.length})'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: favoriteEventsAsync.when(
                     loading: () => _buildToggleTab(1, 'Etkinlikler (...)'),
-                    error: (_, __) => _buildToggleTab(1, 'Etkinlikler (Hata)'),
-                    data: (list) => _buildToggleTab(1, 'Etkinlikler (${list.length})'),
+                    error: (_, _) => _buildToggleTab(1, 'Etkinlikler (Hata)'),
+                    data: (list) =>
+                        _buildToggleTab(1, 'Etkinlikler (${list.length})'),
                   ),
                 ),
               ],
@@ -54,13 +67,35 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
           Expanded(
             child: _selectedTab == 0
                 ? favoriteVenuesAsync.when(
-                    loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
-                    error: (err, _) => Center(child: Text('Mekanlar yüklenemedi: $err')),
+                    loading: () => AppRefreshableContent(
+                      onRefresh: _refreshVenues,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: BiCikalimTheme.primary,
+                        ),
+                      ),
+                    ),
+                    error: (err, _) => AppRefreshableContent(
+                      onRefresh: _refreshVenues,
+                      child: Center(child: Text('Mekanlar yüklenemedi: $err')),
+                    ),
                     data: (list) => _buildSavedVenuesList(list),
                   )
                 : favoriteEventsAsync.when(
-                    loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
-                    error: (err, _) => Center(child: Text('Etkinlikler yüklenemedi: $err')),
+                    loading: () => AppRefreshableContent(
+                      onRefresh: _refreshEvents,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: BiCikalimTheme.primary,
+                        ),
+                      ),
+                    ),
+                    error: (err, _) => AppRefreshableContent(
+                      onRefresh: _refreshEvents,
+                      child: Center(
+                        child: Text('Etkinlikler yüklenemedi: $err'),
+                      ),
+                    ),
                     data: (list) => _buildSavedEventsList(list),
                   ),
           ),
@@ -83,16 +118,20 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
   Widget _buildSavedVenuesList(List<ApiVenue> list) {
     if (list.isEmpty) {
-      return const AppEmptyState(
-        icon: Icons.bookmark_border,
-        message: 'Henüz kaydettiğin bir mekan bulunmuyor.',
+      return AppRefreshableContent(
+        onRefresh: _refreshVenues,
+        child: const AppEmptyState(
+          icon: Icons.bookmark_border,
+          message: 'Henüz kaydettiğin bir mekan bulunmuyor.',
+        ),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(favoriteVenuesProvider),
+      onRefresh: _refreshVenues,
       color: BiCikalimTheme.primary,
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         itemCount: list.length,
         itemBuilder: (context, index) {
@@ -108,36 +147,28 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
   Widget _buildSavedEventsList(List<ApiEvent> list) {
     if (list.isEmpty) {
-      return const AppEmptyState(
-        icon: Icons.event_busy,
-        message: 'Henüz kaydettiğin bir etkinlik bulunmuyor.',
+      return AppRefreshableContent(
+        onRefresh: _refreshEvents,
+        child: const AppEmptyState(
+          icon: Icons.event_busy,
+          message: 'Henüz kaydettiğin bir etkinlik bulunmuyor.',
+        ),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(favoriteEventsProvider),
+      onRefresh: _refreshEvents,
       color: BiCikalimTheme.primary,
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         itemCount: list.length,
         itemBuilder: (context, index) {
           final event = list[index];
-          final venue = ApiVenue(
-            id: event.venueId,
-            name: event.venue?.name ?? 'Mekan',
-            slug: event.venue?.slug ?? 'mekan',
-            venueType: 'cafe',
-            city: ApiLocationSummary(id: '1', name: 'Eskişehir', slug: 'eskisehir'),
-            isVerified: true,
-            isFavorite: false,
-            activitySummary: const [],
-            coverUrl: event.coverUrl,
-          );
 
           return EventListCard(
             event: event,
-            venue: venue,
-            onTap: () => context.push('/venues/${venue.slug}'),
+            onTap: () => context.push('/events/${event.slug}'),
           );
         },
       ),

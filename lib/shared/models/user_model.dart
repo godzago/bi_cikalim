@@ -3,10 +3,11 @@
 /// İleride FastAPI backend'inden gelecek response'a göre güncellenecek.
 class AppUser {
   final String id;
+  final String username;
   final String displayName;
   final String email;
   final String? phone;
-  final String? city;
+  final String? selectedCityId;
   final String? avatarUrl;
   final List<String> roles;
   final DateTime createdAt;
@@ -14,10 +15,11 @@ class AppUser {
 
   const AppUser({
     required this.id,
+    this.username = '',
     required this.displayName,
     required this.email,
     this.phone,
-    this.city,
+    this.selectedCityId,
     this.avatarUrl,
     required this.roles,
     required this.createdAt,
@@ -28,10 +30,11 @@ class AppUser {
   factory AppUser.fromMap(String id, Map<String, dynamic> map) {
     return AppUser(
       id: id,
+      username: (map['username'] ?? map['displayName']) as String? ?? '',
       displayName: map['displayName'] as String? ?? '',
       email: map['email'] as String? ?? '',
       phone: map['phone'] as String?,
-      city: map['city'] as String?,
+      selectedCityId: (map['selected_city_id'] ?? map['city'])?.toString(),
       avatarUrl: map['avatarUrl'] as String?,
       roles: List<String>.from(map['roles'] as List? ?? ['user']),
       createdAt: map['createdAt'] != null
@@ -47,9 +50,10 @@ class AppUser {
   Map<String, dynamic> toMap() {
     return {
       'displayName': displayName,
+      'username': username,
       'email': email,
       'phone': phone,
-      'city': city,
+      'selected_city_id': selectedCityId,
       'avatarUrl': avatarUrl,
       'roles': roles,
       'createdAt': createdAt.toIso8601String(),
@@ -59,20 +63,22 @@ class AppUser {
 
   /// Kopyalama (immutable güncelleme için).
   AppUser copyWith({
+    String? username,
     String? displayName,
     String? email,
     String? phone,
-    String? city,
+    String? selectedCityId,
     String? avatarUrl,
     List<String>? roles,
     DateTime? updatedAt,
   }) {
     return AppUser(
       id: id,
+      username: username ?? this.username,
       displayName: displayName ?? this.displayName,
       email: email ?? this.email,
       phone: phone ?? this.phone,
-      city: city ?? this.city,
+      selectedCityId: selectedCityId ?? this.selectedCityId,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       roles: roles ?? this.roles,
       createdAt: createdAt,

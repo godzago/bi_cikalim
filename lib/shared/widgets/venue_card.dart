@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
+import 'app_pressable_scale.dart';
 import 'app_network_image.dart';
 
 class VenueCard extends StatelessWidget {
@@ -17,17 +18,19 @@ class VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.only(bottom: dense ? 10 : 14),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade100),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: dense ? _buildDenseCard() : _buildDefaultCard(),
+    return AppPressableScale(
+      child: Card(
+        margin: EdgeInsets.only(bottom: dense ? 10 : 14),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade100),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: dense ? _buildDenseCard() : _buildDefaultCard(),
+        ),
       ),
     );
   }
@@ -159,7 +162,6 @@ class VenueCard extends StatelessWidget {
               color: BiCikalimTheme.textPrimary,
               fontSize: fontSize,
               fontWeight: FontWeight.bold,
-              
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

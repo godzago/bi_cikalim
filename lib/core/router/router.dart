@@ -11,22 +11,22 @@ import '../../features/discover/presentation/screens/discover_search_screen.dart
 import '../../features/discover/presentation/screens/discover_catalog_screen.dart';
 import '../../features/discover/presentation/screens/discover_results_screen.dart';
 import '../../features/events/presentation/screens/events_screen.dart';
+import '../../features/events/presentation/screens/event_detail_screen.dart';
+import '../../features/events/presentation/screens/event_swipe_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/map/presentation/screens/map_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/screens/submission_screen.dart';
 import '../../features/venues/presentation/screens/venue_detail_screen.dart';
 
 /// Uygulama router konfigürasyonu.
-/// Mock session tabanlı — Firebase Auth kaldırıldı.
+/// Gerçek API oturumu ve public misafir akışını kullanan yönlendirme.
 /// Redirect mantığı: userTypeProvider üzerinden Riverpod consumer widget'larında yönetilir.
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   routes: [
     // Splash
-    GoRoute(
-      path: '/splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
 
     // Onboarding — Kullanıcı tipi seçimi
     GoRoute(
@@ -84,6 +84,10 @@ final GoRouter appRouter = GoRouter(
                 final subcategoryId =
                     state.uri.queryParameters['subcategoryId'];
                 final activityId = state.uri.queryParameters['activityId'];
+                final categorySlug = state.uri.queryParameters['categorySlug'];
+                final subcategorySlug =
+                    state.uri.queryParameters['subcategorySlug'];
+                final activitySlug = state.uri.queryParameters['activitySlug'];
                 final title = state.uri.queryParameters['title'];
 
                 return DiscoverResultsScreen(
@@ -91,6 +95,9 @@ final GoRouter appRouter = GoRouter(
                   categoryId: categoryId,
                   subcategoryId: subcategoryId,
                   activityId: activityId,
+                  categorySlug: categorySlug,
+                  subcategorySlug: subcategorySlug,
+                  activitySlug: activitySlug,
                   title: title,
                 );
               },
@@ -100,11 +107,14 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/events',
           builder: (context, state) => const EventsScreen(),
+          routes: [
+            GoRoute(
+              path: 'tonight',
+              builder: (context, state) => const EventSwipeScreen(),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/map',
-          builder: (context, state) => const MapScreen(),
-        ),
+        GoRoute(path: '/map', builder: (context, state) => const MapScreen()),
         GoRoute(
           path: '/favorites',
           builder: (context, state) => const FavoritesScreen(),
@@ -123,6 +133,27 @@ final GoRouter appRouter = GoRouter(
         final venueId = state.pathParameters['venueId']!;
         return VenueDetailScreen(venueId: venueId);
       },
+    ),
+    GoRoute(
+      path: '/events/:eventSlug',
+      builder: (context, state) {
+        return EventDetailScreen(eventSlug: state.pathParameters['eventSlug']!);
+      },
+    ),
+    GoRoute(
+      path: '/submissions/venue',
+      builder: (context, state) =>
+          const SubmissionScreen(type: SubmissionType.venueSuggestion),
+    ),
+    GoRoute(
+      path: '/submissions/ownership',
+      builder: (context, state) =>
+          const SubmissionScreen(type: SubmissionType.ownership),
+    ),
+    GoRoute(
+      path: '/submissions/taxonomy',
+      builder: (context, state) =>
+          const SubmissionScreen(type: SubmissionType.taxonomy),
     ),
   ],
 );

@@ -47,7 +47,6 @@ class _AppTextFieldState extends State<AppTextField> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: BiCikalimTheme.textPrimary,
-            
           ),
         ),
         const SizedBox(height: 6),
@@ -66,16 +65,23 @@ class _AppTextFieldState extends State<AppTextField> {
           decoration: InputDecoration(
             hintText: widget.hintText,
             prefixIcon: widget.prefixIcon != null
-                ? Icon(widget.prefixIcon, color: BiCikalimTheme.textLight, size: 20)
+                ? Icon(
+                    widget.prefixIcon,
+                    color: BiCikalimTheme.textLight,
+                    size: 20,
+                  )
                 : null,
             suffixIcon: widget.isPassword
                 ? IconButton(
                     icon: Icon(
-                      _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureText
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: BiCikalimTheme.textLight,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _obscureText = !_obscureText),
+                    onPressed: () =>
+                        setState(() => _obscureText = !_obscureText),
                   )
                 : null,
           ),

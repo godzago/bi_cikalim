@@ -39,12 +39,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await ref.read(userSessionProvider.notifier).signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        username: _usernameController.text.trim(),
-        fullName: _nameController.text.trim(),
-      );
+      await ref
+          .read(userSessionProvider.notifier)
+          .signUp(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            username: _usernameController.text.trim(),
+            fullName: _nameController.text.trim(),
+          );
 
       if (!mounted) return;
       // Kayıt sonrası şehir seçimine yönlendir
@@ -98,7 +100,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: BiCikalimTheme.textPrimary,
-                    
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -120,8 +121,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   prefixIcon: Icons.person_outline,
                   textInputAction: TextInputAction.next,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'İsim boş olamaz.';
-                    if (v.trim().length < 2) return 'İsim en az 2 karakter olmalıdır.';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'İsim boş olamaz.';
+                    }
+                    if (v.trim().length < 2) {
+                      return 'İsim en az 2 karakter olmalıdır.';
+                    }
                     return null;
                   },
                 ),
@@ -135,8 +140,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   prefixIcon: Icons.alternate_email,
                   textInputAction: TextInputAction.next,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Kullanıcı adı boş olamaz.';
-                    if (v.trim().length < 3) return 'Kullanıcı adı en az 3 karakter olmalıdır.';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Kullanıcı adı boş olamaz.';
+                    }
+                    if (v.trim().length < 3) {
+                      return 'Kullanıcı adı en az 3 karakter olmalıdır.';
+                    }
                     return null;
                   },
                 ),
@@ -151,7 +160,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   prefixIcon: Icons.email_outlined,
                   textInputAction: TextInputAction.next,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'E-posta boş olamaz.';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'E-posta boş olamaz.';
+                    }
                     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
                       return 'Geçerli bir e-posta adresi girin.';
                     }
@@ -170,7 +181,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   textInputAction: TextInputAction.next,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Şifre boş olamaz.';
-                    if (v.length < 8) return 'Şifre en az 8 karakter olmalıdır.';
+                    if (v.length < 8) {
+                      return 'Şifre en az 8 karakter olmalıdır.';
+                    }
                     return null;
                   },
                 ),
@@ -186,8 +199,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _signUp(),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Şifre tekrar boş olamaz.';
-                    if (v != _passwordController.text) return 'Şifreler eşleşmiyor.';
+                    if (v == null || v.isEmpty) {
+                      return 'Şifre tekrar boş olamaz.';
+                    }
+                    if (v != _passwordController.text) {
+                      return 'Şifreler eşleşmiyor.';
+                    }
                     return null;
                   },
                 ),
@@ -216,8 +233,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 const SizedBox(height: 32),
 
                 // Giriş Yap yönlendirmesi
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const Text(
                       'Zaten hesabın var mı?  ',

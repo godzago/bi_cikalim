@@ -16,11 +16,27 @@ class AuthException implements Exception {
 class ServiceException implements Exception {
   final String message;
   final String? code;
+  final int? statusCode;
+  final String? requestId;
+  final dynamic details;
 
-  const ServiceException({required this.message, this.code});
+  const ServiceException({
+    required this.message,
+    this.code,
+    this.statusCode,
+    this.requestId,
+    this.details,
+  });
+
+  bool get isUnauthorized => statusCode == 401;
+  bool get isForbidden => statusCode == 403;
+  bool get isNotFound => statusCode == 404;
+  bool get isConflict => statusCode == 409;
+  bool get isValidationError => statusCode == 422;
+  bool get isRateLimited => statusCode == 429;
 
   @override
-  String toString() => 'ServiceException($code): $message';
+  String toString() => message;
 }
 
 /// Hata mesajı çevirisi (ileride backend hata kodları için).

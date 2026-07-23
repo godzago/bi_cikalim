@@ -39,7 +39,7 @@ class ApiCategory {
       id: json['id']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       slug: json['slug'] as String? ?? '',
-      iconName: json['icon_name'] as String?,
+      iconName: (json['icon'] ?? json['icon_name']) as String?,
       description: json['description'] as String?,
       isActive: json['is_active'] as bool? ?? true,
       sortOrder: json['sort_order'] as int? ?? 0,
@@ -135,9 +135,9 @@ class ApiActivity {
       categoryId: json['category_id']?.toString() ?? '',
       subcategoryId: json['sub_category_id']?.toString(),
       description: json['description'] as String?,
-      kind: json['kind'] as String? ?? 'other',
-      minPeople: json['min_people'] as int? ?? 1,
-      maxPeople: json['max_people'] as int? ?? 10,
+      kind: (json['activity_kind'] ?? json['kind']) as String? ?? 'other',
+      minPeople: (json['min_participants'] ?? json['min_people']) as int? ?? 1,
+      maxPeople: (json['max_participants'] ?? json['max_people']) as int? ?? 10,
     );
   }
 
@@ -206,20 +206,24 @@ class ApiVenueActivitySummary {
   final String activityId;
   final String activityName;
   final String activitySlug;
-  final String status;
-  final String priceType;
-  final bool requiresReservation;
-  final bool isFeatured;
+  final String availability;
+  final bool isPaid;
+  final double? price;
+  final String? priceUnit;
+  final String? shortDescription;
+  final DateTime? lastVerifiedAt;
 
   const ApiVenueActivitySummary({
     required this.id,
     required this.activityId,
     required this.activityName,
     required this.activitySlug,
-    required this.status,
-    required this.priceType,
-    required this.requiresReservation,
-    required this.isFeatured,
+    required this.availability,
+    required this.isPaid,
+    this.price,
+    this.priceUnit,
+    this.shortDescription,
+    this.lastVerifiedAt,
   });
 
   factory ApiVenueActivitySummary.fromJson(Map<String, dynamic> json) {
@@ -228,14 +232,22 @@ class ApiVenueActivitySummary {
       activityId: json['activity_id']?.toString() ?? '',
       activityName: json['activity_name'] as String? ?? '',
       activitySlug: json['activity_slug'] as String? ?? '',
-      status: json['status'] as String? ?? 'available',
-      priceType: json['price_type'] as String? ?? 'free',
-      requiresReservation: json['requires_reservation'] as bool? ?? false,
-      isFeatured: json['is_featured'] as bool? ?? false,
+      availability:
+          (json['availability'] ?? json['status']) as String? ?? 'available',
+      isPaid:
+          json['is_paid'] as bool? ?? (json['price_type'] as String?) == 'paid',
+      price: _toDouble(json['price']),
+      priceUnit: json['price_unit'] as String?,
+      shortDescription: json['short_description'] as String?,
+      lastVerifiedAt: _toDateTime(json['last_verified_at']),
     );
   }
 
-  bool get isFree => priceType.toLowerCase() == 'free';
+  bool get isFree => !isPaid;
+  String get status => availability;
+  String get priceType => isPaid ? 'paid' : 'free';
+  bool get requiresReservation => false;
+  bool get isFeatured => false;
 }
 
 class ApiVenueOpeningHour {
@@ -329,7 +341,7 @@ class ApiVenue {
     required this.isVerified,
     required this.isFavorite,
     required this.activitySummary,
-    
+
     // Detail-only
     this.description,
     this.address,
@@ -355,17 +367,28 @@ class ApiVenue {
       slug: json['slug'] as String? ?? '',
       shortDescription: json['short_description'] as String?,
       venueType: json['venue_type'] as String? ?? 'other',
-      city: ApiLocationSummary.fromJson(json['city'] as Map<String, dynamic>? ?? {}),
-      district: json['district'] != null 
-          ? ApiLocationSummary.fromJson(json['district'] as Map<String, dynamic>)
+      city: ApiLocationSummary.fromJson(
+        json['city'] as Map<String, dynamic>? ?? {},
+      ),
+      district: json['district'] != null
+          ? ApiLocationSummary.fromJson(
+              json['district'] as Map<String, dynamic>,
+            )
           : null,
       coverUrl: json['cover_url'] as String?,
       isVerified: json['is_verified'] as bool? ?? false,
       isFavorite: json['is_favorite'] as bool? ?? false,
-      activitySummary: (json['activity_summary'] as List? ?? json['activities_summary'] as List? ?? [])
-          .map((item) => ApiVenueActivitySummary.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      
+      activitySummary:
+          (json['activity_summary'] as List? ??
+                  json['activities_summary'] as List? ??
+                  [])
+              .map(
+                (item) => ApiVenueActivitySummary.fromJson(
+                  item as Map<String, dynamic>,
+                ),
+              )
+              .toList(),
+
       // Detail-only
       description: json['description'] as String?,
       address: json['address'] as String?,
@@ -376,11 +399,16 @@ class ApiVenue {
       email: json['email'] as String?,
       instagramUrl: json['instagram_url'] as String?,
       websiteUrl: json['website_url'] as String?,
-      neighborhood: json['neighborhood'] != null 
-          ? ApiLocationSummary.fromJson(json['neighborhood'] as Map<String, dynamic>)
+      neighborhood: json['neighborhood'] != null
+          ? ApiLocationSummary.fromJson(
+              json['neighborhood'] as Map<String, dynamic>,
+            )
           : null,
       openingHours: (json['opening_hours'] as List? ?? [])
-          .map((item) => ApiVenueOpeningHour.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) =>
+                ApiVenueOpeningHour.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       tags: (json['tags'] as List? ?? [])
           .map((item) => ApiTagSummary.fromJson(item as Map<String, dynamic>))
@@ -483,6 +511,7 @@ class ApiEvent {
   final String? coverUrl;
   final List<ApiEventActivitySummary> activities;
   final bool isFavorite;
+  final String? attendanceStatus;
 
   // Detail-only fields
   final String? description;
@@ -510,6 +539,7 @@ class ApiEvent {
     this.coverUrl,
     required this.activities,
     required this.isFavorite,
+    this.attendanceStatus,
 
     // Detail-only
     this.description,
@@ -534,15 +564,21 @@ class ApiEvent {
       minPrice: _toDouble(json['min_price']),
       maxPrice: _toDouble(json['max_price']),
       currency: json['currency'] as String? ?? 'TRY',
-      city: ApiLocationSummary.fromJson(json['city'] as Map<String, dynamic>? ?? {}),
-      venue: json['venue'] != null 
+      city: ApiLocationSummary.fromJson(
+        json['city'] as Map<String, dynamic>? ?? {},
+      ),
+      venue: json['venue'] != null
           ? ApiEventVenueSummary.fromJson(json['venue'] as Map<String, dynamic>)
           : null,
       coverUrl: json['cover_url'] as String?,
       activities: (json['activities'] as List? ?? [])
-          .map((item) => ApiEventActivitySummary.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) =>
+                ApiEventActivitySummary.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       isFavorite: json['is_favorite'] as bool? ?? false,
+      attendanceStatus: json['attendance_status'] as String?,
 
       // Detail-only
       description: json['description'] as String?,
@@ -557,19 +593,26 @@ class ApiEvent {
   }
 
   String get priceInfo {
-    if (priceType.toLowerCase() == 'free') return 'Ücretsiz';
+    final normalized = priceType.toLowerCase();
+    if (normalized == 'free') return 'Ücretsiz';
+    if (normalized == 'reservation_required') {
+      return 'Rezervasyon gerekli';
+    }
+    if (normalized == 'included_with_entry') return 'Girişe dahil';
     if (minPrice != null && maxPrice != null) {
       return '$minPrice - $maxPrice $currency';
     }
     if (minPrice != null) {
       return '$minPrice $currency\'den başlayan';
     }
-    return 'Rezervasyon Gerekli';
+    if (normalized == 'paid') return 'Ücretli';
+    return 'Fiyat bilgisi yok';
   }
 
   String get imageUrl => coverUrl ?? '';
-  String get category => activities.isNotEmpty ? activities.first.name : 'Etkinlik';
-  DateTime get startDate => startAt;
+  String get category =>
+      activities.isNotEmpty ? activities.first.name : 'Etkinlik';
+  DateTime get startDate => startAt.toLocal();
   String get venueId => venue?.id ?? '';
 }
 
@@ -606,6 +649,7 @@ class ApiReview {
   final String id;
   final String venueId;
   final String userId;
+  final String? activityId;
   final int rating;
   final String? comment;
   final String status;
@@ -617,6 +661,7 @@ class ApiReview {
     required this.id,
     required this.venueId,
     required this.userId,
+    this.activityId,
     required this.rating,
     this.comment,
     required this.status,
@@ -630,6 +675,7 @@ class ApiReview {
       id: json['id']?.toString() ?? '',
       venueId: json['venue_id']?.toString() ?? '',
       userId: json['user_id']?.toString() ?? '',
+      activityId: json['activity_id']?.toString(),
       rating: json['rating'] as int? ?? 5,
       comment: json['comment'] as String?,
       status: json['status'] as String? ?? 'published',
@@ -639,7 +685,10 @@ class ApiReview {
     );
   }
 
-  String get userDisplayName => 'Kullanıcı (${userId.substring(0, 4)})';
+  String get userDisplayName {
+    final shortId = userId.length <= 4 ? userId : userId.substring(0, 4);
+    return 'Kullanıcı ($shortId)';
+  }
 }
 
 class ApiContentReport {
@@ -681,4 +730,273 @@ class ApiContentReport {
       updatedAt: _toDateTime(json['updated_at']) ?? DateTime.now(),
     );
   }
+}
+
+class ApiDataResponse<T> {
+  final T data;
+
+  const ApiDataResponse(this.data);
+
+  factory ApiDataResponse.fromJson(
+    Map<String, dynamic> json,
+    T Function(Map<String, dynamic>) decoder,
+  ) {
+    return ApiDataResponse(
+      decoder(json['data'] as Map<String, dynamic>? ?? const {}),
+    );
+  }
+}
+
+class ApiPaginatedResponse<T> {
+  final List<T> items;
+  final int total;
+  final int page;
+  final int pageSize;
+  final int pages;
+
+  const ApiPaginatedResponse({
+    required this.items,
+    required this.total,
+    required this.page,
+    required this.pageSize,
+    required this.pages,
+  });
+
+  factory ApiPaginatedResponse.fromJson(
+    Map<String, dynamic> json,
+    T Function(Map<String, dynamic>) decoder,
+  ) {
+    return ApiPaginatedResponse(
+      items: (json['items'] as List? ?? const [])
+          .map((item) => decoder(item as Map<String, dynamic>))
+          .toList(),
+      total: json['total'] as int? ?? 0,
+      page: json['page'] as int? ?? 1,
+      pageSize: json['page_size'] as int? ?? 20,
+      pages: json['pages'] as int? ?? 0,
+    );
+  }
+}
+
+class ApiCity {
+  final String id;
+  final String name;
+  final String slug;
+  final String? plateCode;
+  final String countryCode;
+  final bool hasContent;
+  final String launchStatus;
+  final String? emptyStateTitle;
+  final String? emptyStateDescription;
+
+  const ApiCity({
+    required this.id,
+    required this.name,
+    required this.slug,
+    this.plateCode,
+    required this.countryCode,
+    required this.hasContent,
+    required this.launchStatus,
+    this.emptyStateTitle,
+    this.emptyStateDescription,
+  });
+
+  factory ApiCity.fromJson(Map<String, dynamic> json) {
+    return ApiCity(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      plateCode: json['plate_code']?.toString(),
+      countryCode: json['country_code'] as String? ?? 'TR',
+      hasContent: json['has_content'] as bool? ?? false,
+      launchStatus: json['launch_status'] as String? ?? 'planned',
+      emptyStateTitle: json['empty_state_title'] as String?,
+      emptyStateDescription: json['empty_state_description'] as String?,
+    );
+  }
+}
+
+class ApiSearchTaxonomyItem {
+  final String id;
+  final String type;
+  final String name;
+  final String slug;
+
+  const ApiSearchTaxonomyItem({
+    required this.id,
+    required this.type,
+    required this.name,
+    required this.slug,
+  });
+
+  factory ApiSearchTaxonomyItem.fromJson(Map<String, dynamic> json) {
+    return ApiSearchTaxonomyItem(
+      id: json['id']?.toString() ?? '',
+      type: json['type'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+    );
+  }
+}
+
+class ApiSearchVenueItem {
+  final String id;
+  final String name;
+  final String slug;
+  final ApiLocationSummary city;
+  final String? shortDescription;
+
+  const ApiSearchVenueItem({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.city,
+    this.shortDescription,
+  });
+
+  factory ApiSearchVenueItem.fromJson(Map<String, dynamic> json) {
+    return ApiSearchVenueItem(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      city: ApiLocationSummary.fromJson(
+        json['city'] as Map<String, dynamic>? ?? const {},
+      ),
+      shortDescription: json['short_description'] as String?,
+    );
+  }
+}
+
+class ApiSearchEventItem {
+  final String id;
+  final String title;
+  final String slug;
+  final ApiLocationSummary city;
+
+  const ApiSearchEventItem({
+    required this.id,
+    required this.title,
+    required this.slug,
+    required this.city,
+  });
+
+  factory ApiSearchEventItem.fromJson(Map<String, dynamic> json) {
+    return ApiSearchEventItem(
+      id: json['id']?.toString() ?? '',
+      title: json['title'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      city: ApiLocationSummary.fromJson(
+        json['city'] as Map<String, dynamic>? ?? const {},
+      ),
+    );
+  }
+}
+
+class ApiSearchResult {
+  final String query;
+  final List<ApiSearchTaxonomyItem> taxonomy;
+  final List<ApiSearchVenueItem> venues;
+  final List<ApiSearchEventItem> events;
+  final int total;
+
+  const ApiSearchResult({
+    required this.query,
+    required this.taxonomy,
+    required this.venues,
+    required this.events,
+    required this.total,
+  });
+
+  factory ApiSearchResult.fromJson(Map<String, dynamic> json) {
+    return ApiSearchResult(
+      query: json['query'] as String? ?? '',
+      taxonomy: (json['taxonomy'] as List? ?? const [])
+          .map(
+            (item) =>
+                ApiSearchTaxonomyItem.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      venues: (json['venues'] as List? ?? const [])
+          .map(
+            (item) => ApiSearchVenueItem.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      events: (json['events'] as List? ?? const [])
+          .map(
+            (item) => ApiSearchEventItem.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      total: json['total'] as int? ?? 0,
+    );
+  }
+}
+
+class ApiSubmissionReceipt {
+  final String id;
+  final String status;
+  final DateTime? createdAt;
+
+  const ApiSubmissionReceipt({
+    required this.id,
+    required this.status,
+    this.createdAt,
+  });
+
+  factory ApiSubmissionReceipt.fromJson(Map<String, dynamic> json) {
+    return ApiSubmissionReceipt(
+      id: json['id']?.toString() ?? '',
+      status: json['status'] as String? ?? 'pending',
+      createdAt: _toDateTime(json['created_at']),
+    );
+  }
+}
+
+class ApiMedia {
+  final String id;
+  final String? publicUrl;
+  final String mimeType;
+  final int fileSize;
+  final String mediaType;
+  final String visibility;
+  final String status;
+
+  const ApiMedia({
+    required this.id,
+    this.publicUrl,
+    required this.mimeType,
+    required this.fileSize,
+    required this.mediaType,
+    required this.visibility,
+    required this.status,
+  });
+
+  factory ApiMedia.fromJson(Map<String, dynamic> json) {
+    return ApiMedia(
+      id: json['id']?.toString() ?? '',
+      publicUrl: json['public_url'] as String?,
+      mimeType: json['mime_type'] as String? ?? '',
+      fileSize: json['file_size'] as int? ?? 0,
+      mediaType: json['media_type'] as String? ?? 'image',
+      visibility: json['visibility'] as String? ?? 'public',
+      status: json['status'] as String? ?? 'uploaded',
+    );
+  }
+}
+
+abstract final class AnalyticsEventName {
+  static const search = 'search';
+  static const activityFilter = 'activity_filter';
+  static const venueView = 'venue_view';
+  static const favorite = 'favorite';
+  static const eventView = 'event_view';
+  static const qrPageView = 'qr_page_view';
+
+  static const values = {
+    search,
+    activityFilter,
+    venueView,
+    favorite,
+    eventView,
+    qrPageView,
+  };
 }

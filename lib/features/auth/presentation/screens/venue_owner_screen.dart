@@ -18,9 +18,7 @@ class VenueOwnerScreen extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             // Header
-            SliverToBoxAdapter(
-              child: _buildHeader(context, ref),
-            ),
+            SliverToBoxAdapter(child: _buildHeader(context, ref)),
 
             // Özellik Kartları
             SliverPadding(
@@ -90,10 +88,7 @@ class VenueOwnerScreen extends ConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            BiCikalimTheme.primary,
-            BiCikalimTheme.primaryDark,
-          ],
+          colors: [BiCikalimTheme.primary, BiCikalimTheme.primaryDark],
         ),
       ),
       child: Column(
@@ -129,11 +124,7 @@ class VenueOwnerScreen extends ConsumerWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.construction,
-                      color: Colors.white,
-                      size: 14,
-                    ),
+                    Icon(Icons.construction, color: Colors.white, size: 14),
                     SizedBox(width: 6),
                     Text(
                       'Geliştiriliyor',
@@ -156,11 +147,7 @@ class VenueOwnerScreen extends ConsumerWidget {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: const Icon(
-              Icons.storefront,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: const Icon(Icons.storefront, color: Colors.white, size: 32),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -169,7 +156,6 @@ class VenueOwnerScreen extends ConsumerWidget {
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.bold,
-              
             ),
           ),
           const SizedBox(height: 8),
@@ -185,7 +171,9 @@ class VenueOwnerScreen extends ConsumerWidget {
           // Keşfet moduna git
           GestureDetector(
             onTap: () {
-              ref.read(userTypeProvider.notifier).setUserType(UserType.normalUser);
+              ref
+                  .read(userTypeProvider.notifier)
+                  .setUserType(UserType.normalUser);
               context.go(AppConstants.discoverRoute);
             },
             child: Container(
@@ -197,11 +185,7 @@ class VenueOwnerScreen extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.explore,
-                    color: BiCikalimTheme.primary,
-                    size: 18,
-                  ),
+                  Icon(Icons.explore, color: BiCikalimTheme.primary, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'Keşfet moduna geç',
@@ -266,7 +250,7 @@ class VenueOwnerScreen extends ConsumerWidget {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          
+
                           color: BiCikalimTheme.textPrimary,
                         ),
                       ),
@@ -336,7 +320,7 @@ class VenueOwnerScreen extends ConsumerWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              
+
               color: BiCikalimTheme.textPrimary,
             ),
             textAlign: TextAlign.center,

@@ -1,34 +1,123 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../../shared/models/api_models.dart';
+import '../../shared/models/user_model.dart';
+import '../errors/app_exception.dart';
 import '../network/api_client.dart';
 
-class TaxonomyApiService {
-  final Dio _dio = ApiClient.instance.dio;
+abstract class _ApiService {
+  final Dio dio = ApiClient.instance.dio;
 
-  Future<List<ApiCategory>> fetchCategories() async {
+  Map<String, dynamic> mapData(Response<dynamic> response) {
+    return response.data as Map<String, dynamic>? ?? const {};
+  }
+
+  Map<String, dynamic> wrappedData(Response<dynamic> response) {
+    return mapData(response)['data'] as Map<String, dynamic>? ?? const {};
+  }
+
+  Never fail(Object error) => throw apiServiceException(error);
+}
+
+class TaxonomyApiService extends _ApiService {
+  Future<ApiPaginatedResponse<ApiCategory>> fetchCategoriesPage({
+    int page = 1,
+    int pageSize = 100,
+  }) async {
     try {
-      final response = await _dio.get('/activity-categories');
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiCategory.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get(
+        '/activity-categories',
+        queryParameters: {'page': page, 'page_size': pageSize},
+      );
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiCategory.fromJson,
+      );
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<List<ApiSubcategory>> fetchSubcategories({String? categorySlug}) async {
+  Future<List<ApiCategory>> fetchCategories() async {
+    return (await fetchCategoriesPage()).items;
+  }
+
+  Future<ApiCategory> fetchCategory(String slug) async {
     try {
-      final response = await _dio.get(
+      final response = await dio.get('/activity-categories/$slug');
+      return ApiCategory.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<ApiPaginatedResponse<ApiSubcategory>> fetchSubcategoriesPage({
+    int page = 1,
+    int pageSize = 100,
+    String? categorySlug,
+  }) async {
+    try {
+      final response = await dio.get(
         '/activity-sub-categories',
         queryParameters: {
-          if (categorySlug != null) 'category_slug': categorySlug,
+          'page': page,
+          'page_size': pageSize,
+          'category_slug': ?categorySlug,
         },
       );
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiSubcategory.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiSubcategory.fromJson,
+      );
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<List<ApiSubcategory>> fetchSubcategories({
+    String? categorySlug,
+  }) async {
+    return (await fetchSubcategoriesPage(categorySlug: categorySlug)).items;
+  }
+
+  Future<ApiSubcategory> fetchSubcategory(String slug) async {
+    try {
+      final response = await dio.get('/activity-sub-categories/$slug');
+      return ApiSubcategory.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<ApiPaginatedResponse<ApiActivity>> fetchActivitiesPage({
+    int page = 1,
+    int pageSize = 100,
+    String? categorySlug,
+    String? subCategorySlug,
+    String? q,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/activities',
+        queryParameters: {
+          'page': page,
+          'page_size': pageSize,
+          'category_slug': ?categorySlug,
+          'sub_category_slug': ?subCategorySlug,
+          'q': ?q,
+        },
+      );
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiActivity.fromJson,
+      );
+    } catch (error) {
+      fail(error);
     }
   }
 
@@ -37,114 +126,277 @@ class TaxonomyApiService {
     String? subCategorySlug,
     String? q,
   }) async {
+    return (await fetchActivitiesPage(
+      categorySlug: categorySlug,
+      subCategorySlug: subCategorySlug,
+      q: q,
+    )).items;
+  }
+
+  Future<ApiActivity> fetchActivity(String slug) async {
     try {
-      final response = await _dio.get(
-        '/activities',
-        queryParameters: {
-          if (categorySlug != null) 'category_slug': categorySlug,
-          if (subCategorySlug != null) 'sub_category_slug': subCategorySlug,
-          if (q != null) 'q': q,
-        },
-      );
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiActivity.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get('/activities/$slug');
+      return ApiActivity.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
     }
   }
 }
 
-class VenueApiService {
-  final Dio _dio = ApiClient.instance.dio;
+class UserApiService extends _ApiService {
+  Future<ApiPaginatedResponse<ApiCity>> fetchCities({
+    int page = 1,
+    int pageSize = 100,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/cities',
+        queryParameters: {'page': page, 'page_size': pageSize},
+      );
+      return ApiPaginatedResponse.fromJson(mapData(response), ApiCity.fromJson);
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<ApiCity> fetchCity(String slug) async {
+    try {
+      final response = await dio.get('/cities/$slug');
+      return ApiCity.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<AppUser> updateProfile({String? fullName, String? username}) async {
+    try {
+      final response = await dio.patch(
+        '/users/me',
+        data: {'full_name': ?fullName, 'username': ?username},
+      );
+      return appUserFromApi(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<AppUser> updateSelectedCity(String cityId) async {
+    try {
+      final response = await dio.put(
+        '/users/me/selected-city',
+        data: {'city_id': cityId},
+      );
+      return appUserFromApi(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+}
+
+class VenueApiService extends _ApiService {
+  Future<ApiPaginatedResponse<ApiVenue>> fetchVenuesPage({
+    int page = 1,
+    int pageSize = 20,
+    String? citySlug,
+    String? districtSlug,
+    String? neighborhoodSlug,
+    String? activityCategorySlug,
+    String? activitySubCategorySlug,
+    String? activitySlug,
+    String? tagSlug,
+    String? q,
+    bool? hasCoordinates,
+    bool? isVerified,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/venues',
+        queryParameters: {
+          'page': page,
+          'page_size': pageSize,
+          'city_slug': ?citySlug,
+          'district_slug': ?districtSlug,
+          'neighborhood_slug': ?neighborhoodSlug,
+          'activity_category_slug': ?activityCategorySlug,
+          'activity_sub_category_slug': ?activitySubCategorySlug,
+          'activity_slug': ?activitySlug,
+          'tag_slug': ?tagSlug,
+          'q': ?q,
+          'has_coordinates': ?hasCoordinates,
+          'is_verified': ?isVerified,
+        },
+      );
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiVenue.fromJson,
+      );
+    } catch (error) {
+      fail(error);
+    }
+  }
 
   Future<List<ApiVenue>> fetchVenues({
     int page = 1,
     int pageSize = 20,
     String? citySlug,
     String? districtSlug,
+    String? neighborhoodSlug,
     String? activityCategorySlug,
+    String? activitySubCategorySlug,
     String? activitySlug,
+    String? tagSlug,
     String? q,
+    bool? hasCoordinates,
+    bool? isVerified,
   }) async {
-    try {
-      final response = await _dio.get(
-        '/venues',
-        queryParameters: {
-          'page': page,
-          'page_size': pageSize,
-          if (citySlug != null) 'city_slug': citySlug,
-          if (districtSlug != null) 'district_slug': districtSlug,
-          if (activityCategorySlug != null) 'activity_category_slug': activityCategorySlug,
-          if (activitySlug != null) 'activity_slug': activitySlug,
-          if (q != null) 'q': q,
-        },
-      );
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiVenue.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
-    }
+    return (await fetchVenuesPage(
+      page: page,
+      pageSize: pageSize,
+      citySlug: citySlug,
+      districtSlug: districtSlug,
+      neighborhoodSlug: neighborhoodSlug,
+      activityCategorySlug: activityCategorySlug,
+      activitySubCategorySlug: activitySubCategorySlug,
+      activitySlug: activitySlug,
+      tagSlug: tagSlug,
+      q: q,
+      hasCoordinates: hasCoordinates,
+      isVerified: isVerified,
+    )).items;
   }
 
   Future<ApiVenue> fetchVenueDetail(String slug) async {
     try {
-      final response = await _dio.get('/venues/$slug');
-      final data = response.data as Map<String, dynamic>;
-      return ApiVenue.fromJson(data['data'] as Map<String, dynamic>);
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get('/venues/$slug');
+      return ApiVenue.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<List<ApiVenueActivitySummary>> fetchVenueActivities(String slug) async {
+  Future<List<ApiVenueActivitySummary>> fetchVenueActivities(
+    String slug,
+  ) async {
     try {
-      final response = await _dio.get('/venues/$slug/activities');
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiVenueActivitySummary.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get('/venues/$slug/activities');
+      return (mapData(response)['items'] as List? ?? const [])
+          .map(
+            (item) =>
+                ApiVenueActivitySummary.fromJson(item as Map<String, dynamic>),
+          )
+          .toList();
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<List<ApiVenue>> fetchFavoriteVenues() async {
+  Future<ApiPaginatedResponse<ApiVenue>> fetchVenuesForDiscovery({
+    required String scope,
+    required String slug,
+    required String citySlug,
+    int page = 1,
+    int pageSize = 20,
+    String? districtSlug,
+    String? neighborhoodSlug,
+    String? tagSlug,
+    String? q,
+  }) async {
+    final prefix = switch (scope) {
+      'category' => 'activity-categories',
+      'subcategory' => 'activity-sub-categories',
+      _ => 'activities',
+    };
     try {
-      final response = await _dio.get('/users/me/favorite-venues');
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiVenue.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get(
+        '/$prefix/$slug/venues',
+        queryParameters: {
+          'city_slug': citySlug,
+          'page': page,
+          'page_size': pageSize,
+          'district_slug': ?districtSlug,
+          'neighborhood_slug': ?neighborhoodSlug,
+          'tag_slug': ?tagSlug,
+          'q': ?q,
+        },
+      );
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiVenue.fromJson,
+      );
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<bool> addFavoriteVenue(String venueId) async {
+  Future<List<ApiVenue>> fetchFavoriteVenues({
+    int page = 1,
+    int pageSize = 100,
+  }) async {
     try {
-      final response = await _dio.post('/users/me/favorite-venues/$venueId');
-      final responseData = response.data as Map<String, dynamic>;
-      final data = responseData['data'] as Map<String, dynamic>? ?? {};
-      return data['is_favorite'] as bool? ?? true;
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get(
+        '/users/me/favorite-venues',
+        queryParameters: {'page': page, 'page_size': pageSize},
+      );
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiVenue.fromJson,
+      ).items;
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<bool> removeFavoriteVenue(String venueId) async {
+  Future<bool> addFavoriteVenue(String venueId) =>
+      _setFavorite('/users/me/favorite-venues/$venueId', true);
+
+  Future<bool> removeFavoriteVenue(String venueId) =>
+      _setFavorite('/users/me/favorite-venues/$venueId', false);
+
+  Future<bool> _setFavorite(String path, bool value) async {
     try {
-      final response = await _dio.delete('/users/me/favorite-venues/$venueId');
-      final responseData = response.data as Map<String, dynamic>;
-      final data = responseData['data'] as Map<String, dynamic>? ?? {};
-      return data['is_favorite'] as bool? ?? false;
-    } catch (e) {
-      throw _handleError(e);
+      final response = value ? await dio.post(path) : await dio.delete(path);
+      return wrappedData(response)['is_favorite'] as bool? ?? value;
+    } catch (error) {
+      fail(error);
     }
   }
 }
 
-class EventApiService {
-  final Dio _dio = ApiClient.instance.dio;
+class EventApiService extends _ApiService {
+  Future<ApiPaginatedResponse<ApiEvent>> fetchEventsPage({
+    int page = 1,
+    int pageSize = 20,
+    String? citySlug,
+    String? venueSlug,
+    String? activitySlug,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? priceType,
+    String? q,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/events',
+        queryParameters: {
+          'page': page,
+          'page_size': pageSize,
+          'city_slug': ?citySlug,
+          'venue_slug': ?venueSlug,
+          'activity_slug': ?activitySlug,
+          if (dateFrom != null) 'date_from': dateFrom.toIso8601String(),
+          if (dateTo != null) 'date_to': dateTo.toIso8601String(),
+          'price_type': ?priceType,
+          'q': ?q,
+        },
+      );
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiEvent.fromJson,
+      );
+    } catch (error) {
+      fail(error);
+    }
+  }
 
   Future<List<ApiEvent>> fetchEvents({
     int page = 1,
@@ -157,143 +409,169 @@ class EventApiService {
     String? priceType,
     String? q,
   }) async {
-    try {
-      final response = await _dio.get(
-        '/events',
-        queryParameters: {
-          'page': page,
-          'page_size': pageSize,
-          if (citySlug != null) 'city_slug': citySlug,
-          if (venueSlug != null) 'venue_slug': venueSlug,
-          if (activitySlug != null) 'activity_slug': activitySlug,
-          if (dateFrom != null) 'date_from': dateFrom.toIso8601String(),
-          if (dateTo != null) 'date_to': dateTo.toIso8601String(),
-          if (priceType != null) 'price_type': priceType,
-          if (q != null) 'q': q,
-        },
-      );
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiEvent.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
-    }
+    return (await fetchEventsPage(
+      page: page,
+      pageSize: pageSize,
+      citySlug: citySlug,
+      venueSlug: venueSlug,
+      activitySlug: activitySlug,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+      priceType: priceType,
+      q: q,
+    )).items;
   }
 
   Future<ApiEvent> fetchEventDetail(String slug) async {
     try {
-      final response = await _dio.get('/events/$slug');
-      final data = response.data as Map<String, dynamic>;
-      return ApiEvent.fromJson(data['data'] as Map<String, dynamic>);
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get('/events/$slug');
+      return ApiEvent.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<ApiEventAttendance> setAttendance(String eventId, String status) async {
+  Future<ApiEventAttendance> setAttendance(
+    String eventId,
+    String status,
+  ) async {
+    if (!const {'interested', 'going', 'not_going'}.contains(status)) {
+      throw const ServiceException(
+        message: 'Geçersiz katılım durumu.',
+        code: 'client_validation_error',
+        statusCode: 422,
+      );
+    }
     try {
-      final response = await _dio.post(
+      final response = await dio.post(
         '/events/$eventId/attendance',
         data: {'status': status},
       );
-      final data = response.data as Map<String, dynamic>;
-      return ApiEventAttendance.fromJson(data['data'] as Map<String, dynamic>);
-    } catch (e) {
-      throw _handleError(e);
+      return ApiEventAttendance.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
     }
   }
 
   Future<void> deleteAttendance(String eventId) async {
     try {
-      await _dio.delete('/events/$eventId/attendance');
-    } catch (e) {
-      throw _handleError(e);
+      await dio.delete('/events/$eventId/attendance');
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<List<ApiEvent>> fetchFavoriteEvents() async {
+  Future<List<ApiEvent>> fetchFavoriteEvents({
+    int page = 1,
+    int pageSize = 100,
+  }) async {
     try {
-      final response = await _dio.get('/users/me/favorite-events');
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiEvent.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
+      final response = await dio.get(
+        '/users/me/favorite-events',
+        queryParameters: {'page': page, 'page_size': pageSize},
+      );
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiEvent.fromJson,
+      ).items;
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<bool> addFavoriteEvent(String eventId) async {
-    try {
-      final response = await _dio.post('/users/me/favorite-events/$eventId');
-      final responseData = response.data as Map<String, dynamic>;
-      final data = responseData['data'] as Map<String, dynamic>? ?? {};
-      return data['is_favorite'] as bool? ?? true;
-    } catch (e) {
-      throw _handleError(e);
-    }
-  }
+  Future<bool> addFavoriteEvent(String eventId) =>
+      _setFavorite('/users/me/favorite-events/$eventId', true);
 
-  Future<bool> removeFavoriteEvent(String eventId) async {
+  Future<bool> removeFavoriteEvent(String eventId) =>
+      _setFavorite('/users/me/favorite-events/$eventId', false);
+
+  Future<bool> _setFavorite(String path, bool value) async {
     try {
-      final response = await _dio.delete('/users/me/favorite-events/$eventId');
-      final responseData = response.data as Map<String, dynamic>;
-      final data = responseData['data'] as Map<String, dynamic>? ?? {};
-      return data['is_favorite'] as bool? ?? false;
-    } catch (e) {
-      throw _handleError(e);
+      final response = value ? await dio.post(path) : await dio.delete(path);
+      return wrappedData(response)['is_favorite'] as bool? ?? value;
+    } catch (error) {
+      fail(error);
     }
   }
 }
 
-class InteractionApiService {
-  final Dio _dio = ApiClient.instance.dio;
-
-  Future<List<ApiReview>> fetchVenueReviews(String venueId, {int page = 1, int pageSize = 20}) async {
+class InteractionApiService extends _ApiService {
+  Future<ApiPaginatedResponse<ApiReview>> fetchVenueReviewsPage(
+    String venueId, {
+    String? activityId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     try {
-      final response = await _dio.get(
+      final response = await dio.get(
         '/venues/$venueId/reviews',
         queryParameters: {
+          'activity_id': ?activityId,
           'page': page,
           'page_size': pageSize,
         },
       );
-      final data = response.data as Map<String, dynamic>;
-      final list = data['items'] as List? ?? [];
-      return list.map((item) => ApiReview.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw _handleError(e);
+      return ApiPaginatedResponse.fromJson(
+        mapData(response),
+        ApiReview.fromJson,
+      );
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<ApiReview> createReview(String venueId, int rating, String? comment) async {
+  Future<List<ApiReview>> fetchVenueReviews(
+    String venueId, {
+    String? activityId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    return (await fetchVenueReviewsPage(
+      venueId,
+      activityId: activityId,
+      page: page,
+      pageSize: pageSize,
+    )).items;
+  }
+
+  Future<ApiReview> createReview(
+    String venueId,
+    int rating,
+    String? comment, {
+    String? activityId,
+  }) async {
+    _validateRating(rating);
     try {
-      final response = await _dio.post(
+      final response = await dio.post(
         '/venues/$venueId/reviews',
         data: {
           'rating': rating,
-          if (comment != null) 'comment': comment,
+          'comment': ?comment,
+          'activity_id': ?activityId,
         },
       );
-      final data = response.data as Map<String, dynamic>;
-      return ApiReview.fromJson(data['data'] as Map<String, dynamic>);
-    } catch (e) {
-      throw _handleError(e);
+      return ApiReview.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
     }
   }
 
-  Future<ApiReview> updateMyReview(String venueId, int? rating, String? comment) async {
+  Future<ApiReview> updateMyReview(
+    String venueId,
+    int? rating,
+    String? comment, {
+    String? activityId,
+  }) async {
+    if (rating != null) _validateRating(rating);
     try {
-      final response = await _dio.patch(
+      final response = await dio.patch(
         '/venues/$venueId/reviews/me',
-        data: {
-          if (rating != null) 'rating': rating,
-          if (comment != null) 'comment': comment,
-        },
+        queryParameters: {'activity_id': ?activityId},
+        data: {'rating': ?rating, 'comment': ?comment},
       );
-      final data = response.data as Map<String, dynamic>;
-      return ApiReview.fromJson(data['data'] as Map<String, dynamic>);
-    } catch (e) {
-      throw _handleError(e);
+      return ApiReview.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
     }
   }
 
@@ -304,33 +582,297 @@ class InteractionApiService {
     String? description,
   }) async {
     try {
-      final response = await _dio.post(
+      final response = await dio.post(
         '/reports',
         data: {
           'target_type': targetType,
           'target_id': targetId,
           'reason': reason,
-          if (description != null) 'description': description,
+          'description': ?description,
         },
       );
-      final data = response.data as Map<String, dynamic>;
-      return ApiContentReport.fromJson(data['data'] as Map<String, dynamic>);
-    } catch (e) {
-      throw _handleError(e);
+      return ApiContentReport.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  void _validateRating(int rating) {
+    if (rating < 1 || rating > 5) {
+      throw const ServiceException(
+        message: 'Puan 1 ile 5 arasında olmalıdır.',
+        code: 'client_validation_error',
+        statusCode: 422,
+      );
     }
   }
 }
 
-Exception _handleError(dynamic e) {
-  if (e is DioException) {
-    if (e.response != null && e.response!.data is Map<String, dynamic>) {
-      final data = e.response!.data as Map<String, dynamic>;
-      final detail = data['detail'];
-      if (detail is String) {
-        return Exception(detail);
-      }
+class SearchApiService extends _ApiService {
+  Future<ApiSearchResult> search({
+    required String query,
+    String? citySlug,
+    int limit = 8,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/search',
+        queryParameters: {'q': query, 'city_slug': ?citySlug, 'limit': limit},
+      );
+      return ApiSearchResult.fromJson(mapData(response));
+    } catch (error) {
+      fail(error);
     }
-    return Exception(e.message ?? 'Ağ hatası oluştu.');
   }
-  return Exception(e.toString());
+}
+
+class SubmissionApiService extends _ApiService {
+  Future<ApiSubmissionReceipt> createVenueSuggestion({
+    required String cityId,
+    required String name,
+    String? address,
+    String? googleMapsUrl,
+    String? instagramUrl,
+    String? note,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/venue-suggestions',
+        data: {
+          'city_id': cityId,
+          'name': name,
+          'address': ?address,
+          'google_maps_url': ?googleMapsUrl,
+          'instagram_url': ?instagramUrl,
+          'note': ?note,
+        },
+      );
+      return ApiSubmissionReceipt.fromJson(mapData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<ApiSubmissionReceipt> createOwnershipApplication({
+    String? venueId,
+    String? requestedVenueName,
+    String? businessName,
+    required String contactName,
+    required String contactPhone,
+    required String contactEmail,
+    String? proofMediaId,
+    String? message,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/venue-ownership-applications',
+        data: {
+          'venue_id': ?venueId,
+          'requested_venue_name': ?requestedVenueName,
+          'business_name': ?businessName,
+          'contact_name': contactName,
+          'contact_phone': contactPhone,
+          'contact_email': contactEmail,
+          'proof_media_id': ?proofMediaId,
+          'message': ?message,
+        },
+      );
+      return ApiSubmissionReceipt.fromJson(mapData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<ApiSubmissionReceipt> createTaxonomyRequest({
+    required String requestType,
+    required String name,
+    String? description,
+    String? categoryId,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/taxonomy-requests',
+        data: {
+          'request_type': requestType,
+          'name': name,
+          'description': ?description,
+          'category_id': ?categoryId,
+        },
+      );
+      return ApiSubmissionReceipt.fromJson(mapData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+}
+
+class MediaApiService extends _ApiService {
+  Future<ApiMedia> fetchMedia(String mediaId) async {
+    try {
+      final response = await dio.get('/media/$mediaId');
+      return ApiMedia.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  Future<ApiMedia> uploadImage({
+    required String filePath,
+    required String usageType,
+    String visibility = 'public',
+  }) async {
+    try {
+      final form = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+        'usage_type': usageType,
+        'visibility': visibility,
+      });
+      final response = await dio.post(
+        '/uploads/image',
+        data: form,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+      return ApiMedia.fromJson(wrappedData(response));
+    } catch (error) {
+      fail(error);
+    }
+  }
+}
+
+class AnalyticsApiService extends _ApiService {
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static const _anonymousIdKey = 'analytics_anonymous_id';
+  static final String _sessionId = _newId('session');
+
+  void track({
+    required String eventName,
+    String? cityId,
+    String? venueId,
+    String? activityId,
+    String? eventRefId,
+    Map<String, dynamic> properties = const {},
+  }) {
+    unawaited(
+      send(
+        eventName: eventName,
+        cityId: cityId,
+        venueId: venueId,
+        activityId: activityId,
+        eventRefId: eventRefId,
+        properties: properties,
+      ),
+    );
+  }
+
+  Future<bool> send({
+    required String eventName,
+    String? cityId,
+    String? venueId,
+    String? activityId,
+    String? eventRefId,
+    Map<String, dynamic> properties = const {},
+  }) async {
+    if (!AnalyticsEventName.values.contains(eventName)) {
+      debugPrint('Analytics event reddedildi: $eventName');
+      return false;
+    }
+
+    try {
+      final anonymousId = await _getAnonymousId();
+      await dio.post(
+        '/analytics/track',
+        data: {
+          'event_name': eventName,
+          'anonymous_id': anonymousId,
+          'session_id': _sessionId,
+          'city_id': ?cityId,
+          'venue_id': ?venueId,
+          'activity_id': ?activityId,
+          'event_ref_id': ?eventRefId,
+          'platform': 'flutter',
+          'app_version': '1.0.0',
+          'properties': properties,
+        },
+      );
+      return true;
+    } catch (error) {
+      debugPrint('Analytics gönderilemedi: ${apiServiceException(error).code}');
+      return false;
+    }
+  }
+
+  Future<String> _getAnonymousId() async {
+    final existing = await _storage.read(key: _anonymousIdKey);
+    if (existing != null && existing.isNotEmpty) return existing;
+    final generated = _newId('install');
+    await _storage.write(key: _anonymousIdKey, value: generated);
+    return generated;
+  }
+
+  static String _newId(String prefix) {
+    final random = Random.secure();
+    final entropy = List.generate(
+      4,
+      (_) => random.nextInt(0x7fffffff).toRadixString(16),
+    ).join();
+    return '$prefix-${DateTime.now().microsecondsSinceEpoch}-$entropy';
+  }
+}
+
+AppUser appUserFromApi(Map<String, dynamic> json) {
+  final role = json['role'] as String? ?? 'user';
+  return AppUser(
+    id: json['id']?.toString() ?? '',
+    username: json['username'] as String? ?? '',
+    displayName:
+        json['full_name'] as String? ?? json['username'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    selectedCityId: json['selected_city_id']?.toString(),
+    roles: [role],
+    createdAt:
+        DateTime.tryParse(json['created_at'] as String? ?? '') ??
+        DateTime.now(),
+    updatedAt:
+        DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+        DateTime.now(),
+  );
+}
+
+ServiceException apiServiceException(Object error) {
+  if (error is ServiceException) return error;
+  if (error is DioException) {
+    final response = error.response;
+    final responseData = response?.data;
+    final data = responseData is Map<String, dynamic>
+        ? responseData
+        : const <String, dynamic>{};
+    final errorBody = data['error'] is Map<String, dynamic>
+        ? data['error'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+    final statusCode = response?.statusCode;
+    final fallbackMessage = switch (statusCode) {
+      401 => 'Oturumunuz sona erdi. Lütfen tekrar giriş yapın.',
+      403 => 'Bu işlem için yetkiniz bulunmuyor.',
+      404 => 'İstenen kayıt bulunamadı.',
+      409 => 'Bu işlem mevcut kayıtla çakışıyor.',
+      422 => 'Gönderilen bilgileri kontrol edin.',
+      429 => 'Çok fazla istek gönderildi. Lütfen biraz bekleyin.',
+      _ =>
+        error.type == DioExceptionType.connectionTimeout ||
+                error.type == DioExceptionType.receiveTimeout
+            ? 'API bağlantısı zaman aşımına uğradı.'
+            : 'API sunucusuna bağlanılamadı.',
+    };
+    return ServiceException(
+      message:
+          errorBody['message'] as String? ??
+          data['detail'] as String? ??
+          fallbackMessage,
+      code: errorBody['code'] as String? ?? 'api_error',
+      statusCode: statusCode,
+      requestId: response?.headers.value('x-request-id'),
+      details: errorBody['details'] ?? data['detail'],
+    );
+  }
+  return ServiceException(message: error.toString(), code: 'unexpected_error');
 }

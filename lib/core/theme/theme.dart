@@ -19,7 +19,9 @@ class BiCikalimTheme {
   static const Color error = Color(0xFFE53935);
 
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme);
+    final baseTextTheme = GoogleFonts.poppinsTextTheme(
+      ThemeData.light().textTheme,
+    );
 
     return ThemeData(
       useMaterial3: true,

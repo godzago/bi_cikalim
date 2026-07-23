@@ -1,15 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/services/api_auth_service.dart';
 import '../../../../shared/models/user_model.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/services/api_providers.dart';
 
 /// Uygulama kullanıcı tipi.
 /// Normal kullanıcı keşif akışına, mekan sahibi ise mekan paneline yönlenir.
-enum UserType {
-  normalUser,
-  venueOwner,
-}
+enum UserType { normalUser, venueOwner }
 
 // ---------------------------------------------------------------------------
 // Service Provider
@@ -35,8 +35,9 @@ class CurrentUserNotifier extends Notifier<AppUser?> {
 }
 
 /// Aktif kullanıcı provider'ı.
-final currentUserProvider =
-    NotifierProvider<CurrentUserNotifier, AppUser?>(CurrentUserNotifier.new);
+final currentUserProvider = NotifierProvider<CurrentUserNotifier, AppUser?>(
+  CurrentUserNotifier.new,
+);
 
 /// Kullanıcı tipi (Normal/Mekan Sahibi) state'ini yöneten Notifier.
 class UserTypeNotifier extends Notifier<UserType?> {
@@ -49,8 +50,9 @@ class UserTypeNotifier extends Notifier<UserType?> {
 }
 
 /// Aktif kullanıcı tipi provider'ı.
-final userTypeProvider =
-    NotifierProvider<UserTypeNotifier, UserType?>(UserTypeNotifier.new);
+final userTypeProvider = NotifierProvider<UserTypeNotifier, UserType?>(
+  UserTypeNotifier.new,
+);
 
 /// Giriş yapılmış mı?
 final isLoggedInProvider = Provider<bool>((ref) {
@@ -81,6 +83,12 @@ class UserSessionNotifier extends AsyncNotifier<void> {
 
   @override
   Future<void> build() async {
+    final subscription = ApiClient.instance.sessionExpired.listen((_) {
+      ref.read(currentUserProvider.notifier).setUser(null);
+      ref.read(userTypeProvider.notifier).setUserType(null);
+    });
+    ref.onDispose(() => unawaited(subscription.cancel()));
+
     // Uygulama açılışında kayıtlı oturum kontrolü
     await checkSavedSession();
   }
@@ -90,18 +98,15 @@ class UserSessionNotifier extends AsyncNotifier<void> {
     try {
       final token = await ApiClient.instance.getToken();
       if (token != null && token.isNotEmpty) {
-        if (token == 'mock_user_token') {
-          _loadMockUserSession();
-          return;
-        } else if (token == 'mock_owner_token') {
-          _loadMockOwnerSession();
-          return;
+        var user = await _authService.fetchCurrentUser();
+        final selectedCity = await ref.read(selectedCityProvider.future);
+        if (selectedCity != null && user.selectedCityId != selectedCity.id) {
+          user = await ref
+              .read(userApiServiceProvider)
+              .updateSelectedCity(selectedCity.id);
         }
-
-        // Gerçek backend'den kullanıcı profil bilgilerini çek
-        final user = await _authService.fetchCurrentUser();
         ref.read(currentUserProvider.notifier).setUser(user);
-        
+
         final type = user.roles.contains('venue_owner')
             ? UserType.venueOwner
             : UserType.normalUser;
@@ -109,55 +114,34 @@ class UserSessionNotifier extends AsyncNotifier<void> {
       }
     } catch (e) {
       debugPrint('Kayıtlı oturum yüklenirken hata oluştu: $e');
-      await ApiClient.instance.clearToken();
+      await ApiClient.instance.clearSession();
+      ref.read(currentUserProvider.notifier).setUser(null);
+      ref.read(userTypeProvider.notifier).setUserType(null);
     }
   }
 
-  void _loadMockUserSession() {
-    final mockUser = AppUser(
-      id: 'mock_user',
-      displayName: 'Misafir Kullanıcı',
-      email: 'misafir@bicikalim.com',
-      roles: const ['user'],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    ref.read(currentUserProvider.notifier).setUser(mockUser);
-    ref.read(userTypeProvider.notifier).setUserType(UserType.normalUser);
-  }
-
-  void _loadMockOwnerSession() {
-    final mockOwner = AppUser(
-      id: 'mock_owner',
-      displayName: 'Mekan Sahibi',
-      email: 'owner@bicikalim.com',
-      roles: const ['venue_owner'],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    ref.read(currentUserProvider.notifier).setUser(mockOwner);
-    ref.read(userTypeProvider.notifier).setUserType(UserType.venueOwner);
-  }
-
   /// Kullanıcı girişi yap.
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     state = const AsyncLoading();
     try {
       await _authService.login(email: email, password: password);
-      
+
       // Giriş başarılı olduysa kullanıcı profil bilgilerini backend'den çek
-      final user = await _authService.fetchCurrentUser();
-      
+      var user = await _authService.fetchCurrentUser();
+      final selectedCity = await ref.read(selectedCityProvider.future);
+      if (selectedCity != null && user.selectedCityId != selectedCity.id) {
+        user = await ref
+            .read(userApiServiceProvider)
+            .updateSelectedCity(selectedCity.id);
+      }
+
       ref.read(currentUserProvider.notifier).setUser(user);
-      
+
       final type = user.roles.contains('venue_owner')
           ? UserType.venueOwner
           : UserType.normalUser;
       ref.read(userTypeProvider.notifier).setUserType(type);
-      
+
       state = const AsyncData(null);
     } catch (e, stack) {
       state = AsyncError(e, stack);
@@ -190,20 +174,12 @@ class UserSessionNotifier extends AsyncNotifier<void> {
     }
   }
 
-  /// Normal kullanıcı olarak (Misafir/Mock) devam et.
-  Future<void> signInAsMockUser() async {
+  /// Public API akışına oturumsuz devam et.
+  Future<void> continueAsGuest() async {
     state = const AsyncLoading();
-    // API olmadan hızlı geçiş için geçici token
-    await ApiClient.instance.saveToken('mock_user_token');
-    _loadMockUserSession();
-    state = const AsyncData(null);
-  }
-
-  /// Mekan sahibi olarak (Mock) devam et.
-  Future<void> signInAsMockVenueOwner() async {
-    state = const AsyncLoading();
-    await ApiClient.instance.saveToken('mock_owner_token');
-    _loadMockOwnerSession();
+    await ApiClient.instance.clearSession();
+    ref.read(currentUserProvider.notifier).setUser(null);
+    ref.read(userTypeProvider.notifier).setUserType(null);
     state = const AsyncData(null);
   }
 
@@ -218,5 +194,6 @@ class UserSessionNotifier extends AsyncNotifier<void> {
 }
 
 /// UserSessionNotifier provider'ı.
-final userSessionProvider =
-    AsyncNotifierProvider<UserSessionNotifier, void>(UserSessionNotifier.new);
+final userSessionProvider = AsyncNotifierProvider<UserSessionNotifier, void>(
+  UserSessionNotifier.new,
+);

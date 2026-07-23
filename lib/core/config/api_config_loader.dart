@@ -7,15 +7,21 @@ class ApiConfigLoader {
   ApiConfigLoader._();
 
   static String _baseUrl = 'http://localhost:8000/api/v1';
+  static String _environment = 'local';
 
   /// Platforma göre otomatik belirlenmiş base URL (Android için 10.0.2.2, diğerleri için localhost).
   static String get baseUrl => _baseUrl;
+  static String get environment => _environment;
 
   /// Yapılandırmayı JSON dosyasından yükler.
   static Future<void> initialize() async {
     try {
       final jsonString = await rootBundle.loadString('api_config.json');
       final data = json.decode(jsonString) as Map<String, dynamic>;
+      _environment = const String.fromEnvironment('API_ENV', defaultValue: '');
+      if (_environment.isEmpty) {
+        _environment = data['environment'] as String? ?? 'local';
+      }
 
       if (kIsWeb) {
         _baseUrl = data['base_url'] as String? ?? _baseUrl;
@@ -24,8 +30,14 @@ class ApiConfigLoader {
       } else {
         _baseUrl = data['base_url'] as String? ?? _baseUrl;
       }
+      const overrideUrl = String.fromEnvironment('API_BASE_URL');
+      if (overrideUrl.isNotEmpty) {
+        _baseUrl = overrideUrl;
+      }
     } catch (e) {
-      debugPrint('api_config.json yüklenirken hata oluştu, varsayılan değer kullanılıyor: $e');
+      debugPrint(
+        'api_config.json yüklenirken hata oluştu, varsayılan değer kullanılıyor: $e',
+      );
     }
   }
 }

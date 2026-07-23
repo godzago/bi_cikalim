@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
+import 'app_pressable_scale.dart';
 
 /// Uygulamanın genel primary butonu.
 /// Loading state ve disabled state destekler.
@@ -25,6 +26,7 @@ class PrimaryButton extends StatelessWidget {
 
     if (isLoading) {
       child = const SizedBox(
+        key: ValueKey('loading'),
         width: 22,
         height: 22,
         child: CircularProgressIndicator(
@@ -34,6 +36,7 @@ class PrimaryButton extends StatelessWidget {
       );
     } else if (prefixIcon != null) {
       child = Row(
+        key: const ValueKey('label-with-icon'),
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(prefixIcon, size: 20),
@@ -42,18 +45,30 @@ class PrimaryButton extends StatelessWidget {
         ],
       );
     } else {
-      child = Text(label);
+      child = Text(label, key: const ValueKey('label'));
     }
 
     final button = ElevatedButton(
       onPressed: isLoading ? null : onPressed,
-      child: child,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeOutCubic,
+        child: child,
+      ),
     );
 
-    if (isFullWidth) {
-      return SizedBox(width: double.infinity, height: 52, child: button);
-    }
-    return SizedBox(height: 52, child: button);
+    final sizedButton = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 52),
+      child: isFullWidth
+          ? SizedBox(width: double.infinity, child: button)
+          : button,
+    );
+
+    return AppPressableScale(
+      enabled: onPressed != null && !isLoading,
+      child: sizedButton,
+    );
   }
 }
 
@@ -83,24 +98,28 @@ class SecondaryButton extends StatelessWidget {
           )
         : Text(label);
 
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: BiCikalimTheme.primary,
-          side: const BorderSide(color: BiCikalimTheme.primary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            
+    return AppPressableScale(
+      enabled: onPressed != null,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 52),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: onPressed,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: BiCikalimTheme.primary,
+              side: const BorderSide(color: BiCikalimTheme.primary),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: child,
           ),
         ),
-        child: child,
       ),
     );
   }

@@ -50,7 +50,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       if (mounted) {
         _showLocationPermissionDialog(
           title: 'Konum Servisi Kapalı 📍',
-          message: 'Lütfen yakınınızdaki eğlenceli aktiviteleri ve mekanları haritada görebilmek için cihazınızın GPS (konum) servisini açın.',
+          message:
+              'Lütfen yakınınızdaki eğlenceli aktiviteleri ve mekanları haritada görebilmek için cihazınızın GPS (konum) servisini açın.',
           isServiceError: true,
         );
       }
@@ -62,14 +63,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       if (mounted) {
         _showLocationPermissionDialog(
           title: 'Yakındaki Eğlenceyi Kaçırma! 📍',
-          message: 'Sana en yakın mekanları ve bu akşamki etkinlikleri harita üzerinde gösterebilmemiz için konum iznine ihtiyacımız var.',
+          message:
+              'Sana en yakın mekanları ve bu akşamki etkinlikleri harita üzerinde gösterebilmemiz için konum iznine ihtiyacımız var.',
         );
       }
     } else if (permission == LocationPermission.deniedForever) {
       if (mounted) {
         _showLocationPermissionDialog(
           title: 'Konum İzni Gerekli 📍',
-          message: 'Konum iznini kalıcı olarak reddettiniz. Lütfen uygulama ayarlarından konuma izin verin.',
+          message:
+              'Konum iznini kalıcı olarak reddettiniz. Lütfen uygulama ayarlarından konuma izin verin.',
           isPermanent: true,
         );
       }
@@ -81,7 +84,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Future<void> _getCurrentLocation() async {
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       if (mounted) {
         setState(() {
@@ -109,9 +114,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       barrierDismissible: false,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           elevation: 8,
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -189,7 +196,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           } else if (isPermanent) {
                             await Geolocator.openAppSettings();
                           } else {
-                            final permission = await Geolocator.requestPermission();
+                            final permission =
+                                await Geolocator.requestPermission();
                             if (permission == LocationPermission.whileInUse ||
                                 permission == LocationPermission.always) {
                               _getCurrentLocation();
@@ -225,19 +233,54 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     });
   }
 
+  Future<void> _refreshMap() async {
+    final citySlug = ref.read(selectedCityProvider).value?.slug;
+    final provider = venuesListProvider(
+      VenueFilters(citySlug: citySlug, hasCoordinates: true),
+    );
+    ref.invalidate(provider);
+
+    final futures = <Future<void>>[ref.read(provider.future).then((_) {})];
+    if (_currentLocation != null) {
+      futures.add(_getCurrentLocation());
+    } else {
+      futures.add(_checkAndRequestLocation(isRetry: true));
+    }
+    await Future.wait(futures);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final venuesAsync = ref.watch(venuesListProvider(const VenueFilters()));
+    final citySlug = ref.watch(selectedCityProvider).value?.slug;
+    final venuesAsync = ref.watch(
+      venuesListProvider(
+        VenueFilters(citySlug: citySlug, hasCoordinates: true),
+      ),
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Harita Keşfi')),
+      appBar: AppBar(
+        title: const Text('Harita Keşfi'),
+        actions: [
+          IconButton(
+            tooltip: 'Haritayı yenile',
+            onPressed: _refreshMap,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           // FlutterMap ile gerçek harita çizimi
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _currentLocation ?? const LatLng(39.7767, 30.5206), // Eskişehir pilot şehri koordinatları varsayılan
+              initialCenter:
+                  _currentLocation ??
+                  const LatLng(
+                    39.7767,
+                    30.5206,
+                  ), // Eskişehir pilot şehri koordinatları varsayılan
               initialZoom: 14.0,
               minZoom: 10.0,
               maxZoom: 18.0,
@@ -251,51 +294,29 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                urlTemplate:
+                    'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
                 userAgentPackageName: 'com.godzago.bi_cikalim',
               ),
               venuesAsync.when(
                 loading: () => const MarkerLayer(markers: []),
                 error: (err, _) => const MarkerLayer(markers: []),
                 data: (venues) {
-                  final validVenues = venues.where((v) => v.latitude != null && v.longitude != null).toList();
+                  final validVenues = venues
+                      .where((v) => v.latitude != null && v.longitude != null)
+                      .toList();
 
                   return MarkerLayer(
                     markers: [
-                      if (_currentLocation != null)
-                        Marker(
-                          point: _currentLocation!,
-                          width: 40,
-                          height: 40,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.18),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade600,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.15),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                       ...validVenues.map((venue) {
                         final isSelected = _selectedVenue?.id == venue.id;
-                        final latLng = LatLng(venue.latitude!, venue.longitude!);
-                        final firstTag = venue.activityTags.isNotEmpty ? venue.activityTags.first : '';
+                        final latLng = LatLng(
+                          venue.latitude!,
+                          venue.longitude!,
+                        );
+                        final firstTag = venue.activityTags.isNotEmpty
+                            ? venue.activityTags.first
+                            : '';
 
                         return Marker(
                           point: latLng,
@@ -307,7 +328,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               setState(() {
                                 _selectedVenue = venue;
                               });
-                              _mapController.move(latLng, _mapController.camera.zoom);
+                              _mapController.move(
+                                latLng,
+                                _mapController.camera.zoom,
+                              );
                             },
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -316,29 +340,40 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                   duration: const Duration(milliseconds: 250),
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: isSelected ? BiCikalimTheme.primary : Colors.white,
+                                    color: isSelected
+                                        ? BiCikalimTheme.primary
+                                        : Colors.white,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.15),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.15,
+                                        ),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
                                     ],
                                     border: Border.all(
-                                      color: isSelected ? Colors.white : BiCikalimTheme.primary,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : BiCikalimTheme.primary,
                                       width: 2,
                                     ),
                                   ),
                                   child: Icon(
                                     _getVenueIcon(firstTag),
-                                    color: isSelected ? Colors.white : BiCikalimTheme.primary,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : BiCikalimTheme.primary,
                                     size: 18,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withValues(alpha: 0.75),
                                     borderRadius: BorderRadius.circular(4),
@@ -363,9 +398,70 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   );
                 },
               ),
+              if (_currentLocation != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _currentLocation!,
+                      width: 42,
+                      height: 42,
+                      child: Semantics(
+                        label: 'Konumum',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.16),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 25,
+                              height: 25,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade600,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.18),
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.navigation_rounded,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
-          
+
+          // Harita kaydırma hareketiyle çakışmayan üst pull-to-refresh alanı.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 96,
+            child: RefreshIndicator(
+              color: BiCikalimTheme.primary,
+              onRefresh: _refreshMap,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [SizedBox(height: 97)],
+              ),
+            ),
+          ),
+
           // Üst Bilgilendirme Bandı
           Positioned(
             top: 16,
@@ -373,7 +469,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             right: 16,
             child: IgnorePointer(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(18),
@@ -414,7 +513,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: Card(
                 elevation: 6,
                 shadowColor: Colors.black.withValues(alpha: 0.15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -446,7 +547,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.star, color: BiCikalimTheme.primary, size: 14),
+                                const Icon(
+                                  Icons.star,
+                                  color: BiCikalimTheme.primary,
+                                  size: 14,
+                                ),
                                 const SizedBox(width: 2),
                                 Text(
                                   '${_selectedVenue!.averageRating}',
@@ -456,13 +561,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  _selectedVenue!.districtName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: BiCikalimTheme.textSecondary,
+                                Expanded(
+                                  child: Text(
+                                    _selectedVenue!.districtName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: BiCikalimTheme.textSecondary,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -483,7 +590,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 4),
-                                  Icon(Icons.arrow_forward, color: BiCikalimTheme.primary, size: 14),
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    color: BiCikalimTheme.primary,
+                                    size: 14,
+                                  ),
                                 ],
                               ),
                             ),
@@ -509,6 +620,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                FloatingActionButton.small(
+                  heroTag: 'my_location',
+                  backgroundColor: Colors.white,
+                  foregroundColor: BiCikalimTheme.primary,
+                  onPressed: () {
+                    if (_currentLocation != null) {
+                      _mapController.move(_currentLocation!, 14);
+                    } else {
+                      _checkAndRequestLocation(isRetry: true);
+                    }
+                  },
+                  child: const Icon(Icons.my_location),
+                ),
+                const SizedBox(height: 8),
                 FloatingActionButton.small(
                   heroTag: 'zoom_in',
                   backgroundColor: Colors.white,

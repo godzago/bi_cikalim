@@ -6,7 +6,6 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 
-
 /// Şifremi unuttum ekranı.
 /// E-posta adresi girerek şifre sıfırlama linki alır.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -17,8 +16,7 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
       _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState
-    extends ConsumerState<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
@@ -74,9 +72,16 @@ class _ForgotPasswordScreenState
         title: const Text('Şifremi Unuttum'),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: _emailSent ? _buildSuccessState() : _buildFormState(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: _emailSent ? _buildSuccessState() : _buildFormState(),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -114,7 +119,6 @@ class _ForgotPasswordScreenState
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: BiCikalimTheme.textPrimary,
-              
             ),
           ),
           const SizedBox(height: 8),
@@ -194,7 +198,6 @@ class _ForgotPasswordScreenState
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: BiCikalimTheme.textPrimary,
-            
           ),
           textAlign: TextAlign.center,
         ),

@@ -53,8 +53,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   Future<void> _skipOnboarding() async {
     setState(() => _isLoading = true);
     try {
-      await ref.read(userSessionProvider.notifier).signInAsMockUser();
-      if (mounted) context.go(AppConstants.discoverRoute);
+      await ref.read(userSessionProvider.notifier).continueAsGuest();
+      if (mounted) context.go(AppConstants.citySelectRoute);
     } catch (e) {
       // ignore
     } finally {
@@ -72,7 +72,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final compactActions = MediaQuery.sizeOf(context).height < 600;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -101,7 +101,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 itemCount: _slides.length,
                 onPageChanged: (i) => setState(() => _currentPage = i),
                 itemBuilder: (context, index) {
-                  return _buildSlide(context, _slides[index], size);
+                  return _buildSlide(context, _slides[index]);
                 },
               ),
             ),
@@ -125,11 +125,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: compactActions ? 12 : 40),
 
             // Kullanıcı Tipi Seçimi
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(
+                horizontal: compactActions ? 16 : 24,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -141,9 +143,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     subtitle: 'Mekan, aktivite ve etkinlik keşfet',
                     isPrimary: true,
                     isLoading: _isLoading,
+                    compact: compactActions,
                     onTap: _continueAsUser,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: compactActions ? 8 : 12),
 
                   // Mekan Sahibi
                   _UserTypeButton(
@@ -153,76 +156,84 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     subtitle: 'Mekanımı ekle, aktivitelerimi paylaş',
                     isPrimary: false,
                     isLoading: _isLoading,
+                    compact: compactActions,
                     onTap: _continueAsVenueOwner,
                   ),
-                  const SizedBox(height: 12),
-
-                  Text(
-                    'Devam ederek Kullanım Koşulları\'nı kabul etmiş olursunuz.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade500,
+                  if (!compactActions) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Devam ederek Kullanım Koşulları\'nı kabul etmiş olursunuz.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: compactActions ? 10 : 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSlide(
-    BuildContext context,
-    _OnboardingSlide slide,
-    Size size,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 400),
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              color: slide.color,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                slide.emoji,
-                style: const TextStyle(fontSize: 80),
-              ),
+  Widget _buildSlide(BuildContext context, _OnboardingSlide slide) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 390;
+        final illustrationSize = compact ? 112.0 : 180.0;
+        final emojiSize = compact ? 50.0 : 80.0;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  width: illustrationSize,
+                  height: illustrationSize,
+                  decoration: BoxDecoration(
+                    color: slide.color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      slide.emoji,
+                      style: TextStyle(fontSize: emojiSize),
+                    ),
+                  ),
+                ),
+                SizedBox(height: compact ? 20 : 48),
+                Text(
+                  slide.title,
+                  style: TextStyle(
+                    fontSize: compact ? 23 : 28,
+                    fontWeight: FontWeight.bold,
+                    color: BiCikalimTheme.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: compact ? 8 : 16),
+                Text(
+                  slide.description,
+                  style: TextStyle(
+                    fontSize: compact ? 13 : 15,
+                    color: BiCikalimTheme.textSecondary,
+                    height: compact ? 1.35 : 1.6,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 48),
-          Text(
-            slide.title,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: BiCikalimTheme.textPrimary,
-              
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            slide.description,
-            style: const TextStyle(
-              fontSize: 15,
-              color: BiCikalimTheme.textSecondary,
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -238,6 +249,7 @@ class _UserTypeButton extends StatelessWidget {
   final String subtitle;
   final bool isPrimary;
   final bool isLoading;
+  final bool compact;
   final VoidCallback onTap;
 
   const _UserTypeButton({
@@ -247,6 +259,7 @@ class _UserTypeButton extends StatelessWidget {
     required this.subtitle,
     required this.isPrimary,
     required this.isLoading,
+    required this.compact,
     required this.onTap,
   });
 
@@ -260,14 +273,15 @@ class _UserTypeButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 14 : 20,
+            vertical: compact ? 10 : 16,
+          ),
           decoration: BoxDecoration(
             color: isPrimary ? BiCikalimTheme.primary : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isPrimary
-                  ? BiCikalimTheme.primary
-                  : Colors.grey.shade200,
+              color: isPrimary ? BiCikalimTheme.primary : Colors.grey.shade200,
             ),
             boxShadow: isPrimary
                 ? [
@@ -282,8 +296,8 @@ class _UserTypeButton extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: compact ? 38 : 44,
+                height: compact ? 38 : 44,
                 decoration: BoxDecoration(
                   color: isPrimary
                       ? Colors.white.withValues(alpha: 0.2)
@@ -292,13 +306,11 @@ class _UserTypeButton extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: isPrimary
-                      ? Colors.white
-                      : BiCikalimTheme.primary,
+                  color: isPrimary ? Colors.white : BiCikalimTheme.primary,
                   size: 22,
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: compact ? 10 : 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,22 +320,26 @@ class _UserTypeButton extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        
+
                         color: isPrimary
                             ? Colors.white
                             : BiCikalimTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isPrimary
-                            ? Colors.white.withValues(alpha: 0.8)
-                            : BiCikalimTheme.textSecondary,
+                    if (!compact) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isPrimary
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : BiCikalimTheme.textSecondary,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

@@ -35,13 +35,40 @@ dependencies:
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
   geolocator: ^14.0.3
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  icons_launcher: 3.1.0
+  flutter_native_splash: 2.4.8
 
 flutter:
   uses-material-design: true
   assets:
     - api_config.json
+    - assets/splash.png
+    - assets/inapplogo.png
+
+icons_launcher:
+  image_path: "assets/icons/app_icon_safe.png"
+  platforms:
+    android:
+      enable: true
+      adaptive_background_color: "#FF5438"
+      adaptive_foreground_image: "assets/icons/adaptive_foreground.png"
+      adaptive_round_image: "assets/icons/app_icon_safe.png"
+    ios:
+      enable: true
+
+flutter_native_splash:
+  background_image: "assets/splash.png"
+  android: true
+  ios: true
+  web: false
+  fullscreen: true
+  android_gravity: fill
+  ios_content_mode: scaleAspectFill
+  android_12:
+    color: "#FC4228"

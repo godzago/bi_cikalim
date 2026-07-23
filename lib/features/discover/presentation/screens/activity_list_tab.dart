@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
-import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
+import '../../../../shared/widgets/app_empty_state.dart';
 
 /// Aktivite bazlı keşif listesi.
 /// Kullanıcı aktiviteyi seçer → o aktiviteyi sunan mekanları görür.
@@ -19,28 +19,28 @@ class ActivityListTab extends ConsumerStatefulWidget {
 class _ActivityListTabState extends ConsumerState<ActivityListTab> {
   String? _selectedCategoryId;
 
-  int _venueCountFor(String activityId) {
-    return MockDatabase.venueActivities
-        .where((va) => va.activityId == activityId)
-        .length;
-  }
-
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     final activitiesAsync = ref.watch(activitiesProvider);
 
     return categoriesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: BiCikalimTheme.primary),
+      ),
       error: (error, _) => Center(child: Text('Hata: $error')),
       data: (categories) {
         return activitiesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: BiCikalimTheme.primary),
+          ),
           error: (error, _) => Center(child: Text('Hata: $error')),
           data: (activities) {
             final filteredActivities = _selectedCategoryId == null
                 ? activities
-                : activities.where((a) => a.categoryId == _selectedCategoryId).toList();
+                : activities
+                      .where((a) => a.categoryId == _selectedCategoryId)
+                      .toList();
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,35 +65,62 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
 
                 // Aktivite listesi
                 Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                    itemCount: filteredActivities.length,
-                    separatorBuilder: (context, i) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final activity = filteredActivities[index];
-                      final venueCount = _venueCountFor(activity.id);
-                      final category = categories.firstWhere(
-                        (cat) => cat.id == activity.categoryId,
-                        orElse: () => ApiCategory(id: activity.categoryId, name: 'Kategori', slug: 'kategori', isActive: true, sortOrder: 0),
-                      );
-
-                      return _ActivityItemCard(
-                        activity: activity,
-                        category: category,
-                        venueCount: venueCount,
-                        onTap: () {
-                          context.push(
-                            Uri(
-                              path: '/discover/results',
-                              queryParameters: {
-                                'activityId': activity.id,
-                                'title': activity.name,
-                              },
-                            ).toString(),
-                          );
-                        },
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeOutCubic,
+                    transitionBuilder: (child, animation) {
+                      final offset = Tween<Offset>(
+                        begin: const Offset(0.02, 0),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(position: offset, child: child),
                       );
                     },
+                    child: filteredActivities.isEmpty
+                        ? AppEmptyState(
+                            key: ValueKey('empty-$_selectedCategoryId'),
+                            icon: Icons.local_activity_outlined,
+                            message: _selectedCategoryId == null
+                                ? 'Henüz aktivite bulunmuyor.'
+                                : 'Bu kategoride aktivite bulunmuyor.',
+                          )
+                        : ListView.separated(
+                            key: ValueKey(_selectedCategoryId),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                            itemCount: filteredActivities.length,
+                            separatorBuilder: (context, i) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final activity = filteredActivities[index];
+                              ApiCategory? category;
+                              for (final candidate in categories) {
+                                if (candidate.id == activity.categoryId) {
+                                  category = candidate;
+                                  break;
+                                }
+                              }
+
+                              return _ActivityItemCard(
+                                activity: activity,
+                                category: category,
+                                onTap: () {
+                                  context.push(
+                                    Uri(
+                                      path: '/discover/results',
+                                      queryParameters: {
+                                        'activitySlug': activity.slug,
+                                        'title': activity.name,
+                                      },
+                                    ).toString(),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                   ),
                 ),
               ],
@@ -111,6 +138,7 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
       onTap: () => setState(() => _selectedCategoryId = categoryId),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
@@ -139,14 +167,12 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
 
 class _ActivityItemCard extends StatelessWidget {
   final ApiActivity activity;
-  final ApiCategory category;
-  final int venueCount;
+  final ApiCategory? category;
   final VoidCallback onTap;
 
   const _ActivityItemCard({
     required this.activity,
     required this.category,
-    required this.venueCount,
     required this.onTap,
   });
 
@@ -203,22 +229,27 @@ class _ActivityItemCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      Icon(
-                        category.icon,
-                        size: 11,
-                        color: BiCikalimTheme.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        category.name,
-                        style: const TextStyle(
-                          fontSize: 11,
+                      if (category != null) ...[
+                        Icon(
+                          category!.icon,
+                          size: 11,
                           color: BiCikalimTheme.textSecondary,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('·', style: TextStyle(color: BiCikalimTheme.textLight)),
-                      const SizedBox(width: 8),
+                        const SizedBox(width: 4),
+                        Text(
+                          category!.name,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: BiCikalimTheme.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '·',
+                          style: TextStyle(color: BiCikalimTheme.textLight),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       Text(
                         '${activity.minPeople}–${activity.maxPeople} kişi',
                         style: const TextStyle(
@@ -242,19 +273,15 @@ class _ActivityItemCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: venueCount > 0
-                        ? BiCikalimTheme.primary.withValues(alpha: 0.08)
-                        : Colors.grey.shade50,
+                    color: BiCikalimTheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    venueCount > 0 ? '$venueCount mekan' : 'Yakında',
-                    style: TextStyle(
+                    'Mekanları gör',
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: venueCount > 0
-                          ? BiCikalimTheme.primary
-                          : BiCikalimTheme.textLight,
+                      color: BiCikalimTheme.primary,
                     ),
                   ),
                 ),

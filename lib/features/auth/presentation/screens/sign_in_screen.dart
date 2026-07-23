@@ -33,6 +33,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   Future<void> _loadRememberedCredentials() async {
     final credentials = await ApiClient.instance.getRememberedCredentials();
+    if (!mounted) return;
+
     final email = credentials['email'];
     final password = credentials['password'];
     if (email != null && password != null) {
@@ -55,10 +57,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await ref.read(userSessionProvider.notifier).signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      await ref
+          .read(userSessionProvider.notifier)
+          .signIn(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
       // Beni Hatırla işaretliyse bilgileri kaydeder, değilse temizler
       if (_rememberMe) {
@@ -71,7 +75,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       }
 
       if (!mounted) return;
-      
+
       final userType = ref.read(userTypeProvider);
       if (userType == UserType.venueOwner) {
         context.go('/venue-owner');
@@ -183,8 +187,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   isLoading: _isLoading,
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const Text(
                       'Hesabın yok mu?  ',
