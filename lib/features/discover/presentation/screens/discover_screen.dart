@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/services/mock_data.dart';
+import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_section_header.dart';
 import '../../../../shared/widgets/category_card.dart';
 import '../../../../shared/widgets/event_preview_card.dart';
@@ -11,14 +13,14 @@ import 'activity_list_tab.dart';
 
 /// Keşfet ana ekranı.
 /// Getir benzeri ergonomik, modüler ve görsel odaklı tasarım prensipleriyle revize edilmiştir.
-class DiscoverScreen extends StatefulWidget {
+class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
 
   @override
-  State<DiscoverScreen> createState() => _DiscoverScreenState();
+  ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
-class _DiscoverScreenState extends State<DiscoverScreen>
+class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -36,6 +38,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   Widget build(BuildContext context) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final eventsAsync = ref.watch(eventsListProvider(const EventFilters()));
+    final venuesAsync = ref.watch(venuesListProvider(const VenueFilters()));
+
     return Scaffold(
       backgroundColor: BiCikalimTheme.background,
       body: SafeArea(
@@ -50,8 +56,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     _buildTopHeader(),
                     _buildTopSearchBar(),
                     _buildQuickIntentArea(),
-                    _buildCategoryGridSection(),
-                    _buildEventsSection(),
+                    categoriesAsync.when(
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(color: BiCikalimTheme.primary),
+                        ),
+                      ),
+                      error: (e, _) => Center(child: Text('Hata: $e')),
+                      data: (categories) => _buildCategoryGridSection(categories),
+                    ),
+                    eventsAsync.when(
+                      loading: () => const SizedBox(
+                        height: 180,
+                        child: Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+                      ),
+                      error: (e, _) => Center(child: Text('Hata: $e')),
+                      data: (events) => _buildEventsSection(events),
+                    ),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -69,7 +91,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             controller: _tabController,
             children: [
               const ActivityListTab(),
-              _buildVenueListTab(),
+              venuesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+                error: (e, _) => Center(child: Text('Hata: $e')),
+                data: (venues) => _buildVenueListTab(venues),
+              ),
             ],
           ),
         ),
@@ -275,7 +301,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // 4. Ana Kategori Grid Görünümü (Getir stili görsel listeleme)
   // ---------------------------------------------------------------------------
 
-  Widget _buildCategoryGridSection() {
+  Widget _buildCategoryGridSection(List<ApiCategory> categories) {
     return Column(
       children: [
         Padding(
@@ -298,9 +324,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               mainAxisSpacing: 10,
               childAspectRatio: 0.95,
             ),
-            itemCount: MockDatabase.categories.length,
+            itemCount: categories.length,
             itemBuilder: (context, index) {
-              final category = MockDatabase.categories[index];
+              final category = categories[index];
               return CategoryCard(
                 category: category,
                 width: double.infinity,
@@ -328,7 +354,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // 5. Yakındaki Etkinlikler
   // ---------------------------------------------------------------------------
 
-  Widget _buildEventsSection() {
+  Widget _buildEventsSection(List<ApiEvent> events) {
+    if (events.isEmpty) return const SizedBox.shrink();
+
     return Column(
       children: [
         Padding(
@@ -345,14 +373,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: MockDatabase.events.length,
+            itemCount: events.length,
             itemBuilder: (context, index) {
-              final event = MockDatabase.events[index];
-              final venue = MockDatabase.getVenueById(event.venueId);
+              final event = events[index];
+              final venue = ApiVenue(
+                id: event.venueId,
+                name: event.venue?.name ?? 'Mekan',
+                slug: event.venue?.slug ?? 'mekan',
+                venueType: 'cafe',
+                city: ApiLocationSummary(id: '1', name: 'Eskişehir', slug: 'eskisehir'),
+                isVerified: true,
+                isFavorite: false,
+                activitySummary: const [],
+                coverUrl: event.coverUrl,
+              );
               return EventPreviewCard(
                 event: event,
                 venue: venue,
-                onTap: () => context.push('/venues/${venue.id}'),
+                onTap: () => context.push('/venues/${venue.slug}'),
               );
             },
           ),
@@ -431,16 +469,28 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Mekan Listesi Sekmesi
   // ---------------------------------------------------------------------------
 
-  Widget _buildVenueListTab() {
+  Widget _buildVenueListTab(List<ApiVenue> venues) {
+    if (venues.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text(
+            'Mekan bulunamadı.',
+            style: TextStyle(color: BiCikalimTheme.textSecondary),
+          ),
+        ),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      itemCount: MockDatabase.venues.length,
+      itemCount: venues.length,
       separatorBuilder: (context, i) => const SizedBox(height: 4),
       itemBuilder: (context, index) {
-        final venue = MockDatabase.venues[index];
+        final venue = venues[index];
         return VenueCard(
           venue: venue,
-          onTap: () => context.push('/venues/${venue.id}'),
+          onTap: () => context.push('/venues/${venue.slug}'),
         );
       },
     );

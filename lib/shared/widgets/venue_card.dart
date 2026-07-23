@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../../core/services/mock_data.dart';
+import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
 import 'app_network_image.dart';
 
 class VenueCard extends StatelessWidget {
-  final Venue venue;
+  final ApiVenue venue;
   final VoidCallback onTap;
   final bool dense;
 
@@ -76,7 +75,7 @@ class VenueCard extends StatelessWidget {
   }
 
   Widget _buildDenseCard() {
-    final activityCount = MockDatabase.getActivitiesForVenue(venue.id).length;
+    final activityCount = venue.activitySummary.length;
 
     return Padding(
       padding: const EdgeInsets.all(10),

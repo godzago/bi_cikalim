@@ -1,44 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/api_providers.dart';
 import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/event_list_card.dart';
 
-class VenueDetailScreen extends StatefulWidget {
+class VenueDetailScreen extends ConsumerStatefulWidget {
   final String venueId;
 
   const VenueDetailScreen({super.key, required this.venueId});
 
   @override
-  State<VenueDetailScreen> createState() => _VenueDetailScreenState();
+  ConsumerState<VenueDetailScreen> createState() => _VenueDetailScreenState();
 }
 
-class _VenueDetailScreenState extends State<VenueDetailScreen>
+class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late Venue _venue;
-  late List<VenueActivity> _activities;
-  late List<Event> _events;
-  late List<Review> _reviews;
+  bool _isTogglingFavorite = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-
-    _venue = MockDatabase.venues.firstWhere(
-      (venue) => venue.id == widget.venueId,
-      orElse: () => MockDatabase.venues.first,
-    );
-    _activities = MockDatabase.getVenueActivities(_venue.id);
-    _events = MockDatabase.events
-        .where((event) => event.venueId == _venue.id)
-        .toList();
-    _reviews = MockDatabase.reviews
-        .where((review) => review.venueId == _venue.id)
-        .toList();
   }
 
   @override
@@ -47,189 +35,334 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              expandedHeight: 240,
-              pinned: true,
-              backgroundColor: BiCikalimTheme.primary,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Positioned.fill(
-                      child: AppNetworkImage(imageUrl: _venue.coverImageUrl),
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.85),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ];
-        },
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
+  Future<void> _toggleFavorite(ApiVenue venue) async {
+    if (_isTogglingFavorite) return;
+    setState(() => _isTogglingFavorite = true);
+
+    try {
+      final service = ref.read(venueApiServiceProvider);
+      if (venue.isFavorite) {
+        await service.removeFavoriteVenue(venue.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mekan kaydedilenlerden çıkarıldı.')),
+        );
+      } else {
+        await service.addFavoriteVenue(venue.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mekan kaydedilenlere eklendi.')),
+        );
+      }
+      ref.invalidate(venueDetailProvider(widget.venueId));
+      ref.invalidate(favoriteVenuesProvider);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('İşlem başarısız oldu: $e')),
+      );
+    } finally {
+      setState(() => _isTogglingFavorite = false);
+    }
+  }
+
+  void _showAddReviewDialog(ApiVenue venue) {
+    int rating = 5;
+    final commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Yorum Yaz'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildMetaPill(
-                        Icons.star_rounded,
-                        '${_venue.averageRating} puan',
-                      ),
-                      _buildMetaPill(
-                        Icons.chat_bubble_outline,
-                        '${_venue.reviewCount} yorum',
-                      ),
-                      _buildMetaPill(
-                        Icons.category_outlined,
-                        '${_activities.length} aktivite',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _venue.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            
+                  const Text('Puanın:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  DropdownButton<int>(
+                    value: rating,
+                    isExpanded: true,
+                    items: List.generate(5, (index) => 5 - index).map((val) {
+                      return DropdownMenuItem<int>(
+                        value: val,
+                        child: Row(
+                          children: List.generate(
+                            5,
+                            (starIndex) => Icon(
+                              starIndex < val ? Icons.star : Icons.star_border,
+                              color: BiCikalimTheme.primary,
+                              size: 18,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => rating = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Yorumun:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Mekan hakkındaki görüşlerinizi yazın...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: BiCikalimTheme.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    try {
+                      final service = ref.read(interactionApiServiceProvider);
+                      await service.createReview(venue.id, rating, commentController.text);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Yorumunuz başarıyla eklendi.')),
+                      );
+                      ref.invalidate(venueReviewsProvider(venue.id));
+                      ref.invalidate(venueDetailProvider(widget.venueId));
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Yorum eklenirken hata: $e')),
+                      );
+                    }
+                  },
+                  child: const Text('Gönder', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final venueAsync = ref.watch(venueDetailProvider(widget.venueId));
+    final eventsAsync = ref.watch(eventsListProvider(EventFilters(venueSlug: widget.venueId)));
+    final reviewsAsync = ref.watch(venueReviewsProvider(widget.venueId));
+
+    return Scaffold(
+      body: venueAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+        error: (error, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('Mekan detayları yüklenemedi: $error', textAlign: TextAlign.center),
+          ),
+        ),
+        data: (venue) {
+          return NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverAppBar(
+                  expandedHeight: 240,
+                  pinned: true,
+                  backgroundColor: BiCikalimTheme.primary,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Positioned.fill(
+                          child: AppNetworkImage(imageUrl: venue.coverImageUrl),
                         ),
-                        decoration: BoxDecoration(
-                          color: _venue.verificationStatus == 'verified'
-                              ? BiCikalimTheme.success.withValues(alpha: 0.1)
-                              : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _venue.verificationStatus == 'verified'
-                                  ? Icons.verified
-                                  : Icons.help_outline,
-                              color: _venue.verificationStatus == 'verified'
-                                  ? BiCikalimTheme.success
-                                  : Colors.grey,
-                              size: 14,
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.85),
+                                Colors.transparent,
+                              ],
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _venue.verificationStatus == 'verified'
-                                  ? 'Onayli Mekan'
-                                  : 'Dogrulanmamis',
-                              style: TextStyle(
-                                color: _venue.verificationStatus == 'verified'
-                                    ? BiCikalimTheme.success
-                                    : Colors.grey.shade700,
-                                fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ];
+            },
+            body: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildMetaPill(
+                            Icons.star_rounded,
+                            '${venue.averageRating} puan',
+                          ),
+                          _buildMetaPill(
+                            Icons.chat_bubble_outline,
+                            '${venue.reviewCount} yorum',
+                          ),
+                          _buildMetaPill(
+                            Icons.category_outlined,
+                            '${venue.activitySummary.length} aktivite',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              venue.name,
+                              style: const TextStyle(
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: BiCikalimTheme.primary,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          _venue.address,
-                          style: const TextStyle(
-                            color: BiCikalimTheme.textSecondary,
-                            fontSize: 13,
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: venue.verificationStatus == 'verified'
+                                  ? BiCikalimTheme.success.withValues(alpha: 0.1)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  venue.verificationStatus == 'verified'
+                                      ? Icons.verified
+                                      : Icons.help_outline,
+                                  color: venue.verificationStatus == 'verified'
+                                      ? BiCikalimTheme.success
+                                      : Colors.grey,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  venue.verificationStatus == 'verified'
+                                      ? 'Onaylı Mekan'
+                                      : 'Doğrulanmamış',
+                                  style: TextStyle(
+                                    color: venue.verificationStatus == 'verified'
+                                        ? BiCikalimTheme.success
+                                        : Colors.grey.shade700,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: BiCikalimTheme.primary,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              venue.address ?? '${venue.districtName}, ${venue.cityName}',
+                              style: const TextStyle(
+                                color: BiCikalimTheme.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          _buildQuickAction(Icons.directions, 'Yol Tarifi', () {}),
+                          _buildQuickAction(Icons.phone, 'Ara', () {}),
+                          _buildQuickAction(Icons.camera_alt, 'Instagram', () {}),
+                          _buildQuickAction(
+                            venue.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                            venue.isFavorite ? 'Kaydedildi' : 'Kaydet',
+                            () => _toggleFavorite(venue),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+                ),
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  labelColor: BiCikalimTheme.primary,
+                  unselectedLabelColor: BiCikalimTheme.textSecondary,
+                  indicatorColor: BiCikalimTheme.primary,
+                  indicatorWeight: 3,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  tabs: const [
+                    Tab(text: 'Genel'),
+                    Tab(text: 'Aktiviteler'),
+                    Tab(text: 'Etkinlikler'),
+                    Tab(text: 'Yorumlar'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
                     children: [
-                      _buildQuickAction(Icons.directions, 'Yol Tarifi', () {}),
-                      _buildQuickAction(Icons.phone, 'Ara', () {}),
-                      _buildQuickAction(Icons.camera_alt, 'Instagram', () {}),
-                      _buildQuickAction(Icons.bookmark_border, 'Kaydet', () {}),
+                      _buildGeneralTab(venue),
+                      _buildActivitiesTab(venue.activitySummary),
+                      eventsAsync.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (err, _) => Center(child: Text('Etkinlikler yüklenemedi: $err')),
+                        data: (events) => _buildEventsTab(events, venue),
+                      ),
+                      reviewsAsync.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (err, _) => Center(child: Text('Yorumlar yüklenemedi: $err')),
+                        data: (reviews) => _buildReviewsTab(reviews, venue),
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              labelColor: BiCikalimTheme.primary,
-              unselectedLabelColor: BiCikalimTheme.textSecondary,
-              indicatorColor: BiCikalimTheme.primary,
-              indicatorWeight: 3,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                
-              ),
-              tabs: const [
-                Tab(text: 'Genel'),
-                Tab(text: 'Aktiviteler'),
-                Tab(text: 'Etkinlikler'),
-                Tab(text: 'Yorumlar'),
+                ),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildGeneralTab(),
-                  _buildActivitiesTab(),
-                  _buildEventsTab(),
-                  _buildReviewsTab(),
-                ],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -293,23 +426,19 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     );
   }
 
-  Widget _buildGeneralTab() {
+  Widget _buildGeneralTab(ApiVenue venue) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Hakkinda',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              
-            ),
+            'Hakkında',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            _venue.description,
+            venue.description ?? 'Açıklama bulunmuyor.',
             style: const TextStyle(
               color: BiCikalimTheme.textSecondary,
               height: 1.5,
@@ -317,34 +446,34 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
           ),
           const SizedBox(height: 24),
           const Text(
-            'Calisma Saatleri',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              
-            ),
+            'Çalışma Saatleri',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          _buildInfoRow('Hafta Ici', '09:00 - 23:00'),
-          _buildInfoRow('Hafta Sonu', '10:00 - 01:00'),
+          if (venue.openingHours.isEmpty)
+            const Text('Hafta İçi & Hafta Sonu: 09:00 - 23:00 (Varsayılan)', style: TextStyle(color: BiCikalimTheme.textSecondary))
+          else
+            ...venue.openingHours.map((oh) {
+              final days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+              final dayName = oh.dayOfWeek >= 1 && oh.dayOfWeek <= 7 ? days[oh.dayOfWeek - 1] : 'Gün';
+              final timeStr = oh.isClosed ? 'Kapalı' : '${oh.opensAt ?? "09:00"} - ${oh.closesAt ?? "23:00"}';
+              return _buildInfoRow(dayName, timeStr);
+            }),
           const SizedBox(height: 24),
           const Text(
-            'Mekan Notlari',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              
-            ),
+            'Mekan Özellikleri',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [
-              _buildFeatureChip('Grup dostu'),
-              _buildFeatureChip('Rezervasyon uygun'),
-              _buildFeatureChip('Aksam saatleri hareketli'),
-            ],
+            children: venue.tags.isEmpty
+                ? [
+                    _buildFeatureChip('Grup dostu'),
+                    _buildFeatureChip('Rezervasyon uygun'),
+                  ]
+                : venue.tags.map((t) => _buildFeatureChip(t.name)).toList(),
           ),
         ],
       ),
@@ -390,28 +519,30 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     );
   }
 
-  Widget _buildActivitiesTab() {
-    if (_activities.isEmpty) {
+  Widget _buildActivitiesTab(List<ApiVenueActivitySummary> activities) {
+    if (activities.isEmpty) {
       return const AppEmptyState(
         icon: Icons.notes,
-        message: 'Bu mekana ait aktivite envanteri henuz eklenmemis.',
+        message: 'Bu mekana ait aktivite envanteri henüz eklenmemiş.',
         padding: EdgeInsets.all(32),
       );
     }
 
-    final grouped = <String, List<_InventoryItem>>{};
-    for (final venueActivity in _activities) {
-      final activity = MockDatabase.getActivityById(venueActivity.activityId);
-      grouped.putIfAbsent(activity.categoryId, () => []);
-      grouped[activity.categoryId]!.add(
-        _InventoryItem(activity: activity, venueActivity: venueActivity),
+    final grouped = <String, List<ApiVenueActivitySummary>>{};
+    for (final venueActivity in activities) {
+      final mockAct = MockDatabase.activities.firstWhere(
+        (a) => a.id == venueActivity.activityId,
+        orElse: () => MockDatabase.activities.first,
       );
+      final categoryId = mockAct.categoryId;
+      grouped.putIfAbsent(categoryId, () => []);
+      grouped[categoryId]!.add(venueActivity);
     }
 
     final orderedCategoryIds = grouped.keys.toList()
       ..sort((a, b) {
-        final left = MockDatabase.getCategoryById(a).order;
-        final right = MockDatabase.getCategoryById(b).order;
+        final left = MockDatabase.categories.firstWhere((cat) => cat.id == a, orElse: () => MockDatabase.categories.first).order;
+        final right = MockDatabase.categories.firstWhere((cat) => cat.id == b, orElse: () => MockDatabase.categories.first).order;
         return left.compareTo(right);
       });
 
@@ -419,7 +550,10 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
       padding: const EdgeInsets.all(20),
       children: [
         ...orderedCategoryIds.map((categoryId) {
-          final category = MockDatabase.getCategoryById(categoryId);
+          final mockCat = MockDatabase.categories.firstWhere(
+            (cat) => cat.id == categoryId,
+            orElse: () => MockDatabase.categories.first,
+          );
           final inventory = grouped[categoryId]!;
 
           return Card(
@@ -443,7 +577,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          category.icon,
+                          mockCat.icon,
                           color: BiCikalimTheme.primary,
                           size: 18,
                         ),
@@ -451,11 +585,10 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          category.name,
+                          mockCat.name,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            
                           ),
                         ),
                       ),
@@ -490,10 +623,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     );
   }
 
-  Widget _buildCompactInventoryRow(_InventoryItem item) {
-    final subcategory = MockDatabase.getSubcategoryById(
-      item.activity.subcategoryId,
+  Widget _buildCompactInventoryRow(ApiVenueActivitySummary item) {
+    final mockAct = MockDatabase.activities.firstWhere(
+      (a) => a.id == item.activityId,
+      orElse: () => MockDatabase.activities.first,
     );
+    final subcategory = MockDatabase.getSubcategoryById(mockAct.subcategoryId);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,7 +641,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
-            item.activity.icon,
+            mockAct.icon,
             size: 18,
             color: BiCikalimTheme.primary,
           ),
@@ -521,7 +656,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                 children: [
                   Expanded(
                     child: Text(
-                      item.activity.name,
+                      item.activityName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -533,14 +668,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    item.venueActivity.priceInfo,
+                    item.isFree ? 'Ücretsiz' : 'Ücretli',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      color: item.venueActivity.isFree
-                          ? BiCikalimTheme.success
-                          : BiCikalimTheme.primary,
+                      color: item.isFree ? BiCikalimTheme.success : BiCikalimTheme.primary,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -551,8 +684,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
               Text(
                 [
                   if (subcategory != null) subcategory.name,
-                  '${item.activity.minPeople}-${item.activity.maxPeople} kisi',
-                  item.venueActivity.note,
+                  '${mockAct.minPeople}-${mockAct.maxPeople} kişi',
                 ].join(' - '),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -569,26 +701,26 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
     );
   }
 
-  Widget _buildEventsTab() {
-    if (_events.isEmpty) {
+  Widget _buildEventsTab(List<ApiEvent> events, ApiVenue venue) {
+    if (events.isEmpty) {
       return const AppEmptyState(
         icon: Icons.event_busy,
-        message: 'Yakin zamanda planlanmis etkinlik bulunmuyor.',
+        message: 'Yakın zamanda planlanmış etkinlik bulunmuyor.',
         padding: EdgeInsets.all(32),
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(20),
-      itemCount: _events.length,
+      itemCount: events.length,
       itemBuilder: (context, index) {
-        final event = _events[index];
-        return EventListCard(event: event, venue: _venue, onTap: () {});
+        final event = events[index];
+        return EventListCard(event: event, venue: venue, onTap: () {});
       },
     );
   }
 
-  Widget _buildReviewsTab() {
+  Widget _buildReviewsTab(List<ApiReview> reviews, ApiVenue venue) {
     return Column(
       children: [
         Padding(
@@ -598,20 +730,17 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
               Column(
                 children: [
                   Text(
-                    '${_venue.averageRating}',
+                    '${venue.averageRating}',
                     style: const TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                       color: BiCikalimTheme.primary,
-                      
                     ),
                   ),
                   Row(
                     children: List.generate(5, (index) {
                       return Icon(
-                        index < _venue.averageRating.floor()
-                            ? Icons.star
-                            : Icons.star_border,
+                        index < venue.averageRating.floor() ? Icons.star : Icons.star_border,
                         color: BiCikalimTheme.primary,
                         size: 16,
                       );
@@ -619,7 +748,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${_venue.reviewCount} yorum',
+                    '${venue.reviewCount} yorum',
                     style: const TextStyle(
                       color: BiCikalimTheme.textSecondary,
                       fontSize: 12,
@@ -631,11 +760,11 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
               Expanded(
                 child: Column(
                   children: [
-                    _buildRatingBar(5, 0.8),
-                    _buildRatingBar(4, 0.15),
-                    _buildRatingBar(3, 0.05),
-                    _buildRatingBar(2, 0.0),
-                    _buildRatingBar(1, 0.0),
+                    _buildRatingBar(5, reviews.where((r) => r.rating == 5).length / (reviews.isEmpty ? 1 : reviews.length)),
+                    _buildRatingBar(4, reviews.where((r) => r.rating == 4).length / (reviews.isEmpty ? 1 : reviews.length)),
+                    _buildRatingBar(3, reviews.where((r) => r.rating == 3).length / (reviews.isEmpty ? 1 : reviews.length)),
+                    _buildRatingBar(2, reviews.where((r) => r.rating == 2).length / (reviews.isEmpty ? 1 : reviews.length)),
+                    _buildRatingBar(1, reviews.where((r) => r.rating == 1).length / (reviews.isEmpty ? 1 : reviews.length)),
                   ],
                 ),
               ),
@@ -649,7 +778,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Kullanici Yorumlari',
+                'Kullanıcı Yorumları',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               TextButton.icon(
@@ -662,23 +791,23 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                   'Yorum Yaz',
                   style: TextStyle(color: BiCikalimTheme.primary),
                 ),
-                onPressed: () {},
+                onPressed: () => _showAddReviewDialog(venue),
               ),
             ],
           ),
         ),
         Expanded(
-          child: _reviews.isEmpty
+          child: reviews.isEmpty
               ? const AppEmptyState(
                   icon: Icons.rate_review_outlined,
-                  message: 'Bu mekan icin henuz yorum yapilmamis.',
+                  message: 'Bu mekan için henüz yorum yapılmamış.',
                   padding: EdgeInsets.all(32),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  itemCount: _reviews.length,
+                  itemCount: reviews.length,
                   itemBuilder: (context, index) {
-                    final review = _reviews[index];
+                    final review = reviews[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Column(
@@ -687,8 +816,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: BiCikalimTheme.primary
-                                    .withValues(alpha: 0.08),
+                                backgroundColor: BiCikalimTheme.primary.withValues(alpha: 0.08),
                                 radius: 18,
                                 child: Text(
                                   review.userDisplayName[0],
@@ -710,47 +838,14 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 6,
-                                      crossAxisAlignment:
-                                          WrapCrossAlignment.center,
-                                      children: [
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: List.generate(5, (index) {
-                                            return Icon(
-                                              index < review.rating
-                                                  ? Icons.star
-                                                  : Icons.star_border,
-                                              color: BiCikalimTheme.primary,
-                                              size: 12,
-                                            );
-                                          }),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            review.visitedActivityName,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    Row(
+                                      children: List.generate(5, (starIndex) {
+                                        return Icon(
+                                          starIndex < review.rating ? Icons.star : Icons.star_border,
+                                          color: BiCikalimTheme.primary,
+                                          size: 12,
+                                        );
+                                      }),
                                     ),
                                   ],
                                 ),
@@ -759,7 +854,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            review.comment,
+                            review.comment ?? '',
                             style: const TextStyle(
                               color: BiCikalimTheme.textSecondary,
                               fontSize: 13,
@@ -805,11 +900,4 @@ class _VenueDetailScreenState extends State<VenueDetailScreen>
       ],
     );
   }
-}
-
-class _InventoryItem {
-  final Activity activity;
-  final VenueActivity venueActivity;
-
-  const _InventoryItem({required this.activity, required this.venueActivity});
 }

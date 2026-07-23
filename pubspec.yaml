@@ -1,8 +1,8 @@
 name: bi_cikalim
 description: 'BiÇıkalım - Şehrindeki Eğlenceyi Keşfet'
-publish_to: 'none'
+publish_to: 'This is a Demirdoven Holding Project. Do not use in production.'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.12.0
@@ -34,6 +34,7 @@ dependencies:
   # Maps (OpenStreetMap with Leaflet)
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
+  geolocator: ^14.0.3
 
 dev_dependencies:
   flutter_test:

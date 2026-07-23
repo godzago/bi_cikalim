@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/services/mock_data.dart';
+import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
 import 'app_network_image.dart';
 
 class EventListCard extends StatelessWidget {
-  final Event event;
-  final Venue venue;
+  final ApiEvent event;
+  final ApiVenue venue;
   final VoidCallback onTap;
 
   const EventListCard({
@@ -161,7 +161,7 @@ class EventListCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    event.description,
+                    event.description ?? '',
                     style: const TextStyle(
                       color: BiCikalimTheme.textSecondary,
                       fontSize: 13,

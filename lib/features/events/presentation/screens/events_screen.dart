@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/services/mock_data.dart';
+import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_segmented_option.dart';
 import '../../../../shared/widgets/event_list_card.dart';
 
-class EventsScreen extends StatefulWidget {
+class EventsScreen extends ConsumerStatefulWidget {
   const EventsScreen({super.key});
 
   @override
-  State<EventsScreen> createState() => _EventsScreenState();
+  ConsumerState<EventsScreen> createState() => _EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> {
+class _EventsScreenState extends ConsumerState<EventsScreen> {
   String _selectedDateFilter = 'Tumu';
   String _selectedCategoryFilter = 'Tumu';
 
-  List<Event> _getFilteredEvents() {
-    var filtered = List<Event>.from(MockDatabase.events);
+  List<ApiEvent> _getFilteredEvents(List<ApiEvent> events) {
+    var filtered = List<ApiEvent>.from(events);
 
     if (_selectedDateFilter == 'Bugun') {
       filtered = filtered.where((event) {
@@ -52,123 +54,129 @@ class _EventsScreenState extends State<EventsScreen> {
     return filtered;
   }
 
-  List<String> _getEventCategories() {
+  List<String> _getEventCategories(List<ApiEvent> events) {
     final categories =
-        MockDatabase.events.map((event) => event.category).toSet().toList()
+        events.map((event) => event.category).toSet().toList()
           ..sort();
     return ['Tumu', ...categories];
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredEvents = _getFilteredEvents();
-    final categories = _getEventCategories();
+    final eventsAsync = ref.watch(eventsListProvider(const EventFilters()));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Etkinlikler')),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    BiCikalimTheme.primary.withValues(alpha: 0.1),
-                    BiCikalimTheme.primary.withValues(alpha: 0.03),
+      body: eventsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+        error: (error, _) => Center(child: Text('Hata: $error')),
+        data: (events) {
+          final filteredEvents = _getFilteredEvents(events);
+          final categories = _getEventCategories(events);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        BiCikalimTheme.primary.withValues(alpha: 0.1),
+                        BiCikalimTheme.primary.withValues(alpha: 0.03),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.event_available,
+                          color: BiCikalimTheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '${filteredEvents.length} etkinlik listelendi. Tarih ve kategori seçerek akışı daraltabilirsin.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            height: 1.4,
+                            fontWeight: FontWeight.w600,
+                            color: BiCikalimTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 52,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  children: [
+                    _buildDateSegment('Tumu'),
+                    const SizedBox(width: 8),
+                    _buildDateSegment('Bugun'),
+                    const SizedBox(width: 8),
+                    _buildDateSegment('Yarin'),
+                    const SizedBox(width: 8),
+                    _buildDateSegment('Bu Hafta'),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(18),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.event_available,
-                      color: BiCikalimTheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '${filteredEvents.length} etkinlik listelendi. Tarih ve kategori secerek akisi daraltabilirsin.',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        height: 1.4,
-                        fontWeight: FontWeight.w600,
-                        color: BiCikalimTheme.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 52,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              children: [
-                _buildDateSegment('Tumu'),
-                const SizedBox(width: 8),
-                _buildDateSegment('Bugun'),
-                const SizedBox(width: 8),
-                _buildDateSegment('Yarin'),
-                const SizedBox(width: 8),
-                _buildDateSegment('Bu Hafta'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: categories.length,
-              separatorBuilder: (_, index) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final isSelected = _selectedCategoryFilter == category;
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedCategoryFilter = category;
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.08),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: categories.length,
+                  separatorBuilder: (_, index) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final isSelected = _selectedCategoryFilter == category;
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategoryFilter = category;
+                        });
+                      },
                       borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      category,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : Theme.of(context).colorScheme.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : Theme.of(context).colorScheme.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -181,7 +189,7 @@ class _EventsScreenState extends State<EventsScreen> {
             child: filteredEvents.isEmpty
                 ? const AppEmptyState(
                     icon: Icons.event_busy,
-                    message: 'Bu filtre kombinasyonu icin etkinlik bulunmuyor.',
+                    message: 'Bu filtre kombinasyonu için etkinlik bulunmuyor.',
                     padding: EdgeInsets.all(32),
                   )
                 : ListView.builder(
@@ -189,17 +197,29 @@ class _EventsScreenState extends State<EventsScreen> {
                     itemCount: filteredEvents.length,
                     itemBuilder: (context, index) {
                       final event = filteredEvents[index];
-                      final venue = MockDatabase.getVenueById(event.venueId);
+                      final venue = ApiVenue(
+                        id: event.venueId,
+                        name: event.venue?.name ?? 'Mekan',
+                        slug: event.venue?.slug ?? 'mekan',
+                        venueType: 'cafe',
+                        city: ApiLocationSummary(id: '1', name: 'Eskişehir', slug: 'eskisehir'),
+                        isVerified: true,
+                        isFavorite: false,
+                        activitySummary: const [],
+                        coverUrl: event.coverUrl,
+                      );
 
                       return EventListCard(
                         event: event,
                         venue: venue,
-                        onTap: () => context.push('/venues/${venue.id}'),
+                        onTap: () => context.push('/venues/${venue.slug}'),
                       );
                     },
                   ),
           ),
         ],
+      );
+    },
       ),
     );
   }

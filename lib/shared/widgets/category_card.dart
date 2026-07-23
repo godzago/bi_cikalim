@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/services/mock_data.dart';
+import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
 
 /// Kategori kartı — görsel/icon destekli, dokunması kolay, mobil ergonomiye uygun.
 /// Her kategoriye sabit gradyan renk atanır.
 class CategoryCard extends StatelessWidget {
-  final ActivityCategory category;
+  final ApiCategory category;
   final VoidCallback onTap;
   final double? width;
   final EdgeInsetsGeometry? margin;

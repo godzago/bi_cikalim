@@ -1,31 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/services/api_providers.dart';
 import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/api_models.dart';
 
 /// Aktivite bazlı keşif listesi.
 /// Kullanıcı aktiviteyi seçer → o aktiviteyi sunan mekanları görür.
-class ActivityListTab extends StatefulWidget {
+class ActivityListTab extends ConsumerStatefulWidget {
   const ActivityListTab({super.key});
 
   @override
-  State<ActivityListTab> createState() => _ActivityListTabState();
+  ConsumerState<ActivityListTab> createState() => _ActivityListTabState();
 }
 
-class _ActivityListTabState extends State<ActivityListTab> {
+class _ActivityListTabState extends ConsumerState<ActivityListTab> {
   String? _selectedCategoryId;
-
-  List<ActivityCategory> get _categories => MockDatabase.categories;
-
-  List<Activity> get _filteredActivities {
-    if (_selectedCategoryId == null) {
-      return MockDatabase.activities;
-    }
-    return MockDatabase.activities
-        .where((a) => a.categoryId == _selectedCategoryId)
-        .toList();
-  }
 
   int _venueCountFor(String activityId) {
     return MockDatabase.venueActivities
@@ -35,58 +27,80 @@ class _ActivityListTabState extends State<ActivityListTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Kategori filtre bar
-        SizedBox(
-          height: 40,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: _categories.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _buildFilterChip('Tümü', null);
-              }
-              final cat = _categories[index - 1];
-              return _buildFilterChip(cat.name, cat.id);
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final activitiesAsync = ref.watch(activitiesProvider);
 
-        // Aktivite listesi
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            itemCount: _filteredActivities.length,
-            separatorBuilder: (context, i) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final activity = _filteredActivities[index];
-              final venueCount = _venueCountFor(activity.id);
-              final category = MockDatabase.getCategoryById(activity.categoryId);
+    return categoriesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+      error: (error, _) => Center(child: Text('Hata: $error')),
+      data: (categories) {
+        return activitiesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+          error: (error, _) => Center(child: Text('Hata: $error')),
+          data: (activities) {
+            final filteredActivities = _selectedCategoryId == null
+                ? activities
+                : activities.where((a) => a.categoryId == _selectedCategoryId).toList();
 
-              return _ActivityItemCard(
-                activity: activity,
-                category: category,
-                venueCount: venueCount,
-                onTap: () {
-                  context.push(
-                    Uri(
-                      path: '/discover/results',
-                      queryParameters: {
-                        'activityId': activity.id,
-                        'title': activity.name,
-                      },
-                    ).toString(),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Kategori filtre bar
+                SizedBox(
+                  height: 40,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: categories.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return _buildFilterChip('Tümü', null);
+                      }
+                      final cat = categories[index - 1];
+                      return _buildFilterChip(cat.name, cat.id);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Aktivite listesi
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    itemCount: filteredActivities.length,
+                    separatorBuilder: (context, i) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final activity = filteredActivities[index];
+                      final venueCount = _venueCountFor(activity.id);
+                      final category = categories.firstWhere(
+                        (cat) => cat.id == activity.categoryId,
+                        orElse: () => ApiCategory(id: activity.categoryId, name: 'Kategori', slug: 'kategori', isActive: true, sortOrder: 0),
+                      );
+
+                      return _ActivityItemCard(
+                        activity: activity,
+                        category: category,
+                        venueCount: venueCount,
+                        onTap: () {
+                          context.push(
+                            Uri(
+                              path: '/discover/results',
+                              queryParameters: {
+                                'activityId': activity.id,
+                                'title': activity.name,
+                              },
+                            ).toString(),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -124,8 +138,8 @@ class _ActivityListTabState extends State<ActivityListTab> {
 // ---------------------------------------------------------------------------
 
 class _ActivityItemCard extends StatelessWidget {
-  final Activity activity;
-  final ActivityCategory category;
+  final ApiActivity activity;
+  final ApiCategory category;
   final int venueCount;
   final VoidCallback onTap;
 
@@ -166,7 +180,7 @@ class _ActivityItemCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(
-                activity.icon,
+                activity.iconData,
                 color: BiCikalimTheme.primary,
                 size: 24,
               ),
@@ -183,7 +197,6 @@ class _ActivityItemCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      
                       color: BiCikalimTheme.textPrimary,
                     ),
                   ),
@@ -204,8 +217,7 @@ class _ActivityItemCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text('·',
-                          style: TextStyle(color: BiCikalimTheme.textLight)),
+                      const Text('·', style: TextStyle(color: BiCikalimTheme.textLight)),
                       const SizedBox(width: 8),
                       Text(
                         '${activity.minPeople}–${activity.maxPeople} kişi',

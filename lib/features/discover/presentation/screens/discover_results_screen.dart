@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/services/api_providers.dart';
 import '../../../../core/services/mock_data.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/venue_card.dart';
 
-class DiscoverResultsScreen extends StatefulWidget {
+class DiscoverResultsScreen extends ConsumerStatefulWidget {
   final String? query;
   final String? categoryId;
   final String? subcategoryId;
@@ -23,16 +26,16 @@ class DiscoverResultsScreen extends StatefulWidget {
   });
 
   @override
-  State<DiscoverResultsScreen> createState() => _DiscoverResultsScreenState();
+  ConsumerState<DiscoverResultsScreen> createState() => _DiscoverResultsScreenState();
 }
 
-class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
+class _DiscoverResultsScreenState extends ConsumerState<DiscoverResultsScreen> {
   String? _selectedSubcategoryId;
 
-  bool get _showsCategoryFilters =>
+  bool _showsCategoryFilters(List<ApiSubcategory> subcategories) =>
       widget.activityId == null &&
       widget.categoryId != null &&
-      _resolveSubcategories().isNotEmpty;
+      subcategories.isNotEmpty;
 
   @override
   void initState() {
@@ -40,122 +43,153 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
     _selectedSubcategoryId = widget.subcategoryId;
   }
 
+  List<ApiActivity> _resolveActivities(List<ApiActivity> activities) {
+    if (widget.activityId != null) {
+      return activities.where((a) => a.id == widget.activityId).toList();
+    }
+    if (_selectedSubcategoryId != null) {
+      return activities.where((a) => a.subcategoryId == _selectedSubcategoryId).toList();
+    }
+    if (widget.subcategoryId != null) {
+      return activities.where((a) => a.subcategoryId == widget.subcategoryId).toList();
+    }
+    if (widget.categoryId != null) {
+      return activities.where((a) => a.categoryId == widget.categoryId).toList();
+    }
+    if (widget.query != null && widget.query!.isNotEmpty) {
+      return activities.where((a) => a.name.toLowerCase().contains(widget.query!.toLowerCase())).toList();
+    }
+    return [];
+  }
+
   @override
   Widget build(BuildContext context) {
     final resolvedTitle = _resolveTitle();
-    final matchedCategories = widget.query == null || widget.query!.isEmpty
-        ? <ActivityCategory>[]
-        : MockDatabase.searchCategories(widget.query!);
-    final availableSubcategories = _resolveSubcategories();
-    final matchedActivities = _resolveActivities();
-    final matchedVenues = _resolveVenues();
+
+    final venuesAsync = ref.watch(venuesListProvider(VenueFilters(
+      q: widget.query,
+      activityCategorySlug: widget.categoryId,
+      activitySlug: widget.activityId,
+    )));
+
+    final activitiesAsync = ref.watch(activitiesProvider);
+
+    // Filter subcategories using local MockDatabase for category
+    final availableSubcategories = widget.categoryId != null
+        ? MockDatabase.getSubcategoriesForCategory(widget.categoryId!)
+        : <ActivitySubcategory>[];
 
     return Scaffold(
       appBar: AppBar(title: Text(resolvedTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        children: [
-          Text(
-            '${matchedVenues.length} mekan - ${matchedActivities.length} aktivite',
-            style: const TextStyle(
-              color: BiCikalimTheme.textSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (_showsCategoryFilters) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 38,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
+      body: venuesAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+        error: (err, _) => Center(child: Text('Arama sonuçları yüklenemedi: $err')),
+        data: (venues) {
+          // Apply local subcategory filter if selected
+          var matchedVenues = venues;
+          if (_selectedSubcategoryId != null) {
+            matchedVenues = venues.where((v) => v.activityTags.any((t) => t.toLowerCase() == _selectedSubcategoryId!.toLowerCase())).toList();
+          }
+
+          return activitiesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator(color: BiCikalimTheme.primary)),
+            error: (err, _) => Center(child: Text('Aktiviteler yüklenemedi: $err')),
+            data: (allActivities) {
+              final matchedActivities = _resolveActivities(allActivities);
+
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 children: [
-                  _SubcategoryChip(
-                    label: 'Tum alt kategoriler',
-                    isSelected: _selectedSubcategoryId == null,
-                    onTap: () {
-                      setState(() {
-                        _selectedSubcategoryId = null;
-                      });
-                    },
+                  Text(
+                    '${matchedVenues.length} mekan - ${matchedActivities.length} aktivite',
+                    style: const TextStyle(
+                      color: BiCikalimTheme.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  ...availableSubcategories.map((subcategory) {
-                    final venueCount = MockDatabase.getVenuesForSubcategory(
-                      subcategory.id,
-                    ).length;
-                    return _SubcategoryChip(
-                      label: '${subcategory.name} ($venueCount)',
-                      isSelected: _selectedSubcategoryId == subcategory.id,
-                      onTap: () {
-                        setState(() {
-                          _selectedSubcategoryId = subcategory.id;
-                        });
-                      },
-                    );
-                  }),
+                  if (_showsCategoryFilters(availableSubcategories.map((sc) => ApiSubcategory(id: sc.id, categoryId: sc.categoryId, name: sc.name, slug: sc.id)).toList())) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 38,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          _SubcategoryChip(
+                            label: 'Tüm alt kategoriler',
+                            isSelected: _selectedSubcategoryId == null,
+                            onTap: () {
+                              setState(() {
+                                _selectedSubcategoryId = null;
+                              });
+                            },
+                          ),
+                          ...availableSubcategories.map((subcategory) {
+                            final venueCount = MockDatabase.getVenuesForSubcategory(
+                              subcategory.id,
+                            ).length;
+                            return _SubcategoryChip(
+                              label: '${subcategory.name} ($venueCount)',
+                              isSelected: _selectedSubcategoryId == subcategory.id,
+                              onTap: () {
+                                setState(() {
+                                  _selectedSubcategoryId = subcategory.id;
+                                });
+                              },
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  const _SectionTitle(title: 'Mekanlar'),
+                  const SizedBox(height: 12),
+                  if (matchedVenues.isEmpty)
+                    const AppEmptyState(
+                      icon: Icons.travel_explore,
+                      message: 'Bu filtreye uygun mekan bulunamadı.',
+                    )
+                  else
+                    ...matchedVenues.map((venue) {
+                      return VenueCard(
+                        venue: venue,
+                        dense: true,
+                        onTap: () => context.push('/venues/${venue.slug}'),
+                      );
+                    }),
+                  if (matchedActivities.isNotEmpty && widget.activityId == null) ...[
+                    const SizedBox(height: 18),
+                    const _SectionTitle(title: 'İlgili Aktiviteler'),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 124,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: matchedActivities.length,
+                        separatorBuilder: (_, index) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) {
+                          final activity = matchedActivities[index];
+                          final subcategory = MockDatabase.getSubcategoryById(
+                            activity.subcategoryId,
+                          );
+                          return _ActivityRailCard(
+                            activity: activity,
+                            subtitle: subcategory?.name ?? 'Genel aktivite',
+                            venueCount: MockDatabase.getVenuesForActivity(
+                              activity.id,
+                            ).length,
+                            onTap: () => _openActivity(context, activity),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ],
-              ),
-            ),
-          ],
-          if (matchedCategories.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const _SectionTitle(title: 'Eslesen Kategoriler'),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: matchedCategories.map((category) {
-                return _FilterPill(
-                  label: category.name,
-                  onTap: () => _openCategory(context, category),
-                );
-              }).toList(),
-            ),
-          ],
-          const SizedBox(height: 18),
-          const _SectionTitle(title: 'Mekanlar'),
-          const SizedBox(height: 12),
-          if (matchedVenues.isEmpty)
-            const AppEmptyState(
-              icon: Icons.travel_explore,
-              message: 'Bu filtreye uygun mekan bulunamadi.',
-            )
-          else
-            ...matchedVenues.map((venue) {
-              return VenueCard(
-                venue: venue,
-                dense: true,
-                onTap: () => context.push('/venues/${venue.id}'),
               );
-            }),
-          if (matchedActivities.isNotEmpty && widget.activityId == null) ...[
-            const SizedBox(height: 18),
-            const _SectionTitle(title: 'Ilgili Aktiviteler'),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 124,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: matchedActivities.length,
-                separatorBuilder: (_, index) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final activity = matchedActivities[index];
-                  final subcategory = MockDatabase.getSubcategoryById(
-                    activity.subcategoryId,
-                  );
-                  return _ActivityRailCard(
-                    activity: activity,
-                    subtitle: subcategory?.name ?? 'Genel aktivite',
-                    venueCount: MockDatabase.getVenuesForActivity(
-                      activity.id,
-                    ).length,
-                    onTap: () => _openActivity(context, activity),
-                  );
-                },
-              ),
-            ),
-          ],
-        ],
+            },
+          );
+        },
       ),
     );
   }
@@ -175,66 +209,12 @@ class _DiscoverResultsScreenState extends State<DiscoverResultsScreen> {
           'Alt Kategori';
     }
     if (widget.query != null && widget.query!.isNotEmpty) {
-      return '"${widget.query}" aramasi';
+      return '"${widget.query}" araması';
     }
-    return 'Kesif Sonuclari';
+    return 'Keşif Sonuçları';
   }
 
-  List<ActivitySubcategory> _resolveSubcategories() {
-    if (widget.categoryId != null) {
-      return MockDatabase.getSubcategoriesForCategory(widget.categoryId!);
-    }
-    return [];
-  }
-
-  List<Activity> _resolveActivities() {
-    if (widget.activityId != null) {
-      return [MockDatabase.getActivityById(widget.activityId!)];
-    }
-    if (_selectedSubcategoryId != null) {
-      return MockDatabase.getActivitiesForSubcategory(_selectedSubcategoryId!);
-    }
-    if (widget.subcategoryId != null) {
-      return MockDatabase.getActivitiesForSubcategory(widget.subcategoryId!);
-    }
-    if (widget.categoryId != null) {
-      return MockDatabase.getActivitiesForCategory(widget.categoryId!);
-    }
-    if (widget.query != null && widget.query!.isNotEmpty) {
-      return MockDatabase.searchActivities(widget.query!);
-    }
-    return [];
-  }
-
-  List<Venue> _resolveVenues() {
-    if (widget.activityId != null) {
-      return MockDatabase.getVenuesForActivity(widget.activityId!);
-    }
-    if (_selectedSubcategoryId != null) {
-      return MockDatabase.getVenuesForSubcategory(_selectedSubcategoryId!);
-    }
-    if (widget.subcategoryId != null) {
-      return MockDatabase.getVenuesForSubcategory(widget.subcategoryId!);
-    }
-    if (widget.categoryId != null) {
-      return MockDatabase.getVenuesForCategory(widget.categoryId!);
-    }
-    if (widget.query != null && widget.query!.isNotEmpty) {
-      return MockDatabase.searchVenues(widget.query!);
-    }
-    return MockDatabase.venues;
-  }
-
-  void _openCategory(BuildContext context, ActivityCategory category) {
-    context.push(
-      Uri(
-        path: '/discover/results',
-        queryParameters: {'categoryId': category.id, 'title': category.name},
-      ).toString(),
-    );
-  }
-
-  void _openActivity(BuildContext context, Activity activity) {
+  void _openActivity(BuildContext context, ApiActivity activity) {
     context.push(
       Uri(
         path: '/discover/results',
@@ -256,37 +236,6 @@ class _SectionTitle extends StatelessWidget {
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        
-      ),
-    );
-  }
-}
-
-class _FilterPill extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _FilterPill({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: BiCikalimTheme.primary,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
       ),
     );
   }
@@ -335,7 +284,7 @@ class _SubcategoryChip extends StatelessWidget {
 }
 
 class _ActivityRailCard extends StatelessWidget {
-  final Activity activity;
+  final ApiActivity activity;
   final String subtitle;
   final int venueCount;
   final VoidCallback onTap;
@@ -370,7 +319,7 @@ class _ActivityRailCard extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                activity.icon,
+                activity.iconData,
                 color: BiCikalimTheme.primary,
                 size: 18,
               ),
