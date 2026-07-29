@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -34,7 +36,7 @@ final analyticsApiServiceProvider = Provider<AnalyticsApiService>(
 );
 
 final citiesProvider = FutureProvider<List<ApiCity>>((ref) async {
-  return (await ref.read(userApiServiceProvider).fetchCities()).items;
+  return ref.read(userApiServiceProvider).fetchAllCities();
 });
 
 final cityDetailProvider = FutureProvider.family<ApiCity, String>(
@@ -44,16 +46,20 @@ final cityDetailProvider = FutureProvider.family<ApiCity, String>(
 class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
   static const _storage = FlutterSecureStorage();
   static const _citySlugKey = 'selected_city_slug';
+  static const _cityCacheKey = 'selected_city_cache';
 
   @override
   Future<ApiCity?> build() async {
     final slug = await _storage.read(key: _citySlugKey);
-    if (slug == null || slug.isEmpty) return null;
+    final cached = await _readCachedCity();
+    if (slug == null || slug.isEmpty) return cached;
     try {
-      return await ref.read(userApiServiceProvider).fetchCity(slug);
+      final city = await ref.read(userApiServiceProvider).fetchCity(slug);
+      await _persist(city);
+      return city;
     } catch (_) {
-      await _storage.delete(key: _citySlugKey);
-      return null;
+      // Geçici ağ hatasında kullanıcının şehir tercihini silme.
+      return cached;
     }
   }
 
@@ -62,6 +68,10 @@ class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
     state = AsyncData(city);
     try {
       await _storage.write(key: _citySlugKey, value: city.slug);
+      await _storage.write(
+        key: _cityCacheKey,
+        value: jsonEncode(_cityToJson(city)),
+      );
       if (await ApiClient.instance.getToken() != null) {
         await ref.read(userApiServiceProvider).updateSelectedCity(city.id);
       }
@@ -73,8 +83,63 @@ class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
 
   Future<void> clear() async {
     await _storage.delete(key: _citySlugKey);
+    await _storage.delete(key: _cityCacheKey);
     state = const AsyncData(null);
   }
+
+  /// Başka cihazda/backend'de seçilmiş şehri yerel state'e taşır.
+  Future<ApiCity?> restoreFromUserCityId(String? cityId) async {
+    if (cityId == null || cityId.isEmpty) return state.value;
+    final current = state.value;
+    if (current?.id == cityId) return current;
+
+    var page = 1;
+    while (true) {
+      final response = await ref
+          .read(userApiServiceProvider)
+          .fetchCities(page: page, pageSize: 100);
+      for (final city in response.items) {
+        if (city.id == cityId) {
+          state = AsyncData(city);
+          await _persist(city);
+          return city;
+        }
+      }
+      if (page >= response.pages) break;
+      page++;
+    }
+    return null;
+  }
+
+  Future<void> _persist(ApiCity city) async {
+    await _storage.write(key: _citySlugKey, value: city.slug);
+    await _storage.write(
+      key: _cityCacheKey,
+      value: jsonEncode(_cityToJson(city)),
+    );
+  }
+
+  Future<ApiCity?> _readCachedCity() async {
+    final raw = await _storage.read(key: _cityCacheKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return ApiCity.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } on Object {
+      return null;
+    }
+  }
+
+  Map<String, dynamic> _cityToJson(ApiCity city) => {
+    'id': city.id,
+    'name': city.name,
+    'slug': city.slug,
+    'plate_code': city.plateCode,
+    'country_code': city.countryCode,
+    'has_content': city.hasContent,
+    'launch_status': city.launchStatus,
+    'empty_state_title': city.emptyStateTitle,
+    'empty_state_description': city.emptyStateDescription,
+  };
 }
 
 final selectedCityProvider =
@@ -247,19 +312,17 @@ final discoveryVenuesProvider =
       ref,
       filters,
     ) async {
-      final venues =
-          (await ref
-                  .read(venueApiServiceProvider)
-                  .fetchVenuesForDiscovery(
-                    scope: filters.scope,
-                    slug: filters.slug,
-                    citySlug: filters.citySlug,
-                    districtSlug: filters.districtSlug,
-                    neighborhoodSlug: filters.neighborhoodSlug,
-                    tagSlug: filters.tagSlug,
-                    q: filters.query,
-                  ))
-              .items;
+      final venues = await ref
+          .read(venueApiServiceProvider)
+          .fetchAllVenuesForDiscovery(
+            scope: filters.scope,
+            slug: filters.slug,
+            citySlug: filters.citySlug,
+            districtSlug: filters.districtSlug,
+            neighborhoodSlug: filters.neighborhoodSlug,
+            tagSlug: filters.tagSlug,
+            q: filters.query,
+          );
       ref
           .read(analyticsApiServiceProvider)
           .track(

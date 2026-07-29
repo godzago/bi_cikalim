@@ -9,7 +9,9 @@ import '../providers/user_session_provider.dart';
 
 /// Yeni kullanıcı kayıt ekranı.
 class SignUpScreen extends ConsumerStatefulWidget {
-  const SignUpScreen({super.key});
+  final String accountType;
+
+  const SignUpScreen({super.key, this.accountType = 'user'});
 
   @override
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
@@ -46,11 +48,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             password: _passwordController.text,
             username: _usernameController.text.trim(),
             fullName: _nameController.text.trim(),
+            role: widget.accountType,
           );
 
       if (!mounted) return;
-      // Kayıt sonrası şehir seçimine yönlendir
-      context.go(AppConstants.citySelectRoute);
+      if (widget.accountType == 'venue_owner') {
+        context.go(AppConstants.venueOwnerRoute);
+      } else {
+        context.go(AppConstants.citySelectRoute);
+      }
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString().replaceFirst('Exception: ', ''));
@@ -80,7 +86,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => context.go(AppConstants.signInRoute),
+          onPressed: () => context.go(
+            '${AppConstants.signInRoute}?accountType=${widget.accountType}',
+          ),
         ),
       ),
       body: SafeArea(
@@ -94,8 +102,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 const SizedBox(height: 8),
 
                 // Başlık
-                const Text(
-                  'Hesap Oluştur',
+                Text(
+                  widget.accountType == 'venue_owner'
+                      ? 'İşletme Hesabı Oluştur'
+                      : 'Hesap Oluştur',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -245,7 +255,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => context.go(AppConstants.signInRoute),
+                      onTap: () => context.go(
+                        '${AppConstants.signInRoute}?accountType=${widget.accountType}',
+                      ),
                       child: const Text(
                         'Giriş Yap',
                         style: TextStyle(

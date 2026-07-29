@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/notification_permission_service.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
 /// Uygulama başlangıç splash ekranı.
@@ -62,22 +63,33 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
 
     if (mounted) {
-      _navigate();
+      await _navigate();
     }
   }
 
-  void _navigate() {
+  Future<void> _navigate() async {
     if (!mounted) return;
 
     final userType = ref.read(userTypeProvider);
+    final destination = switch (userType) {
+      UserType.normalUser => AppConstants.discoverRoute,
+      UserType.venueOwner => '/venue-owner',
+      null => AppConstants.onboardingRoute,
+    };
 
-    switch (userType) {
-      case UserType.normalUser:
-        context.go(AppConstants.discoverRoute);
-      case UserType.venueOwner:
-        context.go('/venue-owner');
-      case null:
-        context.go(AppConstants.onboardingRoute);
+    final showNotificationPrompt =
+        await NotificationPermissionService.shouldShowPrompt();
+    if (!mounted) return;
+
+    if (showNotificationPrompt) {
+      context.go(
+        Uri(
+          path: '/notification-permission',
+          queryParameters: {'next': destination},
+        ).toString(),
+      );
+    } else {
+      context.go(destination);
     }
   }
 

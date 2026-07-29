@@ -23,12 +23,20 @@ class ApiConfigLoader {
         _environment = data['environment'] as String? ?? 'local';
       }
 
+      final environments =
+          data['environments'] as Map<String, dynamic>? ?? const {};
+      final environmentConfig =
+          environments[_environment] as Map<String, dynamic>? ?? data;
+
       if (kIsWeb) {
-        _baseUrl = data['base_url'] as String? ?? _baseUrl;
+        _baseUrl = environmentConfig['base_url'] as String? ?? _baseUrl;
       } else if (defaultTargetPlatform == TargetPlatform.android) {
-        _baseUrl = data['base_url_android'] as String? ?? _baseUrl;
+        _baseUrl =
+            environmentConfig['base_url_android'] as String? ??
+            environmentConfig['base_url'] as String? ??
+            _baseUrl;
       } else {
-        _baseUrl = data['base_url'] as String? ?? _baseUrl;
+        _baseUrl = environmentConfig['base_url'] as String? ?? _baseUrl;
       }
       const overrideUrl = String.fromEnvironment('API_BASE_URL');
       if (overrideUrl.isNotEmpty) {

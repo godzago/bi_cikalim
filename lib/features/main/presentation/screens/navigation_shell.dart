@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/theme/theme.dart';
 
 class NavigationShell extends StatelessWidget {
   final Widget child;
@@ -42,46 +43,55 @@ class NavigationShell extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: BiCikalimTheme.surface,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: BiCikalimTheme.primary.withValues(alpha: .08),
             ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          onTap: (index) => _onItemTapped(index, context),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.explore_outlined),
-              activeIcon: Icon(Icons.explore),
-              label: 'Kesfet',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.event_outlined),
-              activeIcon: Icon(Icons.event),
-              label: 'Etkinlikler',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.map_outlined),
-              activeIcon: Icon(Icons.map),
-              label: 'Harita',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_outline),
-              activeIcon: Icon(Icons.bookmark),
-              label: 'Kaydedilenler',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: selectedIndex,
+            onTap: (index) => _onItemTapped(index, context),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.explore_outlined),
+                activeIcon: Icon(Icons.explore_rounded),
+                label: 'Keşfet',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.event_outlined),
+                activeIcon: Icon(Icons.event_rounded),
+                label: 'Etkinlikler',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.map_outlined),
+                activeIcon: Icon(Icons.map_rounded),
+                label: 'Harita',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.bookmark_outline),
+                activeIcon: Icon(Icons.bookmark_rounded),
+                label: 'Kaydedilenler',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person_rounded),
+                label: 'Profil',
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../providers/user_session_provider.dart';
@@ -12,7 +11,9 @@ import '../providers/user_session_provider.dart';
 /// Not: Bu ekran şu an kullanılmıyor. Giriş onboarding üzerinden yapılıyor.
 /// İleride FastAPI backend entegrasyonunda aktif hale gelecek.
 class SignInScreen extends ConsumerStatefulWidget {
-  const SignInScreen({super.key});
+  final String accountType;
+
+  const SignInScreen({super.key, this.accountType = 'user'});
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -23,28 +24,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _rememberMe = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRememberedCredentials();
-  }
-
-  Future<void> _loadRememberedCredentials() async {
-    final credentials = await ApiClient.instance.getRememberedCredentials();
-    if (!mounted) return;
-
-    final email = credentials['email'];
-    final password = credentials['password'];
-    if (email != null && password != null) {
-      setState(() {
-        _emailController.text = email;
-        _passwordController.text = password;
-        _rememberMe = true;
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -65,15 +44,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           );
 
       // Beni Hatırla işaretliyse bilgileri kaydeder, değilse temizler
-      if (_rememberMe) {
-        await ApiClient.instance.saveRememberedCredentials(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-      } else {
-        await ApiClient.instance.clearRememberedCredentials();
-      }
-
       if (!mounted) return;
 
       final userType = ref.read(userTypeProvider);
@@ -121,7 +91,46 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: BiCikalimTheme.primary.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: BiCikalimTheme.primary,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.waving_hand_rounded,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Tekrar hoş geldin!',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Planların ve favorilerin seni bekliyor.',
+                        style: TextStyle(
+                          color: BiCikalimTheme.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
                 AppTextField(
                   label: 'E-posta Adresi',
                   hintText: 'ornek@email.com',
@@ -150,32 +159,23 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
-                Row(
+                const SizedBox(height: 14),
+                const Row(
                   children: [
-                    SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: Checkbox(
-                        value: _rememberMe,
-                        activeColor: BiCikalimTheme.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _rememberMe = value ?? false;
-                          });
-                        },
-                      ),
+                    Icon(
+                      Icons.shield_outlined,
+                      size: 18,
+                      color: BiCikalimTheme.primary,
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Beni Hatırla',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: BiCikalimTheme.textSecondary,
-                        fontWeight: FontWeight.w500,
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Çıkış yapana veya oturumun sona erene kadar girişin açık kalır.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: BiCikalimTheme.textSecondary,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
@@ -199,7 +199,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => context.go(AppConstants.signUpRoute),
+                      onTap: () => context.go(
+                        '${AppConstants.signUpRoute}?accountType=${widget.accountType}',
+                      ),
                       child: const Text(
                         'Kayıt Ol',
                         style: TextStyle(

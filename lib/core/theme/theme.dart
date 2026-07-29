@@ -18,6 +18,10 @@ class BiCikalimTheme {
   static const Color warning = Color(0xFFFFC107);
   static const Color error = Color(0xFFE53935);
 
+  static const double radiusSmall = 14;
+  static const double radiusMedium = 20;
+  static const double radiusLarge = 28;
+
   static ThemeData get lightTheme {
     final baseTextTheme = GoogleFonts.poppinsTextTheme(
       ThemeData.light().textTheme,
@@ -33,9 +37,11 @@ class BiCikalimTheme {
       ),
       scaffoldBackgroundColor: background,
       fontFamily: GoogleFonts.poppins().fontFamily,
+      splashFactory: InkSparkle.splashFactory,
       appBarTheme: AppBarTheme(
-        backgroundColor: surface,
+        backgroundColor: background,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         iconTheme: const IconThemeData(color: textPrimary),
         titleTextStyle: GoogleFonts.poppins(
@@ -61,9 +67,12 @@ class BiCikalimTheme {
       ),
       cardTheme: CardThemeData(
         color: cardBg,
-        elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.05),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        shadowColor: Colors.black.withValues(alpha: 0.04),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMedium),
+          side: BorderSide(color: primary.withValues(alpha: .07)),
+        ),
       ),
       textTheme: baseTextTheme.copyWith(
         headlineLarge: GoogleFonts.poppins(
@@ -121,9 +130,10 @@ class BiCikalimTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          minimumSize: const Size(48, 56),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(18),
           ),
           textStyle: GoogleFonts.poppins(
             fontSize: 16,
@@ -139,15 +149,15 @@ class BiCikalimTheme {
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: primary.withValues(alpha: .08)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: primary.withValues(alpha: .08)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: primary, width: 1.5),
         ),
         hintStyle: GoogleFonts.poppins(
@@ -155,6 +165,34 @@ class BiCikalimTheme {
           fontSize: 14,
           fontWeight: FontWeight.normal,
         ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primary,
+          minimumSize: const Size(48, 56),
+          side: BorderSide(color: primary.withValues(alpha: .35)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          textStyle: GoogleFonts.poppins(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primary,
+          shape: const StadiumBorder(),
+          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMedium),
+        ),
+        insetPadding: const EdgeInsets.all(16),
       ),
     );
   }

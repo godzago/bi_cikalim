@@ -7,6 +7,7 @@ class AppConstants {
   static const String onboardingRoute = '/onboarding';
   static const String signInRoute = '/sign-in';
   static const String signUpRoute = '/sign-up';
+  static const String venueOwnerRoute = '/venue-owner';
   static const String forgotPasswordRoute = '/forgot-password';
   static const String citySelectRoute = '/city-select';
   static const String discoverRoute = '/discover';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
@@ -83,6 +84,34 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     ).showSnackBar(SnackBar(content: Text(error.toString())));
   }
 
+  Future<void> _openUrl(String? value) async {
+    final uri = value == null ? null : Uri.tryParse(value);
+    if (uri == null ||
+        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      _showError('Bağlantı açılamadı.');
+    }
+  }
+
+  Future<void> _reportEvent(ApiEvent event) async {
+    try {
+      await ref
+          .read(interactionApiServiceProvider)
+          .createContentReport(
+            targetType: 'event',
+            targetId: event.id,
+            reason: 'incorrect_info',
+            description: 'Etkinlik bilgilerinin kontrol edilmesini istiyorum.',
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Etkinlik incelemeye gönderildi.')),
+        );
+      }
+    } catch (error) {
+      _showError(error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = eventDetailProvider(widget.eventSlug);
@@ -157,6 +186,116 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       ],
                       const SizedBox(height: 12),
                       Text(event.description ?? event.shortDescription ?? ''),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          Chip(
+                            avatar: const Icon(
+                              Icons.payments_outlined,
+                              size: 18,
+                            ),
+                            label: Text(event.priceInfo),
+                          ),
+                          if (event.ageLimit != null)
+                            Chip(
+                              avatar: const Icon(
+                                Icons.person_outline,
+                                size: 18,
+                              ),
+                              label: Text('${event.ageLimit}+ yaş'),
+                            ),
+                          if (event.doorsOpenAt != null)
+                            Chip(
+                              avatar: const Icon(
+                                Icons.door_front_door_outlined,
+                                size: 18,
+                              ),
+                              label: Text(
+                                'Kapı: ${TimeOfDay.fromDateTime(event.doorsOpenAt!.toLocal()).format(context)}',
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (event.activities.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: event.activities
+                              .map(
+                                (activity) => Chip(
+                                  label: Text(activity.name),
+                                  avatar: const Icon(
+                                    Icons.local_activity_outlined,
+                                    size: 17,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                      if (event.ticketUrl != null ||
+                          event.reservationUrl != null) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            if (event.ticketUrl != null)
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () => _openUrl(event.ticketUrl),
+                                  icon: const Icon(
+                                    Icons.confirmation_number_outlined,
+                                  ),
+                                  label: const Text('Bilet'),
+                                ),
+                              ),
+                            if (event.ticketUrl != null &&
+                                event.reservationUrl != null)
+                              const SizedBox(width: 10),
+                            if (event.reservationUrl != null)
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () =>
+                                      _openUrl(event.reservationUrl),
+                                  icon: const Icon(Icons.event_available),
+                                  label: const Text('Rezervasyon'),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                      if (event.media.isNotEmpty) ...[
+                        const SizedBox(height: 22),
+                        Text(
+                          'Etkinlikten kareler',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 150,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: event.media.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 10),
+                            itemBuilder: (_, index) {
+                              final url = event.media[index].publicUrl;
+                              return url == null
+                                  ? const SizedBox.shrink()
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: AppNetworkImage(
+                                        imageUrl: url,
+                                        width: 210,
+                                        height: 150,
+                                      ),
+                                    );
+                            },
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       Wrap(
                         spacing: 8,
@@ -182,6 +321,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                                     selected ? 'going' : null,
                                   ),
                           ),
+                          FilterChip(
+                            selected: attendance == 'not_going',
+                            label: const Text('Katılamıyorum'),
+                            onSelected: _busy
+                                ? null
+                                : (selected) => _setAttendance(
+                                    event,
+                                    selected ? 'not_going' : null,
+                                  ),
+                          ),
                           ActionChip(
                             avatar: Icon(
                               isFavorite
@@ -193,6 +342,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                             onPressed: _busy
                                 ? null
                                 : () => _toggleFavorite(event),
+                          ),
+                          ActionChip(
+                            avatar: const Icon(Icons.flag_outlined),
+                            label: const Text('Bildir'),
+                            onPressed: _busy ? null : () => _reportEvent(event),
                           ),
                         ],
                       ),

@@ -112,8 +112,8 @@ class ApiActivity {
   final String? subcategoryId;
   final String? description;
   final String kind;
-  final int minPeople;
-  final int maxPeople;
+  final int? minPeople;
+  final int? maxPeople;
 
   const ApiActivity({
     required this.id,
@@ -136,8 +136,8 @@ class ApiActivity {
       subcategoryId: json['sub_category_id']?.toString(),
       description: json['description'] as String?,
       kind: (json['activity_kind'] ?? json['kind']) as String? ?? 'other',
-      minPeople: (json['min_participants'] ?? json['min_people']) as int? ?? 1,
-      maxPeople: (json['max_participants'] ?? json['max_people']) as int? ?? 10,
+      minPeople: (json['min_participants'] ?? json['min_people']) as int?,
+      maxPeople: (json['max_participants'] ?? json['max_people']) as int?,
     );
   }
 

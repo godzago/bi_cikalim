@@ -9,6 +9,8 @@
 		</dict>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Yakınınızdaki mekanları ve etkinlikleri haritada gösterebilmek için konum iznine ihtiyacımız var.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>İşletme mekan görsellerini seçebilmek için fotoğraf arşivinize erişim gerekir.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>Yakınınızdaki mekanları ve etkinlikleri haritada gösterebilmek için konum iznine ihtiyacımız var.</string>
 		<key>CADisableMinimumFrameDurationOnPhone</key>

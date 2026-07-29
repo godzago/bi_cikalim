@@ -24,6 +24,19 @@ abstract class _ApiService {
   Never fail(Object error) => throw apiServiceException(error);
 }
 
+Future<List<T>> _collectAllPages<T>(
+  Future<ApiPaginatedResponse<T>> Function(int page) loadPage,
+) async {
+  final result = <T>[];
+  var page = 1;
+  while (true) {
+    final response = await loadPage(page);
+    result.addAll(response.items);
+    if (page >= response.pages) return result;
+    page++;
+  }
+}
+
 class TaxonomyApiService extends _ApiService {
   Future<ApiPaginatedResponse<ApiCategory>> fetchCategoriesPage({
     int page = 1,
@@ -44,7 +57,9 @@ class TaxonomyApiService extends _ApiService {
   }
 
   Future<List<ApiCategory>> fetchCategories() async {
-    return (await fetchCategoriesPage()).items;
+    return _collectAllPages(
+      (page) => fetchCategoriesPage(page: page, pageSize: 100),
+    );
   }
 
   Future<ApiCategory> fetchCategory(String slug) async {
@@ -82,7 +97,13 @@ class TaxonomyApiService extends _ApiService {
   Future<List<ApiSubcategory>> fetchSubcategories({
     String? categorySlug,
   }) async {
-    return (await fetchSubcategoriesPage(categorySlug: categorySlug)).items;
+    return _collectAllPages(
+      (page) => fetchSubcategoriesPage(
+        page: page,
+        pageSize: 100,
+        categorySlug: categorySlug,
+      ),
+    );
   }
 
   Future<ApiSubcategory> fetchSubcategory(String slug) async {
@@ -126,11 +147,15 @@ class TaxonomyApiService extends _ApiService {
     String? subCategorySlug,
     String? q,
   }) async {
-    return (await fetchActivitiesPage(
-      categorySlug: categorySlug,
-      subCategorySlug: subCategorySlug,
-      q: q,
-    )).items;
+    return _collectAllPages(
+      (page) => fetchActivitiesPage(
+        page: page,
+        pageSize: 100,
+        categorySlug: categorySlug,
+        subCategorySlug: subCategorySlug,
+        q: q,
+      ),
+    );
   }
 
   Future<ApiActivity> fetchActivity(String slug) async {
@@ -166,6 +191,10 @@ class UserApiService extends _ApiService {
     } catch (error) {
       fail(error);
     }
+  }
+
+  Future<List<ApiCity>> fetchAllCities() {
+    return _collectAllPages((page) => fetchCities(page: page, pageSize: 100));
   }
 
   Future<AppUser> updateProfile({String? fullName, String? username}) async {
@@ -249,20 +278,22 @@ class VenueApiService extends _ApiService {
     bool? hasCoordinates,
     bool? isVerified,
   }) async {
-    return (await fetchVenuesPage(
-      page: page,
-      pageSize: pageSize,
-      citySlug: citySlug,
-      districtSlug: districtSlug,
-      neighborhoodSlug: neighborhoodSlug,
-      activityCategorySlug: activityCategorySlug,
-      activitySubCategorySlug: activitySubCategorySlug,
-      activitySlug: activitySlug,
-      tagSlug: tagSlug,
-      q: q,
-      hasCoordinates: hasCoordinates,
-      isVerified: isVerified,
-    )).items;
+    return _collectAllPages(
+      (currentPage) => fetchVenuesPage(
+        page: currentPage,
+        pageSize: 100,
+        citySlug: citySlug,
+        districtSlug: districtSlug,
+        neighborhoodSlug: neighborhoodSlug,
+        activityCategorySlug: activityCategorySlug,
+        activitySubCategorySlug: activitySubCategorySlug,
+        activitySlug: activitySlug,
+        tagSlug: tagSlug,
+        q: q,
+        hasCoordinates: hasCoordinates,
+        isVerified: isVerified,
+      ),
+    );
   }
 
   Future<ApiVenue> fetchVenueDetail(String slug) async {
@@ -328,19 +359,45 @@ class VenueApiService extends _ApiService {
     }
   }
 
+  Future<List<ApiVenue>> fetchAllVenuesForDiscovery({
+    required String scope,
+    required String slug,
+    required String citySlug,
+    String? districtSlug,
+    String? neighborhoodSlug,
+    String? tagSlug,
+    String? q,
+  }) {
+    return _collectAllPages(
+      (page) => fetchVenuesForDiscovery(
+        scope: scope,
+        slug: slug,
+        citySlug: citySlug,
+        page: page,
+        pageSize: 100,
+        districtSlug: districtSlug,
+        neighborhoodSlug: neighborhoodSlug,
+        tagSlug: tagSlug,
+        q: q,
+      ),
+    );
+  }
+
   Future<List<ApiVenue>> fetchFavoriteVenues({
     int page = 1,
     int pageSize = 100,
   }) async {
     try {
-      final response = await dio.get(
-        '/users/me/favorite-venues',
-        queryParameters: {'page': page, 'page_size': pageSize},
-      );
-      return ApiPaginatedResponse.fromJson(
-        mapData(response),
-        ApiVenue.fromJson,
-      ).items;
+      return _collectAllPages((currentPage) async {
+        final response = await dio.get(
+          '/users/me/favorite-venues',
+          queryParameters: {'page': currentPage, 'page_size': 100},
+        );
+        return ApiPaginatedResponse.fromJson(
+          mapData(response),
+          ApiVenue.fromJson,
+        );
+      });
     } catch (error) {
       fail(error);
     }
@@ -409,17 +466,19 @@ class EventApiService extends _ApiService {
     String? priceType,
     String? q,
   }) async {
-    return (await fetchEventsPage(
-      page: page,
-      pageSize: pageSize,
-      citySlug: citySlug,
-      venueSlug: venueSlug,
-      activitySlug: activitySlug,
-      dateFrom: dateFrom,
-      dateTo: dateTo,
-      priceType: priceType,
-      q: q,
-    )).items;
+    return _collectAllPages(
+      (currentPage) => fetchEventsPage(
+        page: currentPage,
+        pageSize: 100,
+        citySlug: citySlug,
+        venueSlug: venueSlug,
+        activitySlug: activitySlug,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        priceType: priceType,
+        q: q,
+      ),
+    );
   }
 
   Future<ApiEvent> fetchEventDetail(String slug) async {
@@ -466,14 +525,16 @@ class EventApiService extends _ApiService {
     int pageSize = 100,
   }) async {
     try {
-      final response = await dio.get(
-        '/users/me/favorite-events',
-        queryParameters: {'page': page, 'page_size': pageSize},
-      );
-      return ApiPaginatedResponse.fromJson(
-        mapData(response),
-        ApiEvent.fromJson,
-      ).items;
+      return _collectAllPages((currentPage) async {
+        final response = await dio.get(
+          '/users/me/favorite-events',
+          queryParameters: {'page': currentPage, 'page_size': 100},
+        );
+        return ApiPaginatedResponse.fromJson(
+          mapData(response),
+          ApiEvent.fromJson,
+        );
+      });
     } catch (error) {
       fail(error);
     }
@@ -526,12 +587,14 @@ class InteractionApiService extends _ApiService {
     int page = 1,
     int pageSize = 20,
   }) async {
-    return (await fetchVenueReviewsPage(
-      venueId,
-      activityId: activityId,
-      page: page,
-      pageSize: pageSize,
-    )).items;
+    return _collectAllPages(
+      (currentPage) => fetchVenueReviewsPage(
+        venueId,
+        activityId: activityId,
+        page: currentPage,
+        pageSize: 100,
+      ),
+    );
   }
 
   Future<ApiReview> createReview(
@@ -709,7 +772,7 @@ class SubmissionApiService extends _ApiService {
 class MediaApiService extends _ApiService {
   Future<ApiMedia> fetchMedia(String mediaId) async {
     try {
-      final response = await dio.get('/media/$mediaId');
+      final response = await dio.get('/media/$mediaId/metadata');
       return ApiMedia.fromJson(wrappedData(response));
     } catch (error) {
       fail(error);

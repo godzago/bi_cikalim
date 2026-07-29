@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
+import '../../features/auth/presentation/screens/notification_permission_screen.dart';
 import '../../features/auth/presentation/screens/venue_owner_screen.dart';
 import '../../features/auth/presentation/screens/sign_in_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
@@ -28,6 +29,22 @@ final GoRouter appRouter = GoRouter(
     // Splash
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
 
+    GoRoute(
+      path: '/notification-permission',
+      builder: (context, state) {
+        const allowedDestinations = {
+          '/onboarding',
+          '/discover',
+          '/venue-owner',
+        };
+        final requested = state.uri.queryParameters['next'];
+        final nextRoute = allowedDestinations.contains(requested)
+            ? requested!
+            : '/onboarding';
+        return NotificationPermissionScreen(nextRoute: nextRoute);
+      },
+    ),
+
     // Onboarding — Kullanıcı tipi seçimi
     GoRoute(
       path: '/onboarding',
@@ -37,13 +54,21 @@ final GoRouter appRouter = GoRouter(
     // Sign In
     GoRoute(
       path: '/sign-in',
-      builder: (context, state) => const SignInScreen(),
+      builder: (context, state) {
+        final requested = state.uri.queryParameters['accountType'];
+        final accountType = requested == 'venue_owner' ? 'venue_owner' : 'user';
+        return SignInScreen(accountType: accountType);
+      },
     ),
 
     // Sign Up
     GoRoute(
       path: '/sign-up',
-      builder: (context, state) => const SignUpScreen(),
+      builder: (context, state) {
+        final requested = state.uri.queryParameters['accountType'];
+        final accountType = requested == 'venue_owner' ? 'venue_owner' : 'user';
+        return SignUpScreen(accountType: accountType);
+      },
     ),
 
     // Mekan Sahibi Panel (Placeholder)

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
 /// Kullanıcı profil ekranı.
@@ -22,8 +23,9 @@ class ProfileScreen extends ConsumerWidget {
     ];
     if (hadUser) {
       futures.add(
-        ref.read(apiAuthServiceProvider).fetchCurrentUser().then((user) {
+        ref.read(apiAuthServiceProvider).fetchCurrentUser().then((user) async {
           ref.read(currentUserProvider.notifier).setUser(user);
+          await ApiClient.instance.saveCachedUser(user);
         }),
       );
     }
@@ -33,6 +35,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userType = ref.watch(userTypeProvider);
+    final isVenueOwner = ref.watch(isVenueOwnerProvider);
     final user = ref.watch(currentUserProvider);
     final selectedCity = ref.watch(selectedCityProvider).value;
 
@@ -135,13 +138,22 @@ class ProfileScreen extends ConsumerWidget {
               // İşletme Yönetimi
               _buildSectionHeader('İşletme'),
               const SizedBox(height: 12),
-              _buildMenuCard(
-                context,
-                icon: Icons.storefront,
-                title: 'Mekan Sahibi misiniz?',
-                subtitle: 'Mekanınızı ekleyin veya sahiplenin.',
-                onTap: () => context.push('/submissions/ownership'),
-              ),
+              if (isVenueOwner)
+                _buildMenuCard(
+                  context,
+                  icon: Icons.business_center_outlined,
+                  title: 'İşletme Araçları',
+                  subtitle: 'Mekan görsellerini ve işletme işlemlerini yönet.',
+                  onTap: () => context.push('/venue-owner'),
+                )
+              else
+                _buildMenuCard(
+                  context,
+                  icon: Icons.storefront,
+                  title: 'Mekan Sahibi misiniz?',
+                  subtitle: 'Mekanınızı ekleyin veya sahiplenin.',
+                  onTap: () => context.push('/submissions/ownership'),
+                ),
               const SizedBox(height: 12),
               _buildMenuCard(
                 context,
@@ -370,6 +382,7 @@ class ProfileScreen extends ConsumerWidget {
                               username: usernameController.text.trim(),
                             );
                         ref.read(currentUserProvider.notifier).setUser(updated);
+                        await ApiClient.instance.saveCachedUser(updated);
                         if (dialogContext.mounted) {
                           Navigator.pop(dialogContext);
                         }

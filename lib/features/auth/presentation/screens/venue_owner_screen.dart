@@ -1,17 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/api_providers.dart';
 import '../providers/user_session_provider.dart';
 
 /// Mekan sahibi panel placeholder ekranı.
 /// İleride mekan profili oluşturma, etkinlik ekleme ve istatistikler buraya gelecek.
-class VenueOwnerScreen extends ConsumerWidget {
+class VenueOwnerScreen extends ConsumerStatefulWidget {
   const VenueOwnerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VenueOwnerScreen> createState() => _VenueOwnerScreenState();
+}
+
+class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
+  bool _isUploading = false;
+  String? _uploadedFileName;
+
+  Future<void> _pickAndUploadImage() async {
+    if (_isUploading) return;
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 88,
+      maxWidth: 1920,
+    );
+    if (image == null || !mounted) return;
+
+    setState(() => _isUploading = true);
+    try {
+      await ref
+          .read(mediaApiServiceProvider)
+          .uploadImage(
+            filePath: image.path,
+            usageType: 'venues',
+            visibility: 'public',
+          );
+      if (!mounted) return;
+      setState(() => _uploadedFileName = image.name);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Görsel yüklendi. Mekana bağlama işlemi yönetici onayından sonra yapılabilir.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Görsel yüklenemedi: $error')));
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isVenueOwner = ref.watch(isVenueOwnerProvider);
+    if (!isVenueOwner) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('İşletme Araçları')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline_rounded, size: 52),
+                const SizedBox(height: 16),
+                const Text(
+                  'Bu alan yalnızca doğrulanmış işletme sahiplerine açıktır.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => context.go(AppConstants.discoverRoute),
+                  child: const Text('Keşfete dön'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: BiCikalimTheme.background,
       body: SafeArea(
@@ -26,6 +102,8 @@ class VenueOwnerScreen extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   const SizedBox(height: 32),
+                  _buildImageUploadCard(),
+                  const SizedBox(height: 12),
                   _buildComingSoonCard(
                     icon: Icons.storefront_outlined,
                     title: 'Mekan Profili Oluştur',
@@ -81,6 +159,78 @@ class VenueOwnerScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildImageUploadCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: BiCikalimTheme.primary.withValues(alpha: .12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.add_photo_alternate_outlined,
+                color: BiCikalimTheme.primary,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Mekan görseli yükle',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              _OwnerOnlyBadge(),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Kapak veya galeri için yüksek kaliteli bir görsel seç. Bu araç normal kullanıcı hesaplarında gösterilmez.',
+            style: TextStyle(
+              color: BiCikalimTheme.textSecondary,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          if (_uploadedFileName != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Son yüklenen: $_uploadedFileName',
+              style: const TextStyle(
+                color: BiCikalimTheme.success,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _isUploading ? null : _pickAndUploadImage,
+              icon: _isUploading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.photo_library_outlined),
+              label: Text(_isUploading ? 'Yükleniyor...' : 'Galeriden seç'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
@@ -103,12 +253,8 @@ class VenueOwnerScreen extends ConsumerWidget {
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () async {
-                    await ref.read(userSessionProvider.notifier).signOut();
-                    if (context.mounted) {
-                      context.go(AppConstants.onboardingRoute);
-                    }
-                  },
+                  tooltip: 'Profile dön',
+                  onPressed: () => context.go('/profile'),
                 ),
               ),
               const Spacer(),
@@ -170,12 +316,7 @@ class VenueOwnerScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           // Keşfet moduna git
           GestureDetector(
-            onTap: () {
-              ref
-                  .read(userTypeProvider.notifier)
-                  .setUserType(UserType.normalUser);
-              context.go(AppConstants.discoverRoute);
-            },
+            onTap: () => context.go(AppConstants.discoverRoute),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
@@ -359,6 +500,29 @@ class VenueOwnerScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OwnerOnlyBadge extends StatelessWidget {
+  const _OwnerOnlyBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: BiCikalimTheme.primary.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: const Text(
+        'İşletmeye özel',
+        style: TextStyle(
+          color: BiCikalimTheme.primary,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

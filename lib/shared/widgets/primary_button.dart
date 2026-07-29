@@ -41,7 +41,9 @@ class PrimaryButton extends StatelessWidget {
         children: [
           Icon(prefixIcon, size: 20),
           const SizedBox(width: 8),
-          Text(label),
+          Flexible(
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
         ],
       );
     } else {
@@ -110,7 +112,7 @@ class SecondaryButton extends StatelessWidget {
               foregroundColor: BiCikalimTheme.primary,
               side: const BorderSide(color: BiCikalimTheme.primary),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
               ),
               textStyle: const TextStyle(
                 fontSize: 16,

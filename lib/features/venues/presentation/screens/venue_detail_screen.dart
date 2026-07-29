@@ -10,6 +10,7 @@ import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../../shared/widgets/event_list_card.dart';
+import '../../../auth/presentation/providers/user_session_provider.dart';
 
 class VenueDetailScreen extends ConsumerStatefulWidget {
   final String venueId;
@@ -85,11 +86,13 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     }
   }
 
-  void _showAddReviewDialog(ApiVenue venue) {
-    int rating = 5;
-    String? activityId;
+  void _showAddReviewDialog(ApiVenue venue, {ApiReview? existing}) {
+    int rating = existing?.rating ?? 5;
+    String? activityId = existing?.activityId;
     var isSubmitting = false;
-    final commentController = TextEditingController();
+    final commentController = TextEditingController(
+      text: existing?.comment ?? '',
+    );
     final pageContext = context;
 
     showDialog<void>(
@@ -101,7 +104,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: const Text('Yorum Yaz'),
+              title: Text(existing == null ? 'Yorum Yaz' : 'Yorumunu Düzenle'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -212,18 +215,31 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                             final service = ref.read(
                               interactionApiServiceProvider,
                             );
-                            await service.createReview(
-                              venue.id,
-                              rating,
-                              commentController.text,
-                              activityId: activityId,
-                            );
+                            if (existing == null) {
+                              await service.createReview(
+                                venue.id,
+                                rating,
+                                commentController.text,
+                                activityId: activityId,
+                              );
+                            } else {
+                              await service.updateMyReview(
+                                venue.id,
+                                rating,
+                                commentController.text,
+                                activityId: existing.activityId,
+                              );
+                            }
                             reviewCreated = true;
                             if (!mounted || !dialogContext.mounted) return;
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(pageContext).showSnackBar(
-                              const SnackBar(
-                                content: Text('Yorumunuz başarıyla eklendi.'),
+                              SnackBar(
+                                content: Text(
+                                  existing == null
+                                      ? 'Yorumunuz başarıyla eklendi.'
+                                      : 'Yorumunuz güncellendi.',
+                                ),
                               ),
                             );
                             ref.invalidate(venueReviewsProvider(venue.id));
@@ -332,6 +348,30 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
         ),
       ),
     ).whenComplete(descriptionController.dispose);
+  }
+
+  Future<void> _reportReview(ApiReview review) async {
+    try {
+      await ref
+          .read(interactionApiServiceProvider)
+          .createContentReport(
+            targetType: 'review',
+            targetId: review.id,
+            reason: 'offensive',
+            description: 'Bu yorumun incelenmesini istiyorum.',
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yorum incelemeye gönderildi.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
   }
 
   Future<void> _launchExternal(String? rawUrl) async {
@@ -742,6 +782,35 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
               height: 1.5,
             ),
           ),
+          if (venue.media.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'Galeri',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 150,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: venue.media.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (_, index) {
+                  final url = venue.media[index].publicUrl;
+                  return url == null
+                      ? const SizedBox.shrink()
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: AppNetworkImage(
+                            imageUrl: url,
+                            width: 210,
+                            height: 150,
+                          ),
+                        );
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           const Text(
             'Çalışma Saatleri',
@@ -750,7 +819,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
           const SizedBox(height: 12),
           if (venue.openingHours.isEmpty)
             const Text(
-              'Hafta İçi & Hafta Sonu: 09:00 - 23:00 (Varsayılan)',
+              'Çalışma saatleri henüz eklenmemiş.',
               style: TextStyle(color: BiCikalimTheme.textSecondary),
             )
           else
@@ -783,8 +852,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
             runSpacing: 8,
             children: venue.tags.isEmpty
                 ? [
-                    _buildFeatureChip('Grup dostu'),
-                    _buildFeatureChip('Rezervasyon uygun'),
+                    const Text(
+                      'Mekan özellikleri henüz eklenmemiş.',
+                      style: TextStyle(color: BiCikalimTheme.textSecondary),
+                    ),
                   ]
                 : venue.tags.map((t) => _buildFeatureChip(t.name)).toList(),
           ),
@@ -906,6 +977,17 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
   }
 
   Widget _buildReviewsTab(List<ApiReview> reviews, ApiVenue venue) {
+    final currentUser = ref.watch(currentUserProvider);
+    ApiReview? myReview;
+    if (currentUser != null) {
+      for (final review in reviews) {
+        if (review.userId == currentUser.id && review.activityId == null) {
+          myReview = review;
+          break;
+        }
+      }
+    }
+
     return Column(
       children: [
         Padding(
@@ -994,11 +1076,12 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                   size: 16,
                   color: BiCikalimTheme.primary,
                 ),
-                label: const Text(
-                  'Yorum Yaz',
-                  style: TextStyle(color: BiCikalimTheme.primary),
+                label: Text(
+                  myReview == null ? 'Yorum Yaz' : 'Yorumunu Düzenle',
+                  style: const TextStyle(color: BiCikalimTheme.primary),
                 ),
-                onPressed: () => _showAddReviewDialog(venue),
+                onPressed: () =>
+                    _showAddReviewDialog(venue, existing: myReview),
               ),
             ],
           ),
@@ -1060,6 +1143,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                                   ],
                                 ),
                               ),
+                              if (currentUser?.id != review.userId)
+                                IconButton(
+                                  tooltip: 'Yorumu bildir',
+                                  onPressed: () => _reportReview(review),
+                                  icon: const Icon(
+                                    Icons.flag_outlined,
+                                    size: 19,
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 8),

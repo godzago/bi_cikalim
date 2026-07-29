@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config/api_config_loader.dart';
+import '../../shared/models/user_model.dart';
 
 /// Uygulamanın tek HTTP istemcisi.
 ///
@@ -79,6 +80,7 @@ class ApiClient {
   }
 
   static const _sessionKey = 'auth_session';
+  static const _cachedUserKey = 'auth_cached_user';
   static const _legacyAccessTokenKey = 'auth_token';
   static const _retriedKey = 'auth_request_retried';
 
@@ -131,7 +133,32 @@ class ApiClient {
 
   Future<void> clearSession() async {
     await _storage.delete(key: _sessionKey);
+    await _storage.delete(key: _cachedUserKey);
     await _storage.delete(key: _legacyAccessTokenKey);
+  }
+
+  /// Son doğrulanan kullanıcıyı cihazda tutar. Böylece geçici bir ağ
+  /// probleminde geçerli oturum, kullanıcı veya mekan sahibi için kaybolmaz.
+  Future<void> saveCachedUser(AppUser user) async {
+    await _storage.write(
+      key: _cachedUserKey,
+      value: jsonEncode({'id': user.id, ...user.toMap()}),
+    );
+  }
+
+  Future<AppUser?> getCachedUser() async {
+    final encoded = await _storage.read(key: _cachedUserKey);
+    if (encoded == null || encoded.isEmpty) return null;
+
+    try {
+      final map = jsonDecode(encoded) as Map<String, dynamic>;
+      final id = map.remove('id')?.toString();
+      if (id == null || id.isEmpty) return null;
+      return AppUser.fromMap(id, map);
+    } on Object {
+      await _storage.delete(key: _cachedUserKey);
+      return null;
+    }
   }
 
   Future<void> saveToken(String token) async {
@@ -191,8 +218,13 @@ class ApiClient {
         refreshToken: newRefreshToken,
       );
       return newAccessToken;
-    } on DioException {
-      await _expireSession();
+    } on DioException catch (error) {
+      // İnternet kesintisi veya geçici sunucu hatası kullanıcıyı hesabından
+      // çıkarmamalı. Oturum yalnızca refresh token açıkça reddedildiğinde biter.
+      final statusCode = error.response?.statusCode;
+      if (statusCode == 400 || statusCode == 401 || statusCode == 403) {
+        await _expireSession();
+      }
       return null;
     }
   }

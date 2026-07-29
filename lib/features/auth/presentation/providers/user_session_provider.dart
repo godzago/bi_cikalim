@@ -95,28 +95,38 @@ class UserSessionNotifier extends AsyncNotifier<void> {
 
   /// Kayıtlı token kontrolü yapıp oturumu yükler.
   Future<void> checkSavedSession() async {
+    AppUser? cachedUser;
     try {
+      // Eski sürümlerdeki e-posta/şifre hatırlama kaydını temizle. Kalıcı
+      // oturum artık parola saklamak yerine access + refresh token kullanır.
+      await ApiClient.instance.clearRememberedCredentials();
       final token = await ApiClient.instance.getToken();
       if (token != null && token.isNotEmpty) {
+        cachedUser = await ApiClient.instance.getCachedUser();
+        if (cachedUser != null) _setActiveUser(cachedUser);
+
         var user = await _authService.fetchCurrentUser();
         final selectedCity = await ref.read(selectedCityProvider.future);
         if (selectedCity != null && user.selectedCityId != selectedCity.id) {
           user = await ref
               .read(userApiServiceProvider)
               .updateSelectedCity(selectedCity.id);
+        } else if (selectedCity == null && user.selectedCityId != null) {
+          await ref
+              .read(selectedCityProvider.notifier)
+              .restoreFromUserCityId(user.selectedCityId);
         }
-        ref.read(currentUserProvider.notifier).setUser(user);
-
-        final type = user.roles.contains('venue_owner')
-            ? UserType.venueOwner
-            : UserType.normalUser;
-        ref.read(userTypeProvider.notifier).setUserType(type);
+        await ApiClient.instance.saveCachedUser(user);
+        _setActiveUser(user);
       }
     } catch (e) {
       debugPrint('Kayıtlı oturum yüklenirken hata oluştu: $e');
-      await ApiClient.instance.clearSession();
-      ref.read(currentUserProvider.notifier).setUser(null);
-      ref.read(userTypeProvider.notifier).setUserType(null);
+      final tokenStillExists = await ApiClient.instance.getToken() != null;
+      if (!tokenStillExists) {
+        _clearActiveUser();
+      } else if (cachedUser != null) {
+        _setActiveUser(cachedUser);
+      }
     }
   }
 
@@ -133,14 +143,14 @@ class UserSessionNotifier extends AsyncNotifier<void> {
         user = await ref
             .read(userApiServiceProvider)
             .updateSelectedCity(selectedCity.id);
+      } else if (selectedCity == null && user.selectedCityId != null) {
+        await ref
+            .read(selectedCityProvider.notifier)
+            .restoreFromUserCityId(user.selectedCityId);
       }
 
-      ref.read(currentUserProvider.notifier).setUser(user);
-
-      final type = user.roles.contains('venue_owner')
-          ? UserType.venueOwner
-          : UserType.normalUser;
-      ref.read(userTypeProvider.notifier).setUserType(type);
+      await ApiClient.instance.saveCachedUser(user);
+      _setActiveUser(user);
 
       state = const AsyncData(null);
     } catch (e, stack) {
@@ -155,6 +165,7 @@ class UserSessionNotifier extends AsyncNotifier<void> {
     required String password,
     required String username,
     required String fullName,
+    required String role,
   }) async {
     state = const AsyncLoading();
     try {
@@ -164,6 +175,7 @@ class UserSessionNotifier extends AsyncNotifier<void> {
         password: password,
         username: username,
         fullName: fullName,
+        role: role,
       );
 
       // Kayıt başarılıysa otomatik giriş yap
@@ -190,6 +202,22 @@ class UserSessionNotifier extends AsyncNotifier<void> {
     ref.read(currentUserProvider.notifier).setUser(null);
     ref.read(userTypeProvider.notifier).setUserType(null);
     state = const AsyncData(null);
+  }
+
+  void _setActiveUser(AppUser user) {
+    ref.read(currentUserProvider.notifier).setUser(user);
+    ref
+        .read(userTypeProvider.notifier)
+        .setUserType(
+          user.roles.contains('venue_owner')
+              ? UserType.venueOwner
+              : UserType.normalUser,
+        );
+  }
+
+  void _clearActiveUser() {
+    ref.read(currentUserProvider.notifier).setUser(null);
+    ref.read(userTypeProvider.notifier).setUserType(null);
   }
 }
 

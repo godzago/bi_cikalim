@@ -12,6 +12,7 @@ class ApiAuthService {
     required String password,
     required String username,
     required String fullName,
+    required String role,
   }) async {
     try {
       final response = await _dio.post(
@@ -21,6 +22,7 @@ class ApiAuthService {
           'password': password,
           'username': username,
           'full_name': fullName,
+          'role': role,
         },
       );
       final body = response.data as Map<String, dynamic>? ?? const {};

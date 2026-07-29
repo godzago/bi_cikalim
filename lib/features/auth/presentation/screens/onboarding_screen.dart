@@ -63,11 +63,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 
   void _continueAsUser() {
-    context.go(AppConstants.signInRoute);
+    context.go('${AppConstants.signInRoute}?accountType=user');
   }
 
   void _continueAsVenueOwner() {
-    context.go(AppConstants.signInRoute);
+    context.go('${AppConstants.signInRoute}?accountType=venue_owner');
   }
 
   @override
@@ -200,7 +200,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   height: illustrationSize,
                   decoration: BoxDecoration(
                     color: slide.color,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(48),
                   ),
                   child: Center(
                     child: Text(
@@ -270,7 +270,7 @@ class _UserTypeButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(
@@ -279,7 +279,7 @@ class _UserTypeButton extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isPrimary ? BiCikalimTheme.primary : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isPrimary ? BiCikalimTheme.primary : Colors.grey.shade200,
             ),

@@ -251,7 +251,11 @@ class _ActivityItemCard extends StatelessWidget {
                         const SizedBox(width: 8),
                       ],
                       Text(
-                        '${activity.minPeople}–${activity.maxPeople} kişi',
+                        activity.minPeople != null && activity.maxPeople != null
+                            ? '${activity.minPeople}–${activity.maxPeople} kişi'
+                            : activity.minPeople != null
+                            ? '${activity.minPeople}+ kişi'
+                            : 'Katılımcı bilgisi yok',
                         style: const TextStyle(
                           fontSize: 11,
                           color: BiCikalimTheme.textSecondary,

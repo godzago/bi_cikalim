@@ -3,6 +3,8 @@ import 'package:bi_cikalim/shared/widgets/app_empty_state.dart';
 import 'package:bi_cikalim/shared/widgets/app_refreshable_content.dart';
 import 'package:bi_cikalim/shared/widgets/category_card.dart';
 import 'package:bi_cikalim/shared/widgets/primary_button.dart';
+import 'package:bi_cikalim/features/auth/presentation/screens/notification_permission_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -112,6 +114,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(refreshed, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('bildirim izni ekranı küçük telefonda taşmaz', (tester) async {
+    configureCompactView(tester);
+    final router = GoRouter(
+      initialLocation: '/permission',
+      routes: [
+        GoRoute(
+          path: '/permission',
+          builder: (_, _) =>
+              const NotificationPermissionScreen(nextRoute: '/done'),
+        ),
+        GoRoute(
+          path: '/done',
+          builder: (_, _) => const Scaffold(body: Text('Tamamlandı')),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pump();
+
+    expect(find.text('Bildirimlere İzin Ver'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
