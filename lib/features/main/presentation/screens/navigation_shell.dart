@@ -66,9 +66,9 @@ class NavigationShell extends StatelessWidget {
             onTap: (index) => _onItemTapped(index, context),
             items: const [
               BottomNavigationBarItem(
-                icon: Icon(Icons.explore_outlined),
-                activeIcon: Icon(Icons.explore_rounded),
-                label: 'Keşfet',
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home_rounded),
+                label: 'Ana Sayfa',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.event_outlined),

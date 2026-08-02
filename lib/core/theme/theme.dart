@@ -12,7 +12,7 @@ class BiCikalimTheme {
 
   static const Color textPrimary = Color(0xFF212121);
   static const Color textSecondary = Color(0xFF757575);
-  static const Color textLight = Color(0xFFBDBDBD);
+  static const Color textLight = Color(0xFF8A8A8A);
 
   static const Color success = Color(0xFF4CAF50);
   static const Color warning = Color(0xFFFFC107);

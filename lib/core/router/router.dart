@@ -8,12 +8,13 @@ import '../../features/main/presentation/screens/splash_screen.dart';
 import '../../features/main/presentation/screens/city_select_screen.dart';
 import '../../features/main/presentation/screens/navigation_shell.dart';
 import '../../features/discover/presentation/screens/discover_screen.dart';
-import '../../features/discover/presentation/screens/discover_search_screen.dart';
+import '../../features/discover/presentation/screens/advanced_discover_results_screen.dart';
+import '../../features/discover/presentation/screens/advanced_discover_search_screen.dart';
 import '../../features/discover/presentation/screens/discover_catalog_screen.dart';
-import '../../features/discover/presentation/screens/discover_results_screen.dart';
 import '../../features/events/presentation/screens/events_screen.dart';
 import '../../features/events/presentation/screens/event_detail_screen.dart';
 import '../../features/events/presentation/screens/event_swipe_screen.dart';
+import '../../features/events/presentation/screens/tonight_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/map/presentation/screens/map_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -95,7 +96,9 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: 'search',
-              builder: (context, state) => const DiscoverSearchScreen(),
+              builder: (context, state) => AdvancedDiscoverSearchScreen(
+                initialQuery: state.uri.queryParameters['q'] ?? '',
+              ),
             ),
             GoRoute(
               path: 'catalog',
@@ -105,6 +108,7 @@ final GoRouter appRouter = GoRouter(
               path: 'results',
               builder: (context, state) {
                 final query = state.uri.queryParameters['query'];
+                final citySlug = state.uri.queryParameters['citySlug'];
                 final categoryId = state.uri.queryParameters['categoryId'];
                 final subcategoryId =
                     state.uri.queryParameters['subcategoryId'];
@@ -113,16 +117,40 @@ final GoRouter appRouter = GoRouter(
                 final subcategorySlug =
                     state.uri.queryParameters['subcategorySlug'];
                 final activitySlug = state.uri.queryParameters['activitySlug'];
+                final activityCategorySlug =
+                    state.uri.queryParameters['activityCategorySlug'];
+                final activitySubCategorySlug =
+                    state.uri.queryParameters['activitySubCategorySlug'];
+                final scope = state.uri.queryParameters['scope'];
+                final type = state.uri.queryParameters['type'] ?? 'venues';
+                final currentVenueId =
+                    state.uri.queryParameters['currentVenueId'];
+                final hasCoordinates =
+                    state.uri.queryParameters['hasCoordinates'] == 'true'
+                    ? true
+                    : null;
+                final isVerified =
+                    state.uri.queryParameters['isVerified'] == 'true'
+                    ? true
+                    : null;
                 final title = state.uri.queryParameters['title'];
 
-                return DiscoverResultsScreen(
+                return AdvancedDiscoverResultsScreen(
+                  type: type,
+                  scope: scope,
                   query: query,
+                  citySlug: citySlug,
                   categoryId: categoryId,
                   subcategoryId: subcategoryId,
                   activityId: activityId,
                   categorySlug: categorySlug,
                   subcategorySlug: subcategorySlug,
                   activitySlug: activitySlug,
+                  activityCategorySlug: activityCategorySlug,
+                  activitySubCategorySlug: activitySubCategorySlug,
+                  hasCoordinates: hasCoordinates,
+                  isVerified: isVerified,
+                  currentVenueId: currentVenueId,
                   title: title,
                 );
               },
@@ -135,11 +163,40 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: 'tonight',
+              builder: (context, state) => const TonightScreen(),
+            ),
+            GoRoute(
+              path: 'swipe',
               builder: (context, state) => const EventSwipeScreen(),
             ),
           ],
         ),
-        GoRoute(path: '/map', builder: (context, state) => const MapScreen()),
+        GoRoute(
+          path: '/map',
+          builder: (context, state) {
+            final query = state.uri.queryParameters;
+            return MapScreen(
+              citySlug: query['citySlug'] ?? query['city_slug'],
+              districtSlug: query['districtSlug'] ?? query['district_slug'],
+              neighborhoodSlug:
+                  query['neighborhoodSlug'] ?? query['neighborhood_slug'],
+              activityCategorySlug:
+                  query['activityCategorySlug'] ??
+                  query['activity_category_slug'],
+              activitySubCategorySlug:
+                  query['activitySubCategorySlug'] ??
+                  query['activity_sub_category_slug'],
+              activitySlug: query['activitySlug'] ?? query['activity_slug'],
+              tagSlug: query['tagSlug'] ?? query['tag_slug'],
+              q: query['q'] ?? query['query'],
+              isVerified: query['isVerified'] == 'true'
+                  ? true
+                  : query['is_verified'] == 'true'
+                  ? true
+                  : null,
+            );
+          },
+        ),
         GoRoute(
           path: '/favorites',
           builder: (context, state) => const FavoritesScreen(),

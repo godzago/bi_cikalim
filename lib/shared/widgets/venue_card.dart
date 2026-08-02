@@ -3,33 +3,46 @@ import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
 import 'app_pressable_scale.dart';
 import 'app_network_image.dart';
+import 'app_status_badge.dart';
 
 class VenueCard extends StatelessWidget {
   final ApiVenue venue;
   final VoidCallback onTap;
+  final VoidCallback? onFavoriteTap;
   final bool dense;
 
   const VenueCard({
     super.key,
     required this.venue,
     required this.onTap,
+    this.onFavoriteTap,
     this.dense = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppPressableScale(
-      child: Card(
-        margin: EdgeInsets.only(bottom: dense ? 10 : 14),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade100),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: dense ? _buildDenseCard() : _buildDefaultCard(),
+    final semanticLocation = [
+      if (venue.districtName.isNotEmpty) venue.districtName,
+      if (venue.cityName.isNotEmpty) venue.cityName,
+    ].join(', ');
+
+    return Semantics(
+      button: true,
+      label:
+          '${venue.name}${semanticLocation.isEmpty ? '' : ', $semanticLocation'}. Burada ne yapılır bilgilerini gör.',
+      child: AppPressableScale(
+        child: Card(
+          margin: EdgeInsets.only(bottom: dense ? 10 : 14),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade100),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: dense ? _buildDenseCard() : _buildDefaultCard(),
+          ),
         ),
       ),
     );
@@ -49,9 +62,10 @@ class VenueCard extends StatelessWidget {
                 imageUrl: venue.coverImageUrl,
                 height: 136,
                 width: double.infinity,
+                semanticLabel: '${venue.name} mekan görseli',
               ),
             ),
-            _buildBookmarkButton(top: 12, right: 12),
+            if (onFavoriteTap != null) _buildBookmarkButton(top: 12, right: 12),
             if (venue.verificationStatus == 'verified')
               _buildVerifiedBadge(top: 12, left: 12),
           ],
@@ -91,6 +105,7 @@ class VenueCard extends StatelessWidget {
               imageUrl: venue.coverImageUrl,
               width: 88,
               height: 88,
+              semanticLabel: '${venue.name} mekan görseli',
             ),
           ),
           const SizedBox(width: 12),
@@ -106,10 +121,13 @@ class VenueCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     if (venue.verificationStatus == 'verified')
-                      const Icon(
-                        Icons.verified,
-                        size: 16,
-                        color: BiCikalimTheme.success,
+                      const Tooltip(
+                        message: 'Doğrulanmış mekan',
+                        child: Icon(
+                          Icons.verified,
+                          size: 18,
+                          color: BiCikalimTheme.success,
+                        ),
                       ),
                   ],
                 ),
@@ -205,8 +223,15 @@ class VenueCard extends StatelessWidget {
         const SizedBox(width: 2),
         Expanded(
           child: Text(
-            '${venue.district}, ${venue.city}',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: fontSize),
+            [
+              if (venue.districtName.isNotEmpty) venue.districtName,
+              if (venue.cityName.isNotEmpty) venue.cityName,
+            ].join(', '),
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: fontSize,
+              height: 1.3,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -228,7 +253,7 @@ class VenueCard extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: Colors.grey.shade800,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -248,7 +273,7 @@ class VenueCard extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: Colors.grey.shade800,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -259,16 +284,32 @@ class VenueCard extends StatelessWidget {
     return Positioned(
       top: top,
       right: right,
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.bookmark_border,
-          color: BiCikalimTheme.primary,
-          size: 20,
+      child: Semantics(
+        button: true,
+        label: venue.isFavorite
+            ? '${venue.name}, favorilerden çıkar'
+            : '${venue.name}, favorilere ekle',
+        child: Tooltip(
+          message: venue.isFavorite ? 'Favoriden çıkar' : 'Favoriye ekle',
+          child: Material(
+            color: Colors.white,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onFavoriteTap,
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Icon(
+                  venue.isFavorite
+                      ? Icons.bookmark_rounded
+                      : Icons.bookmark_border,
+                  color: BiCikalimTheme.primary,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -278,27 +319,9 @@ class VenueCard extends StatelessWidget {
     return Positioned(
       top: top,
       left: left,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: BiCikalimTheme.success,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.verified, color: Colors.white, size: 10),
-            SizedBox(width: 4),
-            Text(
-              'ONAYLI MEKAN',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+      child: const AppStatusBadge.verified(
+        label: 'Doğrulanmış',
+        semanticLabel: 'Doğrulanmış mekan',
       ),
     );
   }

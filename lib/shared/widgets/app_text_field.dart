@@ -73,6 +73,7 @@ class _AppTextFieldState extends State<AppTextField> {
                 : null,
             suffixIcon: widget.isPassword
                 ? IconButton(
+                    tooltip: _obscureText ? 'Şifreyi göster' : 'Şifreyi gizle',
                     icon: Icon(
                       _obscureText
                           ? Icons.visibility_off_outlined

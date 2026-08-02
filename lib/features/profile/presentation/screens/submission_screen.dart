@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
 enum SubmissionType { venueSuggestion, ownership, taxonomy }
@@ -116,117 +117,130 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
     return trimmed.isEmpty ? null : trimmed;
   }
 
+  Future<void> _refreshPrerequisites() async {
+    ref.invalidate(selectedCityProvider);
+    await ref.read(selectedCityProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final loggedIn = ref.watch(isLoggedInProvider);
     return Scaffold(
       appBar: AppBar(title: Text(_title)),
       body: !loggedIn
-          ? Center(
-              child: FilledButton(
-                onPressed: () => context.push('/sign-in'),
-                child: const Text('Başvuru için giriş yap'),
+          ? AppRefreshableContent(
+              onRefresh: _refreshPrerequisites,
+              child: Center(
+                child: FilledButton(
+                  onPressed: () => context.push('/sign-in'),
+                  child: const Text('Başvuru için giriş yap'),
+                ),
               ),
             )
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  if (widget.type == SubmissionType.taxonomy)
-                    DropdownButtonFormField<String>(
-                      initialValue: _taxonomyType,
-                      decoration: const InputDecoration(
-                        labelText: 'Talep türü',
+          : RefreshIndicator(
+              onRefresh: _refreshPrerequisites,
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    if (widget.type == SubmissionType.taxonomy)
+                      DropdownButtonFormField<String>(
+                        initialValue: _taxonomyType,
+                        decoration: const InputDecoration(
+                          labelText: 'Talep türü',
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'activity',
+                            child: Text('Aktivite'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'category',
+                            child: Text('Kategori'),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _taxonomyType = value ?? 'activity'),
                       ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'activity',
-                          child: Text('Aktivite'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'category',
-                          child: Text('Kategori'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _taxonomyType = value ?? 'activity'),
-                    ),
-                  if (widget.type == SubmissionType.taxonomy)
-                    const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _name,
-                    decoration: InputDecoration(
-                      labelText: widget.type == SubmissionType.taxonomy
-                          ? 'Talep adı'
-                          : 'Mekan adı',
-                    ),
-                    validator: (value) =>
-                        value == null || value.trim().length < 2
-                        ? 'En az 2 karakter girin.'
-                        : null,
-                  ),
-                  if (widget.type != SubmissionType.taxonomy) ...[
-                    const SizedBox(height: 12),
+                    if (widget.type == SubmissionType.taxonomy)
+                      const SizedBox(height: 12),
                     TextFormField(
-                      controller: _secondary,
+                      controller: _name,
                       decoration: InputDecoration(
-                        labelText: widget.type == SubmissionType.venueSuggestion
-                            ? 'Adres'
-                            : 'İşletme adı',
+                        labelText: widget.type == SubmissionType.taxonomy
+                            ? 'Talep adı'
+                            : 'Mekan adı',
                       ),
+                      validator: (value) =>
+                          value == null || value.trim().length < 2
+                          ? 'En az 2 karakter girin.'
+                          : null,
                     ),
-                  ],
-                  if (widget.type == SubmissionType.venueSuggestion) ...[
+                    if (widget.type != SubmissionType.taxonomy) ...[
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _secondary,
+                        decoration: InputDecoration(
+                          labelText:
+                              widget.type == SubmissionType.venueSuggestion
+                              ? 'Adres'
+                              : 'İşletme adı',
+                        ),
+                      ),
+                    ],
+                    if (widget.type == SubmissionType.venueSuggestion) ...[
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _url,
+                        decoration: const InputDecoration(
+                          labelText: 'Google Maps URL',
+                        ),
+                      ),
+                    ],
+                    if (widget.type == SubmissionType.ownership) ...[
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _contactName,
+                        decoration: const InputDecoration(
+                          labelText: 'İletişim adı',
+                        ),
+                        validator: _required,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _contactPhone,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(labelText: 'Telefon'),
+                        validator: _required,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _contactEmail,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'E-posta'),
+                        validator: _required,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     TextFormField(
-                      controller: _url,
+                      controller: _note,
+                      minLines: 3,
+                      maxLines: 5,
                       decoration: const InputDecoration(
-                        labelText: 'Google Maps URL',
+                        labelText: 'Açıklama / not',
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _busy ? null : _submit,
+                      child: Text(
+                        _busy ? 'Gönderiliyor...' : 'Admin Onayına Gönder',
                       ),
                     ),
                   ],
-                  if (widget.type == SubmissionType.ownership) ...[
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _contactName,
-                      decoration: const InputDecoration(
-                        labelText: 'İletişim adı',
-                      ),
-                      validator: _required,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _contactPhone,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(labelText: 'Telefon'),
-                      validator: _required,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _contactEmail,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'E-posta'),
-                      validator: _required,
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _note,
-                    minLines: 3,
-                    maxLines: 5,
-                    decoration: const InputDecoration(
-                      labelText: 'Açıklama / not',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: _busy ? null : _submit,
-                    child: Text(
-                      _busy ? 'Gönderiliyor...' : 'Admin Onayına Gönder',
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
     );

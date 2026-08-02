@@ -6,6 +6,7 @@ import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../../shared/widgets/app_segmented_option.dart';
 import '../../../../shared/widgets/event_list_card.dart';
@@ -98,7 +99,11 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           error: (error, _) => AppRefreshableContent(
             key: const ValueKey('events-error'),
             onRefresh: refreshEvents,
-            child: Center(child: Text('Hata: $error')),
+            child: AppErrorState(
+              error: error,
+              title: 'Etkinlikler yüklenemedi',
+              onRetry: refreshEvents,
+            ),
           ),
           data: (events) {
             final filteredEvents = _getFilteredEvents(events);
@@ -225,11 +230,20 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         ? AppRefreshableContent(
                             key: ValueKey('events-empty'),
                             onRefresh: refreshEvents,
-                            child: const AppEmptyState(
-                              icon: Icons.event_busy,
-                              message:
-                                  'Bu filtre kombinasyonu için etkinlik bulunmuyor.',
-                              padding: EdgeInsets.all(32),
+                            child: Column(
+                              children: [
+                                _buildTonightPlanCard(events),
+                                const Expanded(
+                                  child: AppEmptyState(
+                                    icon: Icons.event_busy,
+                                    title:
+                                        'Şu anda yayınlanmış bir etkinlik bulunmuyor',
+                                    message:
+                                        'Yine de şehirde yapabileceğin aktiviteleri keşfedebilirsin.',
+                                    padding: EdgeInsets.all(32),
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : RefreshIndicator(
@@ -238,17 +252,24 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                             onRefresh: refreshEvents,
                             child: ListView.builder(
                               physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              itemCount: filteredEvents.length,
+                              padding: EdgeInsets.zero,
+                              itemCount: filteredEvents.length + 1,
                               itemBuilder: (context, index) {
-                                final event = filteredEvents[index];
+                                if (index == 0) {
+                                  return _buildTonightPlanCard(events);
+                                }
 
-                                return EventListCard(
-                                  event: event,
-                                  onTap: () =>
-                                      context.push('/events/${event.slug}'),
+                                final event = filteredEvents[index - 1];
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: EventListCard(
+                                    event: event,
+                                    onTap: () =>
+                                        context.push('/events/${event.slug}'),
+                                  ),
                                 );
                               },
                             ),
@@ -263,6 +284,153 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     );
   }
 
+  Widget _buildTonightPlanCard(List<ApiEvent> events) {
+    final tonightEvents = events.where(_isTonight).toList();
+    final suggestionLabels = (tonightEvents.isNotEmpty ? tonightEvents : events)
+        .take(0)
+        .map((event) => event.title)
+        .where((title) => title.trim().isNotEmpty)
+        .toList();
+    final countLabel = tonightEvents.isEmpty
+        ? 'Aktivite ve etkinlik önerilerini gör.'
+        : '${tonightEvents.length} öneri hazır.';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/events/tonight'),
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Color(0xFFFFF8F4), Color(0xFFFFF1EA)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -18,
+                  bottom: -22,
+                  child: Icon(
+                    Icons.style_outlined,
+                    color: BiCikalimTheme.primary.withValues(alpha: 0.05),
+                    size: 96,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: BiCikalimTheme.primary.withValues(
+                                alpha: 0.08,
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: BiCikalimTheme.primary.withValues(
+                                  alpha: 0.12,
+                                ),
+                              ),
+                            ),
+                            child: const Text(
+                              'Bu Akşam',
+                              style: TextStyle(
+                                color: BiCikalimTheme.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFFEFE7),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: BiCikalimTheme.primary,
+                              size: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Bu Akşam Ne Yapsak?',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: BiCikalimTheme.textPrimary,
+                          fontSize: 16,
+                          height: 1.12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        countLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: BiCikalimTheme.textSecondary,
+                          fontSize: 12,
+                          height: 1.3,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (suggestionLabels.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: suggestionLabels
+                              .map((label) => _EventSuggestionPill(label))
+                              .toList(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool _isTonight(ApiEvent event) {
+    final local = event.startDate;
+    final now = DateTime.now();
+    return local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+  }
+
   Widget _buildDateSegment(String label) {
     return AppSegmentedOption(
       label: label,
@@ -272,6 +440,35 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           _selectedDateFilter = label;
         });
       },
+    );
+  }
+}
+
+class _EventSuggestionPill extends StatelessWidget {
+  final String label;
+
+  const _EventSuggestionPill(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 180),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: .12)),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

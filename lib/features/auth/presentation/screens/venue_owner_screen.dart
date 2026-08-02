@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/services/api_providers.dart';
+import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../providers/user_session_provider.dart';
 
 /// Mekan sahibi panel placeholder ekranı.
@@ -19,6 +21,24 @@ class VenueOwnerScreen extends ConsumerStatefulWidget {
 class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
   bool _isUploading = false;
   String? _uploadedFileName;
+
+  Future<void> _refreshOwnerState() async {
+    final futures = <Future<void>>[];
+
+    ref.invalidate(selectedCityProvider);
+    futures.add(ref.read(selectedCityProvider.future).then((_) {}));
+
+    if (ref.read(currentUserProvider) != null) {
+      futures.add(
+        ref.read(apiAuthServiceProvider).fetchCurrentUser().then((user) async {
+          ref.read(currentUserProvider.notifier).setUser(user);
+          await ApiClient.instance.saveCachedUser(user);
+        }),
+      );
+    }
+
+    await Future.wait(futures);
+  }
 
   Future<void> _pickAndUploadImage() async {
     if (_isUploading) return;
@@ -64,24 +84,27 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
     if (!isVenueOwner) {
       return Scaffold(
         appBar: AppBar(title: const Text('İşletme Araçları')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.lock_outline_rounded, size: 52),
-                const SizedBox(height: 16),
-                const Text(
-                  'Bu alan yalnızca doğrulanmış işletme sahiplerine açıktır.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () => context.go(AppConstants.discoverRoute),
-                  child: const Text('Keşfete dön'),
-                ),
-              ],
+        body: AppRefreshableContent(
+          onRefresh: _refreshOwnerState,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lock_outline_rounded, size: 52),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Bu alan yalnızca doğrulanmış işletme sahiplerine açıktır.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: () => context.go(AppConstants.discoverRoute),
+                    child: const Text('Keşfete dön'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -91,69 +114,74 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
     return Scaffold(
       backgroundColor: BiCikalimTheme.background,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Header
-            SliverToBoxAdapter(child: _buildHeader(context, ref)),
+        child: RefreshIndicator(
+          color: BiCikalimTheme.primary,
+          onRefresh: _refreshOwnerState,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // Header
+              SliverToBoxAdapter(child: _buildHeader(context, ref)),
 
-            // Özellik Kartları
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 32),
-                  _buildImageUploadCard(),
-                  const SizedBox(height: 12),
-                  _buildComingSoonCard(
-                    icon: Icons.storefront_outlined,
-                    title: 'Mekan Profili Oluştur',
-                    description:
-                        'Mekanını ekle, aktivitelerini listele ve fotoğraflarını paylaş.',
-                    color: const Color(0xFFFFF3F0),
-                    iconColor: BiCikalimTheme.primary,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildComingSoonCard(
-                    icon: Icons.event_outlined,
-                    title: 'Etkinlik Ekle',
-                    description:
-                        'Masa oyunu gecesi, turnuva veya karaoke etkinliği oluştur.',
-                    color: const Color(0xFFFFF8F0),
-                    iconColor: const Color(0xFFFF8C00),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildComingSoonCard(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'Aktivite Envanteri',
-                    description:
-                        'Mekanında hangi oyunlar ve aktiviteler var? Müşterilerin görsün.',
-                    color: const Color(0xFFF0F8FF),
-                    iconColor: const Color(0xFF2196F3),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildComingSoonCard(
-                    icon: Icons.bar_chart_outlined,
-                    title: 'İstatistikler ve Analitik',
-                    description:
-                        'Profilinizi kaç kişi gördü, en çok hangi aktiviteler ilgi çekti.',
-                    color: const Color(0xFFF0FFF0),
-                    iconColor: BiCikalimTheme.success,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildComingSoonCard(
-                    icon: Icons.verified_outlined,
-                    title: 'Mekanını Sahiplen',
-                    description:
-                        'Mekanın zaten listede mi? Sahiplenerek bilgilerini yönet.',
-                    color: const Color(0xFFFAF0FF),
-                    iconColor: const Color(0xFF9C27B0),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildContactSection(context),
-                ]),
+              // Özellik Kartları
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const SizedBox(height: 32),
+                    _buildImageUploadCard(),
+                    const SizedBox(height: 12),
+                    _buildComingSoonCard(
+                      icon: Icons.storefront_outlined,
+                      title: 'Mekan Profili Oluştur',
+                      description:
+                          'Mekanını ekle, aktivitelerini listele ve fotoğraflarını paylaş.',
+                      color: const Color(0xFFFFF3F0),
+                      iconColor: BiCikalimTheme.primary,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildComingSoonCard(
+                      icon: Icons.event_outlined,
+                      title: 'Etkinlik Ekle',
+                      description:
+                          'Masa oyunu gecesi, turnuva veya karaoke etkinliği oluştur.',
+                      color: const Color(0xFFFFF8F0),
+                      iconColor: const Color(0xFFFF8C00),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildComingSoonCard(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'Aktivite Envanteri',
+                      description:
+                          'Mekanında hangi oyunlar ve aktiviteler var? Müşterilerin görsün.',
+                      color: const Color(0xFFF0F8FF),
+                      iconColor: const Color(0xFF2196F3),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildComingSoonCard(
+                      icon: Icons.bar_chart_outlined,
+                      title: 'İstatistikler ve Analitik',
+                      description:
+                          'Profilinizi kaç kişi gördü, en çok hangi aktiviteler ilgi çekti.',
+                      color: const Color(0xFFF0FFF0),
+                      iconColor: BiCikalimTheme.success,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildComingSoonCard(
+                      icon: Icons.verified_outlined,
+                      title: 'Mekanını Sahiplen',
+                      description:
+                          'Mekanın zaten listede mi? Sahiplenerek bilgilerini yönet.',
+                      color: const Color(0xFFFAF0FF),
+                      iconColor: const Color(0xFF9C27B0),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildContactSection(context),
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

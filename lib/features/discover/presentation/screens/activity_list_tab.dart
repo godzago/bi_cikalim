@@ -6,6 +6,7 @@ import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_refreshable_content.dart';
 
 /// Aktivite bazlı keşif listesi.
 /// Kullanıcı aktiviteyi seçer → o aktiviteyi sunan mekanları görür.
@@ -19,22 +20,44 @@ class ActivityListTab extends ConsumerStatefulWidget {
 class _ActivityListTabState extends ConsumerState<ActivityListTab> {
   String? _selectedCategoryId;
 
+  Future<void> _refreshActivities() async {
+    ref
+      ..invalidate(categoriesProvider)
+      ..invalidate(activitiesProvider);
+    await Future.wait([
+      ref.read(categoriesProvider.future),
+      ref.read(activitiesProvider.future),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     final activitiesAsync = ref.watch(activitiesProvider);
 
     return categoriesAsync.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: BiCikalimTheme.primary),
+      loading: () => AppRefreshableContent(
+        onRefresh: _refreshActivities,
+        child: const Center(
+          child: CircularProgressIndicator(color: BiCikalimTheme.primary),
+        ),
       ),
-      error: (error, _) => Center(child: Text('Hata: $error')),
+      error: (error, _) => AppRefreshableContent(
+        onRefresh: _refreshActivities,
+        child: Center(child: Text('Hata: $error')),
+      ),
       data: (categories) {
         return activitiesAsync.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: BiCikalimTheme.primary),
+          loading: () => AppRefreshableContent(
+            onRefresh: _refreshActivities,
+            child: const Center(
+              child: CircularProgressIndicator(color: BiCikalimTheme.primary),
+            ),
           ),
-          error: (error, _) => Center(child: Text('Hata: $error')),
+          error: (error, _) => AppRefreshableContent(
+            onRefresh: _refreshActivities,
+            child: Center(child: Text('Hata: $error')),
+          ),
           data: (activities) {
             final filteredActivities = _selectedCategoryId == null
                 ? activities
@@ -104,7 +127,7 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
                                 }
                               }
 
-                              return _ActivityItemCard(
+                              return ActivityItemCard(
                                 activity: activity,
                                 category: category,
                                 onTap: () {
@@ -165,12 +188,13 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
 // Aktivite Item Kartı
 // ---------------------------------------------------------------------------
 
-class _ActivityItemCard extends StatelessWidget {
+class ActivityItemCard extends StatelessWidget {
   final ApiActivity activity;
   final ApiCategory? category;
   final VoidCallback onTap;
 
-  const _ActivityItemCard({
+  const ActivityItemCard({
+    super.key,
     required this.activity,
     required this.category,
     required this.onTap,
@@ -220,6 +244,8 @@ class _ActivityItemCard extends StatelessWidget {
                 children: [
                   Text(
                     activity.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -236,29 +262,24 @@ class _ActivityItemCard extends StatelessWidget {
                           color: BiCikalimTheme.textSecondary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          category!.name,
+                      ],
+                      Expanded(
+                        child: Text(
+                          [
+                            if (category != null) category!.name,
+                            activity.minPeople != null &&
+                                    activity.maxPeople != null
+                                ? '${activity.minPeople}–${activity.maxPeople} kişi'
+                                : activity.minPeople != null
+                                ? '${activity.minPeople}+ kişi'
+                                : 'Katılımcı bilgisi yok',
+                          ].join('  ·  '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 11,
                             color: BiCikalimTheme.textSecondary,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          '·',
-                          style: TextStyle(color: BiCikalimTheme.textLight),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Text(
-                        activity.minPeople != null && activity.maxPeople != null
-                            ? '${activity.minPeople}–${activity.maxPeople} kişi'
-                            : activity.minPeople != null
-                            ? '${activity.minPeople}+ kişi'
-                            : 'Katılımcı bilgisi yok',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: BiCikalimTheme.textSecondary,
                         ),
                       ),
                     ],
@@ -272,6 +293,7 @@ class _ActivityItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
+                  constraints: const BoxConstraints(maxWidth: 96),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 4,
@@ -282,6 +304,8 @@ class _ActivityItemCard extends StatelessWidget {
                   ),
                   child: Text(
                     'Mekanları gör',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,

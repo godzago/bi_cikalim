@@ -10,7 +10,9 @@ import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 
 class DiscoverSearchScreen extends ConsumerStatefulWidget {
-  const DiscoverSearchScreen({super.key});
+  final String initialQuery;
+
+  const DiscoverSearchScreen({super.key, this.initialQuery = ''});
 
   @override
   ConsumerState<DiscoverSearchScreen> createState() =>
@@ -18,9 +20,16 @@ class DiscoverSearchScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
-  final TextEditingController _controller = TextEditingController();
+  late final TextEditingController _controller;
   Timer? _debounce;
-  String _query = '';
+  late String _query;
+
+  @override
+  void initState() {
+    super.initState();
+    _query = widget.initialQuery.trim();
+    _controller = TextEditingController(text: _query);
+  }
 
   @override
   void dispose() {
@@ -71,8 +80,13 @@ class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
             TextField(
               controller: _controller,
               autofocus: true,
+              autocorrect: false,
               textInputAction: TextInputAction.search,
               onChanged: _onChanged,
+              onSubmitted: (value) {
+                _debounce?.cancel();
+                setState(() => _query = value.trim());
+              },
               decoration: InputDecoration(
                 hintText: 'Aktivite, mekan veya etkinlik ara...',
                 prefixIcon: const Icon(Icons.search),

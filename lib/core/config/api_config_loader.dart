@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
-/// Localhost API yapılandırmasını `api_config.json` dosyasından yükleyen sınıf.
+/// API yapılandırmasını `api_config.json` dosyasından yükleyen sınıf.
 class ApiConfigLoader {
   ApiConfigLoader._();
 
-  static String _baseUrl = 'http://localhost:8000/api/v1';
+  static String _baseUrl = 'https://api.169.58.108.163.sslip.io/api/v1';
   static String _environment = 'local';
 
-  /// Platforma göre otomatik belirlenmiş base URL (Android için 10.0.2.2, diğerleri için localhost).
+  /// Uygulamanın kullandığı API base URL'i.
   static String get baseUrl => _baseUrl;
   static String get environment => _environment;
 

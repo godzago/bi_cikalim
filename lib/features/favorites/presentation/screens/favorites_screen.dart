@@ -6,6 +6,7 @@ import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../../shared/widgets/app_segmented_option.dart';
 import '../../../../shared/widgets/event_list_card.dart';
@@ -77,7 +78,11 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                     ),
                     error: (err, _) => AppRefreshableContent(
                       onRefresh: _refreshVenues,
-                      child: Center(child: Text('Mekanlar yüklenemedi: $err')),
+                      child: AppErrorState(
+                        error: err,
+                        title: 'Mekanlar yüklenemedi',
+                        onRetry: _refreshVenues,
+                      ),
                     ),
                     data: (list) => _buildSavedVenuesList(list),
                   )
@@ -92,8 +97,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                     ),
                     error: (err, _) => AppRefreshableContent(
                       onRefresh: _refreshEvents,
-                      child: Center(
-                        child: Text('Etkinlikler yüklenemedi: $err'),
+                      child: AppErrorState(
+                        error: err,
+                        title: 'Etkinlikler yüklenemedi',
+                        onRetry: _refreshEvents,
                       ),
                     ),
                     data: (list) => _buildSavedEventsList(list),
@@ -122,7 +129,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         onRefresh: _refreshVenues,
         child: const AppEmptyState(
           icon: Icons.bookmark_border,
-          message: 'Henüz kaydettiğin bir mekan bulunmuyor.',
+          title: 'Henüz kaydettiğin bir yer yok',
+          message:
+              'Beğendiğin mekânları kaydederek daha sonra kolayca bulabilirsin.',
         ),
       );
     }
@@ -151,7 +160,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         onRefresh: _refreshEvents,
         child: const AppEmptyState(
           icon: Icons.event_busy,
-          message: 'Henüz kaydettiğin bir etkinlik bulunmuyor.',
+          title: 'Henüz kaydettiğin bir etkinlik yok',
+          message:
+              'İlgini çeken etkinlikleri kaydederek daha sonra hızlıca ulaşabilirsin.',
         ),
       );
     }

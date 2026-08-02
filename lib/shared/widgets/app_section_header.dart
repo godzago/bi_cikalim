@@ -4,12 +4,14 @@ import '../../core/theme/theme.dart';
 
 class AppSectionHeader extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final String? actionLabel;
   final VoidCallback? onActionTap;
 
   const AppSectionHeader({
     super.key,
     required this.title,
+    this.subtitle,
     this.actionLabel,
     this.onActionTap,
   });
@@ -22,12 +24,31 @@ class AppSectionHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: BiCikalimTheme.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            child: Semantics(
+              header: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: BiCikalimTheme.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: BiCikalimTheme.textSecondary,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

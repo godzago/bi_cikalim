@@ -428,6 +428,18 @@ class ApiVenue {
   List<String> get activityTags => tags.map((t) => t.name).toList();
   String get cityName => city.name;
   String get districtName => district?.name ?? '';
+  bool get hasValidCoordinates {
+    final lat = latitude;
+    final lng = longitude;
+    return lat != null &&
+        lng != null &&
+        lat.isFinite &&
+        lng.isFinite &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180;
+  }
 }
 
 class ApiEventVenueSummary {

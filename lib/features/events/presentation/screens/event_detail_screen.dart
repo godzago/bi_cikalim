@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
-import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 
@@ -81,7 +81,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(error.toString())));
+    ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
   }
 
   Future<void> _openUrl(String? value) async {
@@ -112,6 +112,21 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     }
   }
 
+  void _openActivityVenues(ApiEventActivitySummary activity, ApiEvent event) {
+    final citySlug = ref.read(selectedCityProvider).value?.slug;
+    context.push(
+      Uri(
+        path: '/discover/results',
+        queryParameters: {
+          'scope': 'activity',
+          'activitySlug': activity.slug,
+          'citySlug': citySlug ?? event.city.slug,
+          'title': '${activity.name} Yapabileceğin Mekânlar',
+        },
+      ).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = eventDetailProvider(widget.eventSlug);
@@ -137,9 +152,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         ),
         error: (error, _) => AppRefreshableContent(
           onRefresh: refreshEvent,
-          child: AppEmptyState(
-            icon: Icons.event_busy,
-            message: 'Etkinlik yüklenemedi.\n$error',
+          child: AppErrorState(
+            error: error,
+            title: 'Etkinlik yüklenemedi',
+            onRetry: refreshEvent,
+            showHomeAction: true,
           ),
         ),
         data: (event) {
@@ -234,6 +251,52 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                                 ),
                               )
                               .toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: BiCikalimTheme.primary.withValues(
+                              alpha: .06,
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Bunu başka nerede yapabilirsin?',
+                                style: TextStyle(
+                                  color: BiCikalimTheme.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: event.activities
+                                    .map(
+                                      (activity) => OutlinedButton.icon(
+                                        onPressed: () => _openActivityVenues(
+                                          activity,
+                                          event,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.storefront_outlined,
+                                          size: 17,
+                                        ),
+                                        label: Text(
+                                          '${activity.name} mekanları',
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                       if (event.ticketUrl != null ||

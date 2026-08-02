@@ -7,6 +7,7 @@ import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../../shared/widgets/event_list_card.dart';
@@ -24,8 +25,10 @@ class VenueDetailScreen extends ConsumerStatefulWidget {
 class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _inventorySearchController = TextEditingController();
   bool _isTogglingFavorite = false;
   bool? _favoriteOverride;
+  String _inventoryQuery = '';
 
   @override
   void initState() {
@@ -35,6 +38,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
 
   @override
   void dispose() {
+    _inventorySearchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -86,9 +90,13 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     }
   }
 
-  void _showAddReviewDialog(ApiVenue venue, {ApiReview? existing}) {
+  void _showAddReviewDialog(
+    ApiVenue venue, {
+    ApiReview? existing,
+    String? initialActivityId,
+  }) {
     int rating = existing?.rating ?? 5;
-    String? activityId = existing?.activityId;
+    String? activityId = existing?.activityId ?? initialActivityId;
     var isSubmitting = false;
     final commentController = TextEditingController(
       text: existing?.comment ?? '',
@@ -336,9 +344,9 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                   );
                 } catch (error) {
                   if (dialogContext.mounted) {
-                    ScaffoldMessenger.of(
-                      dialogContext,
-                    ).showSnackBar(SnackBar(content: Text(error.toString())));
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(content: Text(friendlyErrorMessage(error))),
+                    );
                   }
                 }
               },
@@ -369,7 +377,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
       }
     }
   }
@@ -610,25 +618,34 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                           spacing: 10,
                           runSpacing: 10,
                           children: [
-                            _buildQuickAction(
-                              Icons.directions,
-                              'Yol Tarifi',
-                              () => _launchDirections(venue),
-                            ),
-                            _buildQuickAction(
-                              Icons.phone,
-                              'Ara',
-                              () => _launchExternal(
-                                venue.phone == null
-                                    ? null
-                                    : 'tel:${venue.phone}',
+                            if (venue.googleMapsUrl != null ||
+                                (venue.latitude != null &&
+                                    venue.longitude != null))
+                              _buildQuickAction(
+                                Icons.directions,
+                                'Yol Tarifi',
+                                () => _launchDirections(venue),
                               ),
-                            ),
-                            _buildQuickAction(
-                              Icons.camera_alt,
-                              'Instagram',
-                              () => _launchExternal(venue.instagramUrl),
-                            ),
+                            if (venue.phone != null && venue.phone!.isNotEmpty)
+                              _buildQuickAction(
+                                Icons.phone,
+                                'Ara',
+                                () => _launchExternal('tel:${venue.phone}'),
+                              ),
+                            if (venue.websiteUrl != null &&
+                                venue.websiteUrl!.isNotEmpty)
+                              _buildQuickAction(
+                                Icons.language,
+                                'Web Sitesi',
+                                () => _launchExternal(venue.websiteUrl),
+                              ),
+                            if (venue.instagramUrl != null &&
+                                venue.instagramUrl!.isNotEmpty)
+                              _buildQuickAction(
+                                Icons.camera_alt,
+                                'Instagram',
+                                () => _launchExternal(venue.instagramUrl),
+                              ),
                             _buildQuickAction(
                               isFavorite
                                   ? Icons.bookmark
@@ -672,25 +689,39 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                         activitiesAsync.when(
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
-                          error: (error, _) => AppEmptyState(
-                            icon: Icons.sports_esports_outlined,
-                            message: 'Aktiviteler yüklenemedi.\n$error',
+                          error: (error, _) => AppErrorState(
+                            error: error,
+                            title: 'Aktiviteler yüklenemedi',
+                            onRetry: () => ref.invalidate(
+                              venueActivitiesProvider(venue.slug),
+                            ),
                           ),
-                          data: _buildActivitiesTab,
+                          data: (activities) =>
+                              _buildActivitiesTab(activities, venue),
                         ),
                         eventsAsync.when(
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
-                          error: (err, _) => Center(
-                            child: Text('Etkinlikler yüklenemedi: $err'),
+                          error: (err, _) => AppErrorState(
+                            error: err,
+                            title: 'Etkinlikler yüklenemedi',
+                            onRetry: () => ref.invalidate(
+                              eventsListProvider(
+                                EventFilters(venueSlug: venue.slug),
+                              ),
+                            ),
                           ),
                           data: (events) => _buildEventsTab(events, venue),
                         ),
                         reviewsAsync.when(
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
-                          error: (err, _) =>
-                              Center(child: Text('Yorumlar yüklenemedi: $err')),
+                          error: (err, _) => AppErrorState(
+                            error: err,
+                            title: 'Yorumlar yüklenemedi',
+                            onRetry: () =>
+                                ref.invalidate(venueReviewsProvider(venue.id)),
+                          ),
                           data: (reviews) => _buildReviewsTab(reviews, venue),
                         ),
                       ],
@@ -706,33 +737,43 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
   }
 
   Widget _buildQuickAction(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 88,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
+    return Semantics(
+      button: true,
+      label: label,
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade100),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: BiCikalimTheme.primary, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: BiCikalimTheme.textPrimary,
-              ),
+          child: Container(
+            width: 96,
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade100),
             ),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: BiCikalimTheme.primary, size: 20),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: BiCikalimTheme.textPrimary,
+                    height: 1.15,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -903,24 +944,86 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     );
   }
 
-  Widget _buildActivitiesTab(List<ApiVenueActivitySummary> activities) {
+  Widget _buildActivitiesTab(
+    List<ApiVenueActivitySummary> activities,
+    ApiVenue venue,
+  ) {
     if (activities.isEmpty) {
-      return const AppEmptyState(
+      return AppEmptyState(
         icon: Icons.notes,
-        message: 'Bu mekana ait aktivite envanteri henüz eklenmemiş.',
+        title: 'Bu mekânın aktivite bilgileri henüz eklenmemiş',
+        message:
+            'Eksik veya yanlış bir bilgi fark ettiysen bize bildirebilirsin.',
+        actionLabel: 'Bilgi Bildir',
+        onAction: () => _showReportDialog(venue),
         padding: EdgeInsets.all(32),
       );
     }
 
+    final query = _inventoryQuery.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? activities
+        : activities.where((item) {
+            final text = [
+              item.activityName,
+              item.shortDescription ?? '',
+              item.availability,
+              item.priceUnit ?? '',
+            ].join(' ').toLowerCase();
+            return text.contains(query);
+          }).toList();
+
     return ListView.separated(
       padding: const EdgeInsets.all(20),
-      itemCount: activities.length,
+      itemCount: filtered.length + 1,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (context, index) =>
-          _buildCompactInventoryRow(activities[index]),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Burada Ne Yapılır?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Bu mekanda ${activities.length} aktivite bilgisi var.',
+                style: const TextStyle(
+                  color: BiCikalimTheme.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _inventorySearchController,
+                textInputAction: TextInputAction.search,
+                decoration: const InputDecoration(
+                  hintText: 'Bu mekandaki aktivitelerde ara',
+                  prefixIcon: Icon(Icons.search_rounded),
+                ),
+                onChanged: (value) => setState(() => _inventoryQuery = value),
+              ),
+              if (filtered.isEmpty) ...[
+                const SizedBox(height: 18),
+                const AppEmptyState(
+                  icon: Icons.search_off,
+                  title: 'Aramana uygun aktivite bulunamadı',
+                  message:
+                      'Farklı bir kelime deneyebilir veya arama metnini temizleyebilirsin.',
+                  padding: EdgeInsets.all(20),
+                ),
+              ],
+            ],
+          );
+        }
+        return _buildInventoryCard(filtered[index - 1], venue);
+      },
     );
   }
 
+  // ignore: unused_element
   Widget _buildCompactInventoryRow(ApiVenueActivitySummary item) {
     final availabilityLabel = switch (item.availability) {
       'unavailable' => 'Kullanılamıyor',
@@ -953,11 +1056,282 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     );
   }
 
+  Widget _buildInventoryCard(ApiVenueActivitySummary item, ApiVenue venue) {
+    final priceLabel = _formatInventoryPrice(item);
+    final verifiedLabel = _formatVerifiedAt(item.lastVerifiedAt);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _openVenuesForInventoryActivity(item, venue),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: BiCikalimTheme.primary.withValues(
+                      alpha: .09,
+                    ),
+                    child: const Icon(
+                      Icons.sports_esports_outlined,
+                      color: BiCikalimTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.activityName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 7),
+                        Wrap(
+                          spacing: 7,
+                          runSpacing: 7,
+                          children: [
+                            _buildInventoryPill(
+                              _availabilityLabel(item.availability),
+                              _availabilityColor(item.availability),
+                            ),
+                            _buildInventoryPill(
+                              priceLabel,
+                              item.isFree
+                                  ? BiCikalimTheme.success
+                                  : BiCikalimTheme.primary,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+              if (item.shortDescription != null &&
+                  item.shortDescription!.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  item.shortDescription!.trim(),
+                  style: const TextStyle(
+                    color: BiCikalimTheme.textSecondary,
+                    fontSize: 12,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              if (verifiedLabel != null) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.verified_outlined,
+                      size: 15,
+                      color: BiCikalimTheme.textSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        verifiedLabel,
+                        style: const TextStyle(
+                          color: BiCikalimTheme.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        _openVenuesForInventoryActivity(item, venue),
+                    icon: const Icon(Icons.storefront_outlined, size: 16),
+                    label: const Text('Diğer Mekanlar'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => _showAddReviewDialog(
+                      venue,
+                      initialActivityId: item.activityId,
+                    ),
+                    icon: const Icon(Icons.rate_review_outlined, size: 16),
+                    label: const Text('Yorum Yaz'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _reportInventoryItem(venue, item),
+                    icon: const Icon(Icons.flag_outlined, size: 16),
+                    label: const Text('Bilgi Bildir'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInventoryPill(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  String _availabilityLabel(String value) {
+    return switch (value) {
+      'available' => 'Mevcut',
+      'unavailable' => 'Şu anda kullanılamıyor',
+      'seasonal' => 'Sezonluk',
+      'coming_soon' => 'Yakında',
+      _ => 'Durum bilgisi var',
+    };
+  }
+
+  Color _availabilityColor(String value) {
+    return switch (value) {
+      'available' => BiCikalimTheme.success,
+      'unavailable' => BiCikalimTheme.error,
+      'seasonal' => BiCikalimTheme.warning,
+      'coming_soon' => BiCikalimTheme.textSecondary,
+      _ => BiCikalimTheme.textSecondary,
+    };
+  }
+
+  String _formatInventoryPrice(ApiVenueActivitySummary item) {
+    if (item.isFree) return 'Ücretsiz';
+    final price = item.price;
+    if (price == null) return 'Ücretli';
+    final number = price.truncateToDouble() == price
+        ? price.toStringAsFixed(0)
+        : price.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '');
+    final unit = item.priceUnit == null || item.priceUnit!.isEmpty
+        ? ''
+        : ' / ${_priceUnitLabel(item.priceUnit!)}';
+    return '$number TL$unit';
+  }
+
+  String _priceUnitLabel(String value) {
+    return switch (value) {
+      'hour' || 'per_hour' => 'saat',
+      'person' || 'per_person' => 'kişi',
+      'game' || 'per_game' => 'oyun',
+      'session' || 'per_session' => 'seans',
+      _ => value,
+    };
+  }
+
+  String? _formatVerifiedAt(DateTime? value) {
+    if (value == null) return null;
+    const months = [
+      'Ocak',
+      'Şubat',
+      'Mart',
+      'Nisan',
+      'Mayıs',
+      'Haziran',
+      'Temmuz',
+      'Ağustos',
+      'Eylül',
+      'Ekim',
+      'Kasım',
+      'Aralık',
+    ];
+    final local = value.toLocal();
+    final label = '${local.day} ${months[local.month - 1]} ${local.year}';
+    final stale = DateTime.now().difference(local).inDays > 180;
+    if (stale) {
+      return 'Son doğrulama: $label. Bu bilgi bir süredir doğrulanmadı.';
+    }
+    return 'Son doğrulama: $label';
+  }
+
+  void _openVenuesForInventoryActivity(
+    ApiVenueActivitySummary item,
+    ApiVenue venue,
+  ) {
+    final citySlug = ref.read(selectedCityProvider).value?.slug;
+    context.push(
+      Uri(
+        path: '/discover/results',
+        queryParameters: {
+          'scope': 'activity',
+          'activitySlug': item.activitySlug,
+          'title': '${item.activityName} Yapabileceğin Mekanlar',
+          'currentVenueId': venue.id,
+          'citySlug': ?citySlug,
+        },
+      ).toString(),
+    );
+  }
+
+  Future<void> _reportInventoryItem(
+    ApiVenue venue,
+    ApiVenueActivitySummary item,
+  ) async {
+    try {
+      await ref
+          .read(interactionApiServiceProvider)
+          .createContentReport(
+            targetType: 'venue',
+            targetId: venue.id,
+            reason: 'incorrect_info',
+            description:
+                'Aktivite envanteri bilgisi kontrol edilsin: '
+                '${item.activityName} (${item.activityId}).',
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bildirimin için teşekkürler. Ekibimiz bilgiyi kontrol edecek.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
+    }
+  }
+
   Widget _buildEventsTab(List<ApiEvent> events, ApiVenue venue) {
     if (events.isEmpty) {
       return const AppEmptyState(
         icon: Icons.event_busy,
-        message: 'Yakın zamanda planlanmış etkinlik bulunmuyor.',
+        title: 'Şu anda yayınlanmış bir etkinlik bulunmuyor',
+        message:
+            'Yine de bu mekânda yapabileceğin aktiviteleri inceleyebilirsin.',
         padding: EdgeInsets.all(32),
       );
     }

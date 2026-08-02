@@ -67,9 +67,14 @@ class PrimaryButton extends StatelessWidget {
           : button,
     );
 
-    return AppPressableScale(
+    return Semantics(
+      button: true,
       enabled: onPressed != null && !isLoading,
-      child: sizedButton,
+      label: isLoading ? '$label, işlem devam ediyor' : label,
+      child: AppPressableScale(
+        enabled: onPressed != null && !isLoading,
+        child: sizedButton,
+      ),
     );
   }
 }
@@ -100,26 +105,31 @@ class SecondaryButton extends StatelessWidget {
           )
         : Text(label);
 
-    return AppPressableScale(
+    return Semantics(
+      button: true,
       enabled: onPressed != null,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 52),
-        child: SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: onPressed,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: BiCikalimTheme.primary,
-              side: const BorderSide(color: BiCikalimTheme.primary),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+      label: label,
+      child: AppPressableScale(
+        enabled: onPressed != null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 52),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onPressed,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: BiCikalimTheme.primary,
+                side: const BorderSide(color: BiCikalimTheme.primary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              textStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              child: child,
             ),
-            child: child,
           ),
         ),
       ),

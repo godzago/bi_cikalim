@@ -7,6 +7,7 @@ class AppNetworkImage extends StatelessWidget {
   final double? height;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+  final String? semanticLabel;
 
   const AppNetworkImage({
     super.key,
@@ -15,6 +16,7 @@ class AppNetworkImage extends StatelessWidget {
     this.height,
     this.fit = BoxFit.cover,
     this.borderRadius,
+    this.semanticLabel,
   });
 
   @override
@@ -48,10 +50,14 @@ class AppNetworkImage extends StatelessWidget {
       ),
     );
 
-    if (borderRadius == null) {
-      return image;
+    final clipped = borderRadius == null
+        ? image
+        : ClipRRect(borderRadius: borderRadius!, child: image);
+
+    if (semanticLabel == null || semanticLabel!.trim().isEmpty) {
+      return ExcludeSemantics(child: clipped);
     }
 
-    return ClipRRect(borderRadius: borderRadius!, child: image);
+    return Semantics(image: true, label: semanticLabel, child: clipped);
   }
 }
