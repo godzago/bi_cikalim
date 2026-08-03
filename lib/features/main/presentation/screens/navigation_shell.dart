@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_density.dart';
 import '../../../../core/theme/theme.dart';
 
 class NavigationShell extends StatelessWidget {
@@ -44,26 +45,36 @@ class NavigationShell extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        minimum: EdgeInsets.fromLTRB(
+          AppDensity.value(context, compact: 8, standard: 10, wide: 12),
+          0,
+          AppDensity.value(context, compact: 8, standard: 10, wide: 12),
+          6,
+        ),
         child: Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: BiCikalimTheme.surface,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: BiCikalimTheme.primary.withValues(alpha: .08),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.07),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: BottomNavigationBar(
             currentIndex: selectedIndex,
             onTap: (index) => _onItemTapped(index, context),
+            iconSize: 23,
+            selectedFontSize: 11,
+            unselectedFontSize: 11,
+            selectedIconTheme: const IconThemeData(size: 23),
+            unselectedIconTheme: const IconThemeData(size: 22),
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.home_outlined),

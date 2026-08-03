@@ -86,4 +86,22 @@ class AppDensity {
   static double chipHeight(BuildContext context) {
     return value(context, compact: 32, standard: 34, wide: 36);
   }
+
+  /// Visual scale only affects component chrome such as images, icon wells and
+  /// decorative padding. It must not be used as a global layout transform.
+  static double visualScale(BuildContext context) {
+    return value(context, compact: .90, standard: .92, wide: .94);
+  }
+
+  static double scaled(
+    BuildContext context,
+    double value, {
+    double? min,
+    double? max,
+  }) {
+    final scaledValue = value * visualScale(context);
+    final lowerBound = min ?? double.negativeInfinity;
+    final upperBound = max ?? double.infinity;
+    return scaledValue.clamp(lowerBound, upperBound).toDouble();
+  }
 }

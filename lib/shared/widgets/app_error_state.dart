@@ -20,7 +20,7 @@ class AppErrorState extends StatelessWidget {
     this.fallbackMessage,
     this.onRetry,
     this.showHomeAction = false,
-    this.padding = const EdgeInsets.all(24),
+    this.padding = const EdgeInsets.all(18),
   });
 
   @override

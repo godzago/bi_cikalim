@@ -16,7 +16,7 @@ class AppEmptyState extends StatelessWidget {
     required this.icon,
     this.title,
     required this.message,
-    this.padding = const EdgeInsets.all(24),
+    this.padding = const EdgeInsets.all(18),
     this.actionLabel,
     this.onAction,
     this.secondaryActionLabel,
@@ -36,9 +36,9 @@ class AppEmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 48, color: Colors.grey.shade500),
+              Icon(icon, size: 42, color: Colors.grey.shade500),
               if (title != null && title!.trim().isNotEmpty) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 Text(
                   title!,
                   textAlign: TextAlign.center,
@@ -49,17 +49,17 @@ class AppEmptyState extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 message,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey.shade700,
-                  height: 1.45,
+                  height: 1.36,
                 ),
                 textAlign: TextAlign.center,
               ),
               if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 FilledButton(onPressed: onAction, child: Text(actionLabel!)),
               ],
               if (secondaryActionLabel != null &&

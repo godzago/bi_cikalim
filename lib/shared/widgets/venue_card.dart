@@ -118,21 +118,21 @@ class VenueCard extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.all(
-        AppDensity.value(context, compact: 8, standard: 10, wide: 10),
+        AppDensity.value(context, compact: 7, standard: 8, wide: 9),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: AppNetworkImage(
               imageUrl: venue.coverImageUrl,
-              width: imageSize,
-              height: imageSize,
+              width: AppDensity.scaled(context, imageSize, min: 70),
+              height: AppDensity.scaled(context, imageSize, min: 70),
               semanticLabel: '${venue.name} mekan görseli',
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +168,7 @@ class VenueCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -185,7 +185,7 @@ class VenueCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _buildRatingPill(),
-              SizedBox(height: AppDensity.isCompact(context) ? 14 : 20),
+              SizedBox(height: AppDensity.isCompact(context) ? 10 : 14),
               const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
             ],
           ),
@@ -217,7 +217,7 @@ class VenueCard extends StatelessWidget {
 
   Widget _buildRatingPill() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: BiCikalimTheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(999),
@@ -225,13 +225,13 @@ class VenueCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star, color: BiCikalimTheme.primary, size: 14),
+          const Icon(Icons.star, color: BiCikalimTheme.primary, size: 13),
           const SizedBox(width: 2),
           Text(
             '${venue.averageRating}',
             style: const TextStyle(
               color: BiCikalimTheme.primary,
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -243,7 +243,7 @@ class VenueCard extends StatelessWidget {
   Widget _buildLocationRow({double fontSize = 12}) {
     return Row(
       children: [
-        Icon(Icons.location_on_outlined, color: Colors.grey.shade400, size: 14),
+        Icon(Icons.location_on_outlined, color: Colors.grey.shade400, size: 13),
         const SizedBox(width: 2),
         Expanded(
           child: Text(
@@ -266,7 +266,7 @@ class VenueCard extends StatelessWidget {
 
   Widget _buildTag(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
@@ -286,7 +286,7 @@ class VenueCard extends StatelessWidget {
 
   Widget _buildDenseTag(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
@@ -322,8 +322,8 @@ class VenueCard extends StatelessWidget {
               customBorder: const CircleBorder(),
               onTap: onFavoriteTap,
               child: SizedBox(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 child: Icon(
                   venue.isFavorite
                       ? Icons.bookmark_rounded

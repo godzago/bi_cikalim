@@ -16,7 +16,7 @@ class CategoryCard extends StatelessWidget {
     super.key,
     required this.category,
     required this.onTap,
-    this.width = 130,
+    this.width,
     this.margin = const EdgeInsets.only(right: 10),
   });
 
@@ -50,11 +50,11 @@ class CategoryCard extends StatelessWidget {
           child: Stack(
             children: [
               Positioned(
-                right: -22,
-                bottom: -24,
+                right: -18,
+                bottom: -20,
                 child: Container(
-                  width: 82,
-                  height: 82,
+                  width: AppDensity.scaled(context, 76, min: 66),
+                  height: AppDensity.scaled(context, 76, min: 66),
                   decoration: BoxDecoration(
                     color: BiCikalimTheme.primary.withValues(alpha: 0.045),
                     shape: BoxShape.circle,
@@ -62,15 +62,17 @@ class CategoryCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(
+                  AppDensity.value(context, compact: 9, standard: 10, wide: 11),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: AppDensity.scaled(context, 44, min: 40),
+                          height: AppDensity.scaled(context, 44, min: 40),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [
@@ -80,7 +82,7 @@ class CategoryCard extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
                                 color: BiCikalimTheme.primary.withValues(
@@ -94,13 +96,13 @@ class CategoryCard extends StatelessWidget {
                           child: Icon(
                             category.icon,
                             color: Colors.white,
-                            size: 22,
+                            size: AppDensity.scaled(context, 22, min: 19),
                           ),
                         ),
                         const Spacer(),
                         Container(
-                          width: 26,
-                          height: 26,
+                          width: AppDensity.scaled(context, 26, min: 22),
+                          height: AppDensity.scaled(context, 26, min: 22),
                           decoration: BoxDecoration(
                             color: BiCikalimTheme.primary.withValues(
                               alpha: 0.07,

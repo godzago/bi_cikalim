@@ -447,18 +447,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
                 final baseHeight = AppDensity.value(
                   context,
-                  compact: 204,
-                  standard: 214,
-                  wide: 224,
+                  compact: 174,
+                  standard: 184,
+                  wide: 194,
                 );
                 final cardHeight = MediaQuery.textScalerOf(
                   context,
-                ).scale(baseHeight).clamp(baseHeight, 306.0).toDouble();
+                ).scale(baseHeight).clamp(baseHeight, 260.0).toDouble();
                 final cardWidth = AppDensity.clamp(
                   context,
-                  factor: 0.6,
-                  min: 212,
-                  max: 240,
+                  factor: 0.54,
+                  min: 188,
+                  max: 218,
                 );
                 return SizedBox(
                   height: cardHeight,
@@ -2139,14 +2139,14 @@ class _HorizontalActivitySkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final baseHeight = AppDensity.value(
       context,
-      compact: 204,
-      standard: 214,
-      wide: 224,
+      compact: 174,
+      standard: 184,
+      wide: 194,
     );
     final height = MediaQuery.textScalerOf(
       context,
-    ).scale(baseHeight).clamp(baseHeight, 306.0).toDouble();
-    final width = AppDensity.clamp(context, factor: 0.6, min: 212, max: 240);
+    ).scale(baseHeight).clamp(baseHeight, 260.0).toDouble();
+    final width = AppDensity.clamp(context, factor: 0.54, min: 188, max: 218);
     return SizedBox(
       height: height,
       child: ListView.separated(

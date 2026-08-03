@@ -23,9 +23,9 @@ class EventListCard extends StatelessWidget {
     final radius = AppDensity.cardRadius(context);
     final imageHeight = AppDensity.value(
       context,
-      compact: 124,
-      standard: 136,
-      wide: 144,
+      compact: 96,
+      standard: 108,
+      wide: 116,
     );
     final venueName = venue?.name ?? event.venue?.name;
     final location = [
@@ -70,12 +70,12 @@ class EventListCard extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: 12,
-                    left: 12,
+                    top: 10,
+                    left: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                        horizontal: 8,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.95),
@@ -104,10 +104,10 @@ class EventListCard extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: 12,
-                    right: 12,
+                    top: 10,
+                    right: 10,
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.95),
                         shape: BoxShape.circle,
@@ -115,7 +115,7 @@ class EventListCard extends StatelessWidget {
                       child: const Icon(
                         Icons.bookmark_border,
                         color: BiCikalimTheme.primary,
-                        size: 20,
+                        size: 18,
                       ),
                     ),
                   ),
@@ -123,12 +123,7 @@ class EventListCard extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.all(
-                  AppDensity.value(
-                    context,
-                    compact: 10,
-                    standard: 12,
-                    wide: 14,
-                  ),
+                  AppDensity.value(context, compact: 9, standard: 10, wide: 12),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +137,7 @@ class EventListCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
-                                vertical: 4,
+                                vertical: 3,
                               ),
                               decoration: BoxDecoration(
                                 color: BiCikalimTheme.primary.withValues(
@@ -179,41 +174,41 @@ class EventListCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       event.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: BiCikalimTheme.textPrimary,
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        height: 1.18,
+                        height: 1.12,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       event.description ?? '',
                       style: const TextStyle(
                         color: BiCikalimTheme.textSecondary,
-                        fontSize: 13,
-                        height: 1.4,
+                        fontSize: 12,
+                        height: 1.3,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     const Divider(height: 1),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     if (venueName != null || location.isNotEmpty)
                       Row(
                         children: [
                           if (venue?.coverImageUrl.isNotEmpty ?? false) ...[
                             AppNetworkImage(
                               imageUrl: venue!.coverImageUrl,
-                              width: 32,
-                              height: 32,
-                              borderRadius: BorderRadius.circular(16),
+                              width: 28,
+                              height: 28,
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             const SizedBox(width: 8),
                           ],

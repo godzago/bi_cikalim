@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_density.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_providers.dart';
@@ -59,7 +60,7 @@ class ProfileScreen extends ConsumerWidget {
         onRefresh: () => _refreshProfile(ref),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20.0),
+          padding: AppDensity.screenInsets(context, top: 12, bottom: 18),
           child: Column(
             children: [
               // Kullanıcı Avatar & İsim
@@ -68,23 +69,33 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     // Avatar placeholder
                     Container(
-                      width: 90,
-                      height: 90,
+                      width: AppDensity.value(
+                        context,
+                        compact: 72,
+                        standard: 76,
+                        wide: 80,
+                      ),
+                      height: AppDensity.value(
+                        context,
+                        compact: 72,
+                        standard: 76,
+                        wide: 80,
+                      ),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: BiCikalimTheme.primary.withValues(alpha: 0.1),
                         border: Border.all(
                           color: BiCikalimTheme.primary,
-                          width: 3,
+                          width: 2.5,
                         ),
                       ),
                       child: const Icon(
                         Icons.person,
                         color: BiCikalimTheme.primary,
-                        size: 40,
+                        size: 34,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
                     Text(
                       displayName,
@@ -92,7 +103,7 @@ class ProfileScreen extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -108,7 +119,7 @@ class ProfileScreen extends ConsumerWidget {
                         color: BiCikalimTheme.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
 
                     // Kullanıcı tipi badge
                     Wrap(
@@ -133,7 +144,7 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 22),
 
               // İşletme Yönetimi
               _buildSectionHeader('İşletme'),
@@ -170,7 +181,7 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: 'Yeni taxonomy talebini admin onayına gönder.',
                 onTap: () => context.push('/submissions/taxonomy'),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
 
               // Hesap Ayarları
               _buildSectionHeader('Hesap'),
@@ -190,7 +201,7 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: 'BiÇıkalım platformu hakkında bilgi edinin.',
                 onTap: () {},
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
 
               // Çıkış Yap
               _buildMenuCard(
@@ -201,7 +212,7 @@ class ProfileScreen extends ConsumerWidget {
                 isDestructive: true,
                 onTap: () => _showSignOutDialog(context, ref),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -211,16 +222,16 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildBadge(String label, Color bgColor, Color textColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: textColor,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -253,7 +264,7 @@ class ProfileScreen extends ConsumerWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         side: BorderSide(
           color: isDestructive
               ? BiCikalimTheme.error.withValues(alpha: 0.2)
@@ -262,14 +273,16 @@ class ProfileScreen extends ConsumerWidget {
       ),
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        dense: true,
+        minVerticalPadding: 7,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: color, size: 22),
+          child: Icon(icon, color: color, size: 20),
         ),
         title: Text(
           title,

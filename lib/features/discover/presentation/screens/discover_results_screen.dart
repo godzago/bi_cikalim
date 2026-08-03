@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/app_density.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
@@ -143,7 +144,11 @@ class DiscoverResultsScreen extends ConsumerWidget {
                     },
                     child: ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(20),
+                      padding: AppDensity.screenInsets(
+                        context,
+                        top: 10,
+                        bottom: 16,
+                      ),
                       itemCount: venues.length,
                       itemBuilder: (context, index) {
                         final venue = venues[index];

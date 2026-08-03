@@ -36,14 +36,14 @@ class ActivityRecommendationCard extends StatelessWidget {
           margin: EdgeInsets.zero,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(compact ? 14 : 18),
             side: const BorderSide(color: Color(0xFFF0EDE9)),
           ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(compact ? 14 : 18),
             child: Padding(
-              padding: EdgeInsets.all(compact ? 14 : 16),
+              padding: EdgeInsets.all(compact ? 10 : 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -51,32 +51,32 @@ class ActivityRecommendationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: compact ? 42 : 48,
-                        height: compact ? 42 : 48,
+                        width: compact ? 36 : 44,
+                        height: compact ? 36 : 44,
                         decoration: BoxDecoration(
                           color: BiCikalimTheme.primary.withValues(alpha: .1),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           activity.iconData,
                           color: BiCikalimTheme.primary,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: compact ? 9 : 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const _ActivityBadge(),
-                            const SizedBox(height: 7),
+                            SizedBox(height: compact ? 5 : 7),
                             Text(
                               activity.name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: BiCikalimTheme.textPrimary,
-                                fontSize: compact ? 15 : 17,
-                                height: 1.15,
+                                fontSize: compact ? 14 : 16,
+                                height: 1.12,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -85,55 +85,58 @@ class ActivityRecommendationCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: compact ? 8 : 12),
                   Text(
                     venueCount > 0
                         ? '$venueCount mekânda yapabilirsin'
                         : 'Mekânları kontrol et',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: BiCikalimTheme.primary,
-                      fontSize: 12,
+                      fontSize: compact ? 11 : 12,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   if (previewVenues.isNotEmpty) ...[
-                    const SizedBox(height: 5),
+                    SizedBox(height: compact ? 3 : 5),
                     Text(
                       previewVenues,
                       maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: BiCikalimTheme.textSecondary,
-                        fontSize: 12,
-                        height: 1.35,
+                        fontSize: compact ? 11 : 12,
+                        height: 1.26,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ] else if (activity.description?.trim().isNotEmpty ??
                       false) ...[
-                    const SizedBox(height: 5),
+                    SizedBox(height: compact ? 3 : 5),
                     Text(
                       activity.description!.trim(),
                       maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: BiCikalimTheme.textSecondary,
-                        fontSize: 12,
-                        height: 1.35,
+                        fontSize: compact ? 11 : 12,
+                        height: 1.26,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
+                  SizedBox(height: compact ? 8 : 12),
                   Row(
                     children: [
                       Expanded(
                         child: FilledButton(
                           onPressed: onTap,
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            minimumSize: Size.fromHeight(compact ? 40 : 44),
+                            padding: EdgeInsets.symmetric(
+                              vertical: compact ? 9 : 12,
+                            ),
                           ),
                           child: const Text('Mekânları Gör'),
                         ),

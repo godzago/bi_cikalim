@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/app_density.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
@@ -149,7 +150,7 @@ class _AdvancedDiscoverSearchScreenState
           key: const PageStorageKey('advanced-discover-search-scroll'),
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: AppDensity.screenInsets(context, top: 8, bottom: 18),
           children: [
             _SearchInput(
               controller: _controller,
@@ -173,7 +174,7 @@ class _AdvancedDiscoverSearchScreenState
                 onOpenResults: _openFilteredVenues,
               ),
             ],
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             if (_query.length < 2)
               _buildStartState()
             else
@@ -654,15 +655,15 @@ class _SearchInput extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: BiCikalimTheme.primary.withValues(alpha: .08),
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: .035),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -676,15 +677,24 @@ class _SearchInput extends StatelessWidget {
             onChanged: onChanged,
             onSubmitted: onSubmitted,
             decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 0,
+                vertical: 12,
+              ),
               labelText: 'Arama',
               hintText: 'Aktivite, mekan veya etkinlik ara',
-              prefixIcon: const Icon(Icons.search_rounded),
+              prefixIcon: const Icon(Icons.search_rounded, size: 21),
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 44,
+                minHeight: 44,
+              ),
               suffixIcon: controller.text.isEmpty
                   ? null
                   : IconButton(
                       tooltip: 'Temizle',
                       onPressed: onClear,
-                      icon: const Icon(Icons.clear_rounded),
+                      icon: const Icon(Icons.clear_rounded, size: 20),
                     ),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
@@ -759,7 +769,7 @@ class _ResultSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -768,7 +778,7 @@ class _ResultSection extends StatelessWidget {
             actionLabel: actionLabel,
             onAction: onAction,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           ...children,
         ],
       ),
@@ -825,8 +835,11 @@ class _TaxonomyResultCard extends StatelessWidget {
     };
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       child: ListTile(
+        dense: true,
+        minVerticalPadding: 7,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: BiCikalimTheme.primary.withValues(alpha: .09),
@@ -854,8 +867,11 @@ class _VenueSearchResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       child: ListTile(
+        dense: true,
+        minVerticalPadding: 7,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         onTap: onTap,
         leading: const CircleAvatar(child: Icon(Icons.storefront_outlined)),
         title: Text(
@@ -884,8 +900,11 @@ class _EventSearchResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       child: ListTile(
+        dense: true,
+        minVerticalPadding: 7,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: Colors.black.withValues(alpha: .06),
@@ -913,11 +932,11 @@ class _SearchSkeleton extends StatelessWidget {
       children: List.generate(
         5,
         (index) => Container(
-          height: 72,
-          margin: const EdgeInsets.only(bottom: 10),
+          height: 58,
+          margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),

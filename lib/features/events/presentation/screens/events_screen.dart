@@ -115,11 +115,11 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: AppDensity.screenInsets(context, top: 8),
+                  padding: AppDensity.screenInsets(context, top: 4),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+                      horizontal: 10,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -128,23 +128,23 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           BiCikalimTheme.primary.withValues(alpha: 0.03),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width: 36,
-                          height: 36,
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.event_available,
                             color: BiCikalimTheme.primary,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             '${filteredEvents.length} etkinlik listelendi',
@@ -161,12 +161,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   ),
                 ),
                 SizedBox(
-                  height: 50,
+                  height: 44,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.fromLTRB(
                       AppDensity.screenPadding(context),
-                      8,
+                      6,
                       AppDensity.screenPadding(context),
                       0,
                     ),
@@ -181,7 +181,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 SizedBox(
                   height: 44,
                   child: ListView.separated(
@@ -194,36 +194,37 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     itemBuilder: (context, index) {
                       final category = categories[index];
                       final isSelected = _selectedCategoryFilter == category;
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedCategoryFilter = category;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            category,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                      return Center(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategoryFilter = category;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
                               color: isSelected
-                                  ? Colors.white
-                                  : Theme.of(context).colorScheme.primary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.primary
+                                        .withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              category,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -231,7 +232,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
@@ -309,16 +310,16 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         : '${tonightEvents.length} öneri hazır.';
 
     return Padding(
-      padding: AppDensity.screenInsets(context, top: 6),
+      padding: AppDensity.screenInsets(context, top: 4),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => context.push('/events/tonight'),
           child: Ink(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -335,16 +336,16 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             child: Stack(
               children: [
                 Positioned(
-                  right: -18,
-                  bottom: -22,
+                  right: -16,
+                  bottom: -20,
                   child: Icon(
                     Icons.style_outlined,
                     color: BiCikalimTheme.primary.withValues(alpha: 0.05),
-                    size: 96,
+                    size: 78,
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(11),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -352,8 +353,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color: BiCikalimTheme.primary.withValues(
@@ -377,8 +378,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           ),
                           const Spacer(),
                           Container(
-                            width: 34,
-                            height: 34,
+                            width: 30,
+                            height: 30,
                             decoration: const BoxDecoration(
                               color: Color(0xFFFFEFE7),
                               shape: BoxShape.circle,
@@ -391,19 +392,19 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 7),
                       const Text(
                         'Bu Akşam Ne Yapsak?',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: BiCikalimTheme.textPrimary,
-                          fontSize: 16,
+                          fontSize: 15,
                           height: 1.12,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 5),
                       Text(
                         countLabel,
                         maxLines: 2,
@@ -411,7 +412,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         style: TextStyle(
                           color: BiCikalimTheme.textSecondary,
                           fontSize: 12,
-                          height: 1.3,
+                          height: 1.22,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
