@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -74,6 +75,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     return Scaffold(
       backgroundColor: BiCikalimTheme.background,
       appBar: AppBar(
@@ -85,36 +87,43 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.fromLTRB(
+            layout.screenPadding,
+            0,
+            layout.screenPadding,
+            MediaQuery.viewInsetsOf(context).bottom + layout.sectionGap,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(22),
+                  padding: EdgeInsets.all(layout.cardPadding),
                   decoration: BoxDecoration(
                     color: BiCikalimTheme.primary.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(layout.cardRadius),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: 50,
-                        height: 50,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           color: BiCikalimTheme.primary,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(
+                            layout.controlRadius,
+                          ),
                         ),
                         child: const Icon(
                           Icons.waving_hand_rounded,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 10),
                       Text(
                         'Tekrar hoş geldin!',
                         style: Theme.of(context).textTheme.headlineMedium,
@@ -130,7 +139,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: layout.sectionGap),
                 AppTextField(
                   label: 'E-posta Adresi',
                   hintText: 'ornek@email.com',
@@ -145,7 +154,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 AppTextField(
                   label: 'Şifre',
                   hintText: 'En az 8 karakter',
@@ -180,13 +189,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 PrimaryButton(
                   label: 'Giriş Yap',
                   onPressed: _signIn,
                   isLoading: _isLoading,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,

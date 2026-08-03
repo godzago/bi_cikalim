@@ -9,10 +9,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
-import '../../../../shared/widgets/app_status_badge.dart';
 
 /// Gerçek OpenStreetMap (Google Maps Yol görünümü tasarımı ile) entegre edilmiş harita ekranı.
 class MapScreen extends ConsumerStatefulWidget {
@@ -50,6 +50,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _dialogOpen = false;
   bool _mapReady = false;
   bool _userMovedMap = false;
+  bool _loadingLocation = false;
+  bool _refreshingMap = false;
   String? _lastAutoFitKey;
 
   @override
@@ -81,48 +83,57 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Future<void> _checkAndRequestLocation() async {
-    if (_dialogOpen) return;
+    if (_dialogOpen || _loadingLocation) return;
 
     bool serviceEnabled;
     LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) {
-        _showLocationPermissionDialog(
-          title: 'Konum Servisi Kapalı 📍',
-          message:
-              'Lütfen yakınınızdaki eğlenceli aktiviteleri ve mekanları haritada görebilmek için cihazınızın GPS (konum) servisini açın.',
-          isServiceError: true,
-        );
+    setState(() => _loadingLocation = true);
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          _showLocationPermissionDialog(
+            title: 'Konum Servisi Kapalı 📍',
+            message:
+                'Lütfen yakınınızdaki eğlenceli aktiviteleri ve mekanları haritada görebilmek için cihazınızın GPS (konum) servisini açın.',
+            isServiceError: true,
+          );
+        }
+        return;
       }
-      return;
-    }
 
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      if (mounted) {
-        _showLocationPermissionDialog(
-          title: 'Yakındaki Eğlenceyi Kaçırma! 📍',
-          message:
-              'Sana en yakın mekanları ve bu akşamki etkinlikleri harita üzerinde gösterebilmemiz için konum iznine ihtiyacımız var.',
-        );
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          _showLocationPermissionDialog(
+            title: 'Yakındaki Eğlenceyi Kaçırma! 📍',
+            message:
+                'Sana en yakın mekanları ve bu akşamki etkinlikleri harita üzerinde gösterebilmemiz için konum iznine ihtiyacımız var.',
+          );
+        }
+      } else if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          _showLocationPermissionDialog(
+            title: 'Konum İzni Gerekli 📍',
+            message:
+                'Konum iznini kalıcı olarak reddettiniz. Lütfen uygulama ayarlarından konuma izin verin.',
+            isPermanent: true,
+          );
+        }
+      } else {
+        await _getCurrentLocation(moveCamera: true, manageLoading: false);
       }
-    } else if (permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        _showLocationPermissionDialog(
-          title: 'Konum İzni Gerekli 📍',
-          message:
-              'Konum iznini kalıcı olarak reddettiniz. Lütfen uygulama ayarlarından konuma izin verin.',
-          isPermanent: true,
-        );
-      }
-    } else {
-      _getCurrentLocation(moveCamera: true);
+    } finally {
+      if (mounted) setState(() => _loadingLocation = false);
     }
   }
 
-  Future<void> _getCurrentLocation({bool moveCamera = false}) async {
+  Future<void> _getCurrentLocation({
+    bool moveCamera = false,
+    bool manageLoading = true,
+  }) async {
+    if (manageLoading && mounted) setState(() => _loadingLocation = true);
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -140,6 +151,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
     } catch (e) {
       debugPrint('Error getting location: $e');
+    } finally {
+      if (manageLoading && mounted) setState(() => _loadingLocation = false);
     }
   }
 
@@ -157,12 +170,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       barrierDismissible: false,
       builder: (context) {
         return Dialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: context.layout.screenPadding,
+            vertical: context.layout.sectionGap,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(context.layout.cardRadius),
           ),
           elevation: 8,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            padding: EdgeInsets.all(context.layout.screenPadding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -198,7 +215,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     height: 1.45,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: context.layout.sectionGap),
                 Row(
                   children: [
                     Expanded(
@@ -301,14 +318,33 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Future<void> _refreshMap() async {
+    if (_refreshingMap) return;
     final filters = _buildVenueFilters(ref.read(selectedCityProvider).value);
     final provider = mapVenuesProvider(filters);
-    ref.invalidate(provider);
-    await ref.read(provider.future);
+    setState(() => _refreshingMap = true);
+    try {
+      ref.invalidate(provider);
+      await ref.read(provider.future);
+    } finally {
+      if (mounted) setState(() => _refreshingMap = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
+    final mediaQuery = MediaQuery.of(context);
+    final textScale = mediaQuery.textScaler.scale(16) / 16;
+    final textHeightAllowance = (textScale - 1).clamp(0.0, 1.0) * 48;
+    final baseSheetHeight = (mediaQuery.size.height * .24)
+        .clamp(126.0, layout.collapsedMapSheetHeight)
+        .toDouble();
+    // The visual target remains 126–148 px at the default text size. Larger
+    // accessibility text gets bounded extra room instead of overflowing the
+    // fixed collapsed-sheet constraint.
+    final sheetHeight = (baseSheetHeight + textHeightAllowance)
+        .clamp(126.0, mediaQuery.size.height * .34)
+        .toDouble();
     final selectedCity = ref.watch(selectedCityProvider).value;
     final filters = _buildVenueFilters(selectedCity);
     final filterKey = _filterKey(filters);
@@ -320,8 +356,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         actions: [
           IconButton(
             tooltip: 'Haritayı yenile',
-            onPressed: _refreshMap,
-            icon: const Icon(Icons.refresh),
+            onPressed: _refreshingMap ? null : _refreshMap,
+            icon: _refreshingMap
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  )
+                : const Icon(Icons.refresh),
           ),
         ],
       ),
@@ -426,31 +468,31 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: 96,
+            height: 72,
             child: RefreshIndicator(
               color: BiCikalimTheme.primary,
               onRefresh: _refreshMap,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [SizedBox(height: 97)],
+                children: const [SizedBox(height: 73)],
               ),
             ),
           ),
 
           // Üst Bilgilendirme Bandı
           Positioned(
-            top: 16,
-            left: 16,
-            right: 16,
+            top: 8,
+            left: layout.screenPadding,
+            right: layout.screenPadding,
             child: IgnorePointer(
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+                  horizontal: 10,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(layout.cardRadius),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.06),
@@ -481,9 +523,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
           // Alt Mekan Detay Kartı
           Positioned(
-            top: 84,
-            left: 16,
-            right: 16,
+            top: 62,
+            left: layout.screenPadding,
+            right: layout.screenPadding,
             child: venuesAsync.when(
               loading: () => _buildMapInfoCard(
                 icon: Icons.hourglass_top_rounded,
@@ -505,145 +547,175 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
           ),
 
+          if (_loadingLocation || _refreshingMap || venuesAsync.isLoading)
+            Positioned(
+              top: 76,
+              left: layout.screenPadding,
+              right: layout.screenPadding,
+              child: _MapLoadingBanner(
+                message: _loadingLocation
+                    ? 'Konumun alınıyor...'
+                    : _refreshingMap
+                    ? 'Harita yenileniyor...'
+                    : 'Mekanlar yükleniyor...',
+              ),
+            ),
+
           if (_selectedVenue != null)
             Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
+              bottom: 8,
+              left: layout.screenPadding,
+              right: layout.screenPadding,
+              height: sheetHeight,
               child: Card(
+                margin: EdgeInsets.zero,
                 elevation: 6,
                 shadowColor: Colors.black.withValues(alpha: 0.15),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(layout.cardRadius),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(layout.cardPadding),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(layout.cardRadius),
                         child: AppNetworkImage(
                           imageUrl: _selectedVenue!.coverImageUrl,
-                          width: 80,
-                          height: 80,
+                          width: layout.fluid(64, 70, 76),
+                          height: double.infinity,
                           semanticLabel:
                               '${_selectedVenue!.name} kapak görseli',
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: layout.cardGap),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              _selectedVenue!.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _selectedVenue!.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: layout.cardTitleSize,
+                                      height: 1.15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: AppLayout.minTouchTarget,
+                                  height: AppLayout.minTouchTarget,
+                                  child: IconButton(
+                                    tooltip: 'Kapat',
+                                    padding: EdgeInsets.zero,
+                                    icon: const Icon(Icons.close, size: 17),
+                                    onPressed: () =>
+                                        setState(() => _selectedVenue = null),
+                                  ),
+                                ),
+                              ],
                             ),
-                            if (_selectedVenue!.isVerified) ...[
-                              const SizedBox(height: 6),
-                              const AppStatusBadge.verified(),
-                            ],
-                            const SizedBox(height: 4),
                             Row(
                               children: [
                                 const Icon(
                                   Icons.star,
                                   color: BiCikalimTheme.primary,
-                                  size: 14,
+                                  size: 13,
                                 ),
                                 const SizedBox(width: 2),
-                                Text(
-                                  _ratingText(_selectedVenue!),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                                Flexible(
+                                  child: Text(
+                                    _ratingText(_selectedVenue!),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: layout.metadataSize,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     _shortLocation(_selectedVenue!),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 12,
+                                    style: TextStyle(
+                                      fontSize: layout.metadataSize,
                                       color: BiCikalimTheme.textSecondary,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            if (_selectedVenue!.activitySummary.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              _buildActivityPreview(_selectedVenue!),
-                            ],
-                            const SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () {
-                                context.push('/venues/${_selectedVenue!.slug}');
-                              },
-                              child: const Row(
-                                children: [
-                                  Text(
-                                    'Detaylı İncele',
-                                    style: TextStyle(
-                                      color: BiCikalimTheme.primary,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
+                            const Spacer(),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: Size(
+                                        0,
+                                        layout.compactControlHeight,
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: layout.isCompact ? 6 : 10,
+                                      ),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.padded,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () => context.push(
+                                      '/venues/${_selectedVenue!.slug}',
+                                    ),
+                                    child: Text(
+                                      'Detay',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: layout.metadataSize,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Icon(
-                                    Icons.arrow_forward,
-                                    color: BiCikalimTheme.primary,
-                                    size: 14,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: [
-                                TextButton.icon(
-                                  onPressed: () => context.push(
-                                    '/venues/${_selectedVenue!.slug}',
-                                  ),
-                                  icon: const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 16,
-                                  ),
-                                  label: const Text('Detayı Gör'),
                                 ),
-                                TextButton.icon(
-                                  onPressed: () =>
-                                      _openDirections(_selectedVenue!),
-                                  icon: const Icon(
-                                    Icons.directions_rounded,
-                                    size: 16,
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: Size(
+                                        0,
+                                        layout.compactControlHeight,
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: layout.isCompact ? 6 : 10,
+                                      ),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.padded,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () =>
+                                        _openDirections(_selectedVenue!),
+                                    child: Text(
+                                      'Yol Tarifi',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: layout.metadataSize,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
-                                  label: const Text('Yol Tarifi'),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        onPressed: () {
-                          setState(() {
-                            _selectedVenue = null;
-                          });
-                        },
                       ),
                     ],
                   ),
@@ -651,8 +723,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ),
           Positioned(
-            bottom: _selectedVenue != null ? 250 : 30,
-            right: 20,
+            bottom: _selectedVenue != null ? sheetHeight + 16 : 16,
+            right: layout.screenPadding,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -660,14 +732,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   heroTag: 'my_location',
                   backgroundColor: Colors.white,
                   foregroundColor: BiCikalimTheme.primary,
-                  onPressed: () {
-                    if (_currentLocation != null) {
-                      _mapController.move(_currentLocation!, 14);
-                    } else {
-                      _checkAndRequestLocation();
-                    }
-                  },
-                  child: const Icon(Icons.my_location),
+                  onPressed: _loadingLocation
+                      ? null
+                      : () {
+                          if (_currentLocation != null) {
+                            _mapController.move(_currentLocation!, 14);
+                          } else {
+                            _checkAndRequestLocation();
+                          }
+                        },
+                  child: _loadingLocation
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
+                      : const Icon(Icons.my_location),
                 ),
                 const SizedBox(height: 8),
                 FloatingActionButton.small(
@@ -1004,6 +1084,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  // Kept for the expanded marker presentation used by larger surfaces.
+  // ignore: unused_element
   Widget _buildActivityPreview(ApiVenue venue) {
     final names = venue.activitySummary
         .map((item) => item.activityName)
@@ -1117,5 +1199,54 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (tag.contains('karaoke')) return Icons.mic;
     if (tag.contains('saha')) return Icons.sports_soccer;
     return Icons.store;
+  }
+}
+
+class _MapLoadingBanner extends StatelessWidget {
+  final String message;
+
+  const _MapLoadingBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .96),
+          borderRadius: BorderRadius.circular(context.layout.cardRadius),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .08),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: BiCikalimTheme.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

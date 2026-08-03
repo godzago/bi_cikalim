@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/responsive.dart';
+
 class AppEmptyState extends StatelessWidget {
   final IconData icon;
   final String? title;
@@ -36,9 +38,9 @@ class AppEmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 48, color: Colors.grey.shade500),
+              Icon(icon, size: 40, color: Colors.grey.shade500),
               if (title != null && title!.trim().isNotEmpty) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 Text(
                   title!,
                   textAlign: TextAlign.center,
@@ -59,8 +61,16 @@ class AppEmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 16),
-                FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppLayout.minTouchTarget,
+                  ),
+                  child: FilledButton(
+                    onPressed: onAction,
+                    child: Text(actionLabel!),
+                  ),
+                ),
               ],
               if (secondaryActionLabel != null &&
                   onSecondaryAction != null) ...[

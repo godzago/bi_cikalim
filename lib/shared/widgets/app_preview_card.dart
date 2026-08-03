@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 
 class AppPreviewCard extends StatelessWidget {
   final IconData icon;
@@ -22,30 +23,31 @@ class AppPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(layout.cardRadius),
         side: BorderSide(color: Colors.grey.shade100),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(layout.cardPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(layout.controlRadius),
               ),
-              child: Icon(icon, color: BiCikalimTheme.primary, size: 20),
+              child: Icon(icon, color: BiCikalimTheme.primary, size: 18),
             ),
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: layout.cardTitleSize,
                 fontWeight: FontWeight.bold,
                 color: BiCikalimTheme.textPrimary,
               ),
@@ -59,7 +61,7 @@ class AppPreviewCard extends StatelessWidget {
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Row(
               children: [
                 TextButton(

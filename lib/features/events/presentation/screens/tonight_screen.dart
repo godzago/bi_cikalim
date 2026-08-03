@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_error_state.dart';
+import '../../../../shared/widgets/app_filter_controls.dart';
 import '../../../../shared/widgets/app_skeleton.dart';
 import '../widgets/activity_recommendation_card.dart';
 import '../widgets/tonight_event_card.dart';
@@ -78,108 +80,21 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
       });
     }
 
-    final recommendationsAsync = citySlug == null
-        ? null
-        : ref.watch(
-            tonightActivityRecommendationsProvider(
-              TonightRecommendationFilters(
-                citySlug: citySlug,
-                categorySlug: _categorySlug,
-                subcategorySlug: _subcategorySlug,
-                activitySlug: _activitySlug,
-                isVerified: _verifiedOnly ? true : null,
-                hasCoordinates: _coordinatesOnly ? true : null,
-                limit: 10,
-              ),
-            ),
-          );
-
     return Scaffold(
       backgroundColor: const Color(0xFFFBFAF8),
-      appBar: AppBar(title: const Text('Bu Akşam Ne Yapsak?')),
       body: RefreshIndicator(
         color: BiCikalimTheme.primary,
         onRefresh: () => _refreshAll(citySlug),
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(child: _buildHeader(selectedCity)),
-            SliverToBoxAdapter(child: _buildFilterArea()),
-            SliverToBoxAdapter(
-              child: _buildActivitySection(recommendationsAsync, citySlug),
-            ),
-            SliverToBoxAdapter(child: _buildEventsHeader()),
-            ..._buildEventSlivers(),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(ApiCity? selectedCity) {
-    final range = _loadedRange ?? _calculateTonightRange();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFF0EDE9)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              selectedCity == null
-                  ? 'Şehir seçerek önerileri gör'
-                  : '${selectedCity.name}’de bu akşam',
-              style: const TextStyle(
-                color: BiCikalimTheme.textPrimary,
-                fontSize: 22,
-                height: 1.15,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Şehirde şu anda yapabileceğin aktiviteleri keşfet.',
-              style: TextStyle(
-                color: BiCikalimTheme.textSecondary,
-                fontSize: 13,
-                height: 1.4,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule_rounded,
-                  size: 17,
-                  color: BiCikalimTheme.primary.withValues(alpha: .9),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    '${_formatClock(range.from)} - ${_formatClock(range.to)} aralığı',
-                    style: const TextStyle(
-                      color: BiCikalimTheme.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.push('/city-select'),
-                  child: Text(selectedCity == null ? 'Şehir Seç' : 'Değiştir'),
-                ),
-              ],
-            ),
-          ],
+        child: SafeArea(
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _buildFilterArea()),
+              ..._buildEventSlivers(),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+          ),
         ),
       ),
     );
@@ -198,7 +113,273 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        18,
+        context.layout.screenPadding,
+        14,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bu akşam ne var?',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textPrimary,
+                    fontSize: 22,
+                    height: 1.05,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  _activeFilterLabel(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: BiCikalimTheme.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          AppFilterButton(
+            onPressed: () => _showFilterSheet(
+              categories: categoriesAsync.value ?? const [],
+              subcategories: subcategoriesAsync.value ?? const [],
+              activities: activitiesAsync.value ?? const [],
+            ),
+            activeCount: _activeFilterCount,
+          ),
+        ],
+      ),
+    );
+  }
+
+  int get _activeFilterCount =>
+      (_categorySlug == null ? 0 : 1) +
+      (_subcategorySlug == null ? 0 : 1) +
+      (_activitySlug == null ? 0 : 1) +
+      (_verifiedOnly ? 1 : 0) +
+      (_coordinatesOnly ? 1 : 0);
+
+  String _activeFilterLabel() {
+    final labels = <String>[];
+    if (_activitySlug != null) labels.add('aktivite');
+    if (_categorySlug != null) labels.add('kategori');
+    if (_verifiedOnly) labels.add('doğrulanmış');
+    if (_coordinatesOnly) labels.add('konumlu');
+    if (labels.isEmpty) return 'Etkinliği seç, planı aç.';
+    return labels.join(' • ');
+  }
+
+  Future<void> _showFilterSheet({
+    required List<ApiCategory> categories,
+    required List<ApiSubcategory> subcategories,
+    required List<ApiActivity> activities,
+  }) async {
+    var categorySlug = _categorySlug;
+    var subcategorySlug = _subcategorySlug;
+    var activitySlug = _activitySlug;
+    var verifiedOnly = _verifiedOnly;
+    var coordinatesOnly = _coordinatesOnly;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Widget chip({
+              required String label,
+              required bool selected,
+              required VoidCallback onTap,
+            }) {
+              return AppFilterChoiceChip(
+                label: label,
+                selected: selected,
+                onTap: onTap,
+              );
+            }
+
+            final hasDraftFilters =
+                categorySlug != null ||
+                subcategorySlug != null ||
+                activitySlug != null ||
+                verifiedOnly ||
+                coordinatesOnly;
+
+            return AppFilterSheet(
+              clearEnabled: hasDraftFilters,
+              onClear: () => setSheetState(() {
+                categorySlug = null;
+                subcategorySlug = null;
+                activitySlug = null;
+                verifiedOnly = false;
+                coordinatesOnly = false;
+              }),
+              onApply: () {
+                setState(() {
+                  _categorySlug = categorySlug;
+                  _subcategorySlug = subcategorySlug;
+                  _activitySlug = activitySlug;
+                  _verifiedOnly = verifiedOnly;
+                  _coordinatesOnly = coordinatesOnly;
+                });
+                Navigator.pop(context);
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppFilterSectionTitle('Kategori'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      chip(
+                        label: 'Tümü',
+                        selected: categorySlug == null,
+                        onTap: () => setSheetState(() {
+                          categorySlug = null;
+                          subcategorySlug = null;
+                          activitySlug = null;
+                        }),
+                      ),
+                      ...categories
+                          .take(10)
+                          .map(
+                            (category) => chip(
+                              label: category.name,
+                              selected: categorySlug == category.slug,
+                              onTap: () => setSheetState(() {
+                                categorySlug = category.slug;
+                                subcategorySlug = null;
+                                activitySlug = null;
+                              }),
+                            ),
+                          ),
+                    ],
+                  ),
+                  if (subcategories.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    const AppFilterSectionTitle('Alt kategori'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        chip(
+                          label: 'Alt kategori yok',
+                          selected: subcategorySlug == null,
+                          onTap: () => setSheetState(() {
+                            subcategorySlug = null;
+                            activitySlug = null;
+                          }),
+                        ),
+                        ...subcategories
+                            .take(10)
+                            .map(
+                              (subcategory) => chip(
+                                label: subcategory.name,
+                                selected: subcategorySlug == subcategory.slug,
+                                onTap: () => setSheetState(() {
+                                  subcategorySlug = subcategory.slug;
+                                  activitySlug = null;
+                                }),
+                              ),
+                            ),
+                      ],
+                    ),
+                  ],
+                  if (activities.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    const AppFilterSectionTitle('Aktivite'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        chip(
+                          label: 'Aktivite seçme',
+                          selected: activitySlug == null,
+                          onTap: () => setSheetState(() => activitySlug = null),
+                        ),
+                        ...activities
+                            .take(12)
+                            .map(
+                              (activity) => chip(
+                                label: activity.name,
+                                selected: activitySlug == activity.slug,
+                                onTap: () => setSheetState(
+                                  () => activitySlug = activity.slug,
+                                ),
+                              ),
+                            ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  const AppFilterSectionTitle('Mekân özellikleri'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      chip(
+                        label: 'Doğrulanmış mekanlar',
+                        selected: verifiedOnly,
+                        onTap: () =>
+                            setSheetState(() => verifiedOnly = !verifiedOnly),
+                      ),
+                      chip(
+                        label: 'Konum bilgisi var',
+                        selected: coordinatesOnly,
+                        onTap: () => setSheetState(
+                          () => coordinatesOnly = !coordinatesOnly,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ignore: unused_element
+  Widget _buildLegacyFilterArea() {
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final subcategoriesAsync = ref.watch(subcategoriesProvider(_categorySlug));
+    final activitiesAsync = ref.watch(
+      filteredActivitiesProvider(
+        ActivityFilters(
+          categorySlug: _categorySlug,
+          subcategorySlug: _subcategorySlug,
+        ),
+      ),
+    );
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        10,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -308,7 +489,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
 
   Widget _buildChipRow({required List<Widget> children}) {
     return SizedBox(
-      height: 38,
+      height: AppLayout.minTouchTarget,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: children.length,
@@ -338,12 +519,18 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildActivitySection(
     AsyncValue<List<TonightActivityRecommendation>>? recommendationsAsync,
     String? citySlug,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 2, 20, 20),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        2,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -358,9 +545,9 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
               icon: Icons.location_city_outlined,
               title: 'Şehir seçmelisin',
               message: 'Önerileri göstermek için şehir seçmelisin.',
-              actionLabel: 'Şehir Seç',
-              onAction: () => context.push('/city-select'),
-              padding: const EdgeInsets.all(24),
+              actionLabel: 'Ayarlara Git',
+              onAction: () => context.go('/profile'),
+              padding: EdgeInsets.all(context.layout.screenPadding),
             )
           else
             recommendationsAsync!.when(
@@ -398,7 +585,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
                         _coordinatesOnly = false;
                       });
                     },
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(context.layout.screenPadding),
                   );
                 }
 
@@ -423,9 +610,15 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildEventsHeader() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        10,
+      ),
       child: _SectionTitle(
         title: 'Bu Akşamki Etkinlikler',
         subtitle: 'Etkinlikler tarih, saat ve mekânı belli tekil içeriklerdir.',
@@ -435,10 +628,12 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
 
   List<Widget> _buildEventSlivers() {
     if (_eventsLoading && _events.isEmpty) {
-      return const [
+      return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.layout.screenPadding,
+            ),
             child: _EventSkeletonList(),
           ),
         ),
@@ -449,7 +644,9 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
       return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.layout.screenPadding,
+            ),
             child: _PartialErrorView(
               message: 'Bu akşamki etkinlikler yüklenemedi.',
               onRetry: () => _reloadEvents(_loadedCitySlug),
@@ -460,14 +657,18 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
     }
 
     if (_events.isEmpty) {
-      return const [
+      return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.layout.screenPadding,
+            ),
             child: AppEmptyState(
               icon: Icons.event_busy_outlined,
               title: 'Bu akşam yayınlanmış bir etkinlik bulunmuyor',
-              message: 'Yine de şehirde yapabileceğin pek çok aktivite var.',
+              message: 'Yakındaki mekanları haritada keşfedebilirsin.',
+              actionLabel: 'Yakınımda Ne Var?',
+              onAction: () => context.go('/map'),
               padding: EdgeInsets.all(24),
             ),
           ),
@@ -477,7 +678,7 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
 
     return [
       SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: context.layout.screenPadding),
         sliver: SliverList.builder(
           itemCount: _events.length,
           itemBuilder: (context, index) {
@@ -507,7 +708,12 @@ class _TonightScreenState extends ConsumerState<TonightScreen> {
       if (_eventsError != null && _events.isNotEmpty)
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            padding: EdgeInsets.fromLTRB(
+              context.layout.screenPadding,
+              0,
+              context.layout.screenPadding,
+              10,
+            ),
             child: _PartialErrorView(
               message: 'Etkinliklerin devamı yüklenemedi.',
               onRetry: _loadMoreEvents,
@@ -768,15 +974,6 @@ TonightTimeRange _calculateTonightRange([DateTime? now]) {
   return TonightTimeRange(from: localNow, to: nextMorning);
 }
 
-String _formatClock(DateTime value) {
-  final local = value.toLocal();
-  final day = local.day.toString().padLeft(2, '0');
-  final month = local.month.toString().padLeft(2, '0');
-  final hour = local.hour.toString().padLeft(2, '0');
-  final minute = local.minute.toString().padLeft(2, '0');
-  return '$day/$month $hour:$minute';
-}
-
 class _SectionTitle extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -790,16 +987,16 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             color: BiCikalimTheme.textPrimary,
-            fontSize: 18,
+            fontSize: context.layout.sectionTitleSize,
             fontWeight: FontWeight.w900,
           ),
         ),
         const SizedBox(height: 5),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             color: BiCikalimTheme.textSecondary,
             fontSize: 12,
             height: 1.4,
@@ -821,7 +1018,7 @@ class _PartialErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.layout.cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),

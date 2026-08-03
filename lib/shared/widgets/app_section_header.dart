@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 
 class AppSectionHeader extends StatelessWidget {
   final String title;
@@ -19,7 +20,7 @@ class AppSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: context.layout.screenPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -33,12 +34,12 @@ class AppSectionHeader extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: 18,
+                      fontSize: context.layout.sectionTitleSize,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(

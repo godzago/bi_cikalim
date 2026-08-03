@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 
 class AppIconActionButton extends StatelessWidget {
   final IconData icon;
@@ -30,7 +31,10 @@ class AppIconActionButton extends StatelessWidget {
       enabled: onPressed != null && !isLoading,
       label: semanticLabel ?? label,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+        constraints: const BoxConstraints(
+          minHeight: AppLayout.minTouchTarget,
+          minWidth: AppLayout.minTouchTarget,
+        ),
         child: FilledButton.tonalIcon(
           onPressed: isLoading ? null : onPressed,
           icon: isLoading
@@ -42,15 +46,21 @@ class AppIconActionButton extends StatelessWidget {
                     color: effectiveForeground,
                   ),
                 )
-              : Icon(icon, size: 19),
+              : Icon(icon, size: 18),
           label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
           style: FilledButton.styleFrom(
             foregroundColor: effectiveForeground,
             backgroundColor:
                 backgroundColor ?? effectiveForeground.withValues(alpha: .08),
-            minimumSize: const Size(48, 48),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            minimumSize: const Size(
+              AppLayout.minTouchTarget,
+              AppLayout.minTouchTarget,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            textStyle: TextStyle(
+              fontSize: context.layout.bodySize,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ),
@@ -83,7 +93,10 @@ class AppRoundIconButton extends StatelessWidget {
       child: Tooltip(
         message: tooltip,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          constraints: const BoxConstraints(
+            minWidth: AppLayout.minTouchTarget,
+            minHeight: AppLayout.minTouchTarget,
+          ),
           child: IconButton(
             onPressed: isLoading ? null : onPressed,
             icon: isLoading

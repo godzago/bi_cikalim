@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -79,6 +80,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     return Scaffold(
       backgroundColor: BiCikalimTheme.background,
       appBar: AppBar(
@@ -93,7 +95,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.fromLTRB(
+            layout.screenPadding,
+            0,
+            layout.screenPadding,
+            MediaQuery.viewInsetsOf(context).bottom + layout.sectionGap,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
@@ -107,7 +114,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       ? 'İşletme Hesabı Oluştur'
                       : 'Hesap Oluştur',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: layout.pageTitleSize,
                     fontWeight: FontWeight.bold,
                     color: BiCikalimTheme.textPrimary,
                   ),
@@ -121,7 +128,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: layout.sectionGap),
 
                 // Ad Soyad
                 AppTextField(
@@ -140,7 +147,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Kullanıcı Adı
                 AppTextField(
@@ -159,7 +166,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // E-posta
                 AppTextField(
@@ -179,7 +186,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Şifre
                 AppTextField(
@@ -197,7 +204,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Şifre Tekrar
                 AppTextField(
@@ -218,7 +225,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: layout.sectionGap),
 
                 // Kayıt Ol Butonu
                 PrimaryButton(
@@ -226,7 +233,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   onPressed: _signUp,
                   isLoading: _isLoading,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
 
                 // Kullanım Koşulları
                 Center(
@@ -240,7 +247,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: layout.sectionGap),
 
                 // Giriş Yap yönlendirmesi
                 Wrap(

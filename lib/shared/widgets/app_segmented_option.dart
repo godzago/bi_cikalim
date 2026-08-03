@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 
 class AppSegmentedOption extends StatelessWidget {
   final String label;
@@ -24,8 +25,11 @@ class AppSegmentedOption extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          constraints: const BoxConstraints(minWidth: 84),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          constraints: const BoxConstraints(
+            minWidth: 72,
+            minHeight: AppLayout.minTouchTarget,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: isSelected ? BiCikalimTheme.primary : Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -40,7 +44,7 @@ class AppSegmentedOption extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isSelected ? Colors.white : BiCikalimTheme.textSecondary,
-              fontSize: 13,
+              fontSize: context.layout.bodySize,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
@@ -143,7 +144,13 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
                 key: _formKey,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.fromLTRB(
+                    context.layout.screenPadding,
+                    8,
+                    context.layout.screenPadding,
+                    MediaQuery.viewInsetsOf(context).bottom +
+                        context.layout.sectionGap,
+                  ),
                   children: [
                     if (widget.type == SubmissionType.taxonomy)
                       DropdownButtonFormField<String>(
@@ -232,7 +239,7 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
                         labelText: 'Açıklama / not',
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.layout.sectionGap),
                     FilledButton(
                       onPressed: _busy ? null : _submit,
                       child: Text(

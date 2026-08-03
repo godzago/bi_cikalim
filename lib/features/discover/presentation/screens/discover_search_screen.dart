@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
@@ -75,7 +76,12 @@ class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: EdgeInsets.fromLTRB(
+            context.layout.screenPadding,
+            8,
+            context.layout.screenPadding,
+            MediaQuery.viewInsetsOf(context).bottom + context.layout.sectionGap,
+          ),
           children: [
             TextField(
               controller: _controller,
@@ -102,7 +108,7 @@ class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 10),
             if (_query.length < 2)
               const Text(
                 'Aramak için en az iki karakter yaz.',
@@ -147,6 +153,10 @@ class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
           const _SectionTitle('Mekanlar'),
           ...result.venues.map(
             (venue) => ListTile(
+              minTileHeight: context.layout.fluid(86, 90, 98),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: context.layout.cardPadding,
+              ),
               leading: const Icon(Icons.storefront_outlined),
               title: Text(venue.name),
               subtitle: Text(
@@ -163,6 +173,10 @@ class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
           const _SectionTitle('Etkinlikler'),
           ...result.events.map(
             (event) => ListTile(
+              minTileHeight: context.layout.fluid(88, 94, 102),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: context.layout.cardPadding,
+              ),
               leading: const Icon(Icons.event_outlined),
               title: Text(event.title),
               subtitle: Text(event.city.name),
@@ -181,6 +195,10 @@ class _DiscoverSearchScreenState extends ConsumerState<DiscoverSearchScreen> {
       _ => 'activitySlug',
     };
     return ListTile(
+      minTileHeight: context.layout.fluid(72, 78, 84),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: context.layout.cardPadding,
+      ),
       leading: Icon(
         scope == 'activitySlug'
             ? Icons.sports_esports
@@ -209,7 +227,10 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        style: TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: context.layout.sectionTitleSize,
+        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/responsive.dart';
+
 class AppSkeletonBox extends StatelessWidget {
   final double height;
   final double? width;
@@ -36,7 +38,10 @@ class ActivityCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppSkeletonBox(height: 178, radius: 20);
+    return AppSkeletonBox(
+      height: context.layout.fluid(146, 152, 160),
+      radius: context.layout.cardRadius,
+    );
   }
 }
 
@@ -45,7 +50,10 @@ class VenueCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppSkeletonBox(height: 132, radius: 20);
+    return AppSkeletonBox(
+      height: context.layout.fluid(108, 114, 122),
+      radius: context.layout.cardRadius,
+    );
   }
 }
 
@@ -54,6 +62,9 @@ class EventCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppSkeletonBox(height: 156, radius: 20);
+    return AppSkeletonBox(
+      height: context.layout.fluid(126, 132, 142),
+      radius: context.layout.cardRadius,
+    );
   }
 }

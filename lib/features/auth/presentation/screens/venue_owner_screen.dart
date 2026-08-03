@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/api_providers.dart';
@@ -88,7 +89,7 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
           onRefresh: _refreshOwnerState,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.layout.screenPadding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -125,10 +126,15 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
 
               // Özellik Kartları
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                padding: EdgeInsets.fromLTRB(
+                  context.layout.screenPadding,
+                  0,
+                  context.layout.screenPadding,
+                  context.layout.sectionGap,
+                ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.layout.sectionGap),
                     _buildImageUploadCard(),
                     const SizedBox(height: 12),
                     _buildComingSoonCard(
@@ -175,7 +181,7 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
                       color: const Color(0xFFFAF0FF),
                       iconColor: const Color(0xFF9C27B0),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.layout.sectionGap),
                     _buildContactSection(context),
                   ]),
                 ),
@@ -189,10 +195,10 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
 
   Widget _buildImageUploadCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.layout.cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(context.layout.cardRadius),
         border: Border.all(
           color: BiCikalimTheme.primary.withValues(alpha: .12),
         ),
@@ -261,7 +267,12 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        12,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -313,22 +324,22 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 14),
           Container(
-            width: 64,
-            height: 64,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(context.layout.controlRadius),
             ),
-            child: const Icon(Icons.storefront, color: Colors.white, size: 32),
+            child: const Icon(Icons.storefront, color: Colors.white, size: 26),
           ),
-          const SizedBox(height: 16),
-          const Text(
+          const SizedBox(height: 10),
+          Text(
             'Mekan Sahibi Paneli',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 26,
+              fontSize: context.layout.pageTitleSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -341,7 +352,7 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
           // Keşfet moduna git
           GestureDetector(
             onTap: () => context.go(AppConstants.discoverRoute),
@@ -381,10 +392,10 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
     required Color iconColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.layout.cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(context.layout.cardRadius),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
@@ -398,15 +409,15 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(context.layout.controlRadius),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: context.layout.cardGap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -463,7 +474,7 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
 
   Widget _buildContactSection(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.layout.cardPadding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -471,7 +482,7 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
             BiCikalimTheme.primary.withValues(alpha: 0.02),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(context.layout.cardRadius),
         border: Border.all(
           color: BiCikalimTheme.primary.withValues(alpha: 0.1),
         ),
@@ -506,7 +517,7 @@ class _VenueOwnerScreenState extends ConsumerState<VenueOwnerScreen> {
           ),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
               color: BiCikalimTheme.primary,
               borderRadius: BorderRadius.circular(12),

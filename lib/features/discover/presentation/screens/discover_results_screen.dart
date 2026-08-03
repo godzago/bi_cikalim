@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
@@ -84,8 +85,8 @@ class DiscoverResultsScreen extends ConsumerWidget {
                   icon: Icons.location_city,
                   message:
                       'Aktiviteye göre mekan bulmak için şehir seçmelisin.',
-                  actionLabel: 'Şehir Seç',
-                  onAction: () => context.push('/city-select'),
+                  actionLabel: 'Ayarlara Git',
+                  onAction: () => context.go('/profile'),
                 ),
               );
             }
@@ -143,12 +144,13 @@ class DiscoverResultsScreen extends ConsumerWidget {
                     },
                     child: ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(context.layout.screenPadding),
                       itemCount: venues.length,
                       itemBuilder: (context, index) {
                         final venue = venues[index];
                         return VenueCard(
                           venue: venue,
+                          dense: true,
                           onTap: () => context.push('/venues/${venue.slug}'),
                         );
                       },

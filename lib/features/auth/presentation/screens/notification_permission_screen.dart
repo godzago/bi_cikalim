@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/notification_permission_service.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/widgets/primary_button.dart';
 
 class NotificationPermissionScreen extends StatefulWidget {
@@ -37,14 +38,19 @@ class _NotificationPermissionScreenState
   @override
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).height < 650;
-    final haloSize = compact ? 152.0 : 208.0;
-    final iconSize = compact ? 108.0 : 144.0;
+    final haloSize = context.layout.fluid(132, 144, 160);
+    final iconSize = context.layout.fluid(92, 100, 112);
 
     return Scaffold(
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            padding: EdgeInsets.fromLTRB(
+              context.layout.screenPadding,
+              12,
+              context.layout.screenPadding,
+              16,
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: constraints.maxHeight - 44,
@@ -73,7 +79,7 @@ class _NotificationPermissionScreenState
                           decoration: BoxDecoration(
                             color: BiCikalimTheme.primary,
                             borderRadius: BorderRadius.circular(
-                              compact ? 34 : 44,
+                              compact ? 28 : 34,
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -88,7 +94,7 @@ class _NotificationPermissionScreenState
                           child: Icon(
                             Icons.notifications_active_rounded,
                             color: Colors.white,
-                            size: compact ? 50 : 66,
+                            size: compact ? 42 : 50,
                           ),
                         ),
                         Positioned(
@@ -116,7 +122,7 @@ class _NotificationPermissionScreenState
                         ),
                       ],
                     ),
-                    SizedBox(height: compact ? 24 : 46),
+                    SizedBox(height: compact ? 18 : 20),
                     Text(
                       'Planları kaçırma!',
                       style: Theme.of(context).textTheme.headlineLarge,
@@ -131,11 +137,11 @@ class _NotificationPermissionScreenState
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: compact ? 16 : 24),
+                    SizedBox(height: compact ? 14 : 18),
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: compact ? 10 : 14,
+                        horizontal: 12,
+                        vertical: compact ? 8 : 10,
                       ),
                       decoration: BoxDecoration(
                         color: BiCikalimTheme.primary.withValues(alpha: .07),

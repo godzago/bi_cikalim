@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 import 'app_pressable_scale.dart';
 
 class AppMenuCard extends StatelessWidget {
@@ -21,32 +22,37 @@ class AppMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     return AppPressableScale(
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(layout.cardRadius),
           side: BorderSide(color: Colors.grey.shade100),
         ),
         child: ListTile(
           onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 8,
+          minTileHeight: AppLayout.minTouchTarget,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: layout.cardPadding,
+            vertical: 4,
           ),
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(layout.controlRadius),
             ),
-            child: Icon(icon, color: BiCikalimTheme.primary, size: 22),
+            child: Icon(icon, color: BiCikalimTheme.primary, size: 19),
           ),
           title: Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: layout.cardTitleSize,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           subtitle: Text(
             subtitle,

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_error_state.dart';
@@ -29,6 +30,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
   bool _isTogglingFavorite = false;
   bool? _favoriteOverride;
   String _inventoryQuery = '';
+  bool _showAllInventoryActivities = false;
 
   @override
   void initState() {
@@ -109,8 +111,12 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: context.layout.screenPadding,
+                vertical: context.layout.sectionGap,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(context.layout.cardRadius),
               ),
               title: Text(existing == null ? 'Yorum Yaz' : 'Yorumunu Düzenle'),
               content: SingleChildScrollView(
@@ -285,37 +291,43 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: context.layout.screenPadding,
+            vertical: context.layout.sectionGap,
+          ),
           title: const Text('Mekanı Bildir'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: reason,
-                decoration: const InputDecoration(labelText: 'Neden'),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'incorrect_info',
-                    child: Text('Yanlış bilgi'),
-                  ),
-                  DropdownMenuItem(value: 'spam', child: Text('Spam')),
-                  DropdownMenuItem(
-                    value: 'offensive',
-                    child: Text('Uygunsuz içerik'),
-                  ),
-                  DropdownMenuItem(value: 'fake', child: Text('Sahte kayıt')),
-                  DropdownMenuItem(value: 'other', child: Text('Diğer')),
-                ],
-                onChanged: (value) =>
-                    setDialogState(() => reason = value ?? 'other'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descriptionController,
-                minLines: 2,
-                maxLines: 4,
-                decoration: const InputDecoration(labelText: 'Açıklama'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: reason,
+                  decoration: const InputDecoration(labelText: 'Neden'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'incorrect_info',
+                      child: Text('Yanlış bilgi'),
+                    ),
+                    DropdownMenuItem(value: 'spam', child: Text('Spam')),
+                    DropdownMenuItem(
+                      value: 'offensive',
+                      child: Text('Uygunsuz içerik'),
+                    ),
+                    DropdownMenuItem(value: 'fake', child: Text('Sahte kayıt')),
+                    DropdownMenuItem(value: 'other', child: Text('Diğer')),
+                  ],
+                  onChanged: (value) =>
+                      setDialogState(() => reason = value ?? 'other'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descriptionController,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Açıklama'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -432,7 +444,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
           onRefresh: refreshDetail,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.layout.screenPadding),
               child: Text(
                 'Mekan detayları yüklenemedi: $error',
                 textAlign: TextAlign.center,
@@ -479,7 +491,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
                   SliverAppBar(
-                    expandedHeight: 240,
+                    expandedHeight: context.layout.venueHeroHeight,
                     pinned: true,
                     backgroundColor: BiCikalimTheme.primary,
                     flexibleSpace: FlexibleSpaceBar(
@@ -512,14 +524,28 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
               body: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(context.layout.cardPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(
+                          venue.name,
+                          style: TextStyle(
+                            fontSize: context.layout.pageTitleSize,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _buildActivityFocusPanel(venue),
+                        const SizedBox(height: 10),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
+                            _buildMetaPill(
+                              Icons.category_outlined,
+                              '${venue.activitySummary.length} aktivite',
+                            ),
                             _buildMetaPill(
                               Icons.star_rounded,
                               '${venue.averageRating} puan',
@@ -528,27 +554,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                               Icons.chat_bubble_outline,
                               '${venue.reviewCount} yorum',
                             ),
-                            _buildMetaPill(
-                              Icons.category_outlined,
-                              '${venue.activitySummary.length} aktivite',
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 14),
-                        Text(
-                          venue.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 5),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color: venue.verificationStatus == 'verified'
@@ -591,7 +605,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -613,79 +627,87 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            if (venue.googleMapsUrl != null ||
-                                (venue.latitude != null &&
-                                    venue.longitude != null))
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: AppLayout.minTouchTarget,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              if (venue.googleMapsUrl != null ||
+                                  (venue.latitude != null &&
+                                      venue.longitude != null))
+                                _buildQuickAction(
+                                  Icons.directions,
+                                  'Yol Tarifi',
+                                  () => _launchDirections(venue),
+                                ),
+                              if (venue.phone != null &&
+                                  venue.phone!.isNotEmpty)
+                                _buildQuickAction(
+                                  Icons.phone,
+                                  'Ara',
+                                  () => _launchExternal('tel:${venue.phone}'),
+                                ),
+                              if (venue.websiteUrl != null &&
+                                  venue.websiteUrl!.isNotEmpty)
+                                _buildQuickAction(
+                                  Icons.language,
+                                  'Web Sitesi',
+                                  () => _launchExternal(venue.websiteUrl),
+                                ),
+                              if (venue.instagramUrl != null &&
+                                  venue.instagramUrl!.isNotEmpty)
+                                _buildQuickAction(
+                                  Icons.camera_alt,
+                                  'Instagram',
+                                  () => _launchExternal(venue.instagramUrl),
+                                ),
                               _buildQuickAction(
-                                Icons.directions,
-                                'Yol Tarifi',
-                                () => _launchDirections(venue),
+                                isFavorite
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                                isFavorite ? 'Kaydedildi' : 'Kaydet',
+                                () => _toggleFavorite(venue),
                               ),
-                            if (venue.phone != null && venue.phone!.isNotEmpty)
                               _buildQuickAction(
-                                Icons.phone,
-                                'Ara',
-                                () => _launchExternal('tel:${venue.phone}'),
+                                Icons.flag_outlined,
+                                'Bildir',
+                                () => _showReportDialog(venue),
                               ),
-                            if (venue.websiteUrl != null &&
-                                venue.websiteUrl!.isNotEmpty)
-                              _buildQuickAction(
-                                Icons.language,
-                                'Web Sitesi',
-                                () => _launchExternal(venue.websiteUrl),
-                              ),
-                            if (venue.instagramUrl != null &&
-                                venue.instagramUrl!.isNotEmpty)
-                              _buildQuickAction(
-                                Icons.camera_alt,
-                                'Instagram',
-                                () => _launchExternal(venue.instagramUrl),
-                              ),
-                            _buildQuickAction(
-                              isFavorite
-                                  ? Icons.bookmark
-                                  : Icons.bookmark_border,
-                              isFavorite ? 'Kaydedildi' : 'Kaydet',
-                              () => _toggleFavorite(venue),
-                            ),
-                            _buildQuickAction(
-                              Icons.flag_outlined,
-                              'Bildir',
-                              () => _showReportDialog(venue),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    labelColor: BiCikalimTheme.primary,
-                    unselectedLabelColor: BiCikalimTheme.textSecondary,
-                    indicatorColor: BiCikalimTheme.primary,
-                    indicatorWeight: 3,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                  SizedBox(
+                    height: AppLayout.minTouchTarget,
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      padding: EdgeInsets.zero,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      labelColor: BiCikalimTheme.primary,
+                      unselectedLabelColor: BiCikalimTheme.textSecondary,
+                      indicatorColor: BiCikalimTheme.primary,
+                      indicatorWeight: 3,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      tabs: const [
+                        Tab(text: 'Aktiviteler'),
+                        Tab(text: 'Genel'),
+                        Tab(text: 'Etkinlikler'),
+                        Tab(text: 'Yorumlar'),
+                      ],
                     ),
-                    tabs: const [
-                      Tab(text: 'Genel'),
-                      Tab(text: 'Aktiviteler'),
-                      Tab(text: 'Etkinlikler'),
-                      Tab(text: 'Yorumlar'),
-                    ],
                   ),
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildGeneralTab(venue),
                         activitiesAsync.when(
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
@@ -699,6 +721,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                           data: (activities) =>
                               _buildActivitiesTab(activities, venue),
                         ),
+                        _buildGeneralTab(venue),
                         eventsAsync.when(
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
@@ -746,26 +769,29 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            width: 96,
-            constraints: const BoxConstraints(minHeight: 56),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            constraints: const BoxConstraints(
+              minHeight: AppLayout.minTouchTarget,
+              minWidth: AppLayout.minTouchTarget,
+            ),
+            margin: EdgeInsets.only(right: context.layout.cardGap),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade100),
             ),
-            child: Column(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: BiCikalimTheme.primary, size: 20),
-                const SizedBox(height: 5),
+                Icon(icon, color: BiCikalimTheme.primary, size: 17),
+                const SizedBox(width: 5),
                 Text(
                   label,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: BiCikalimTheme.textPrimary,
                     height: 1.15,
@@ -779,9 +805,133 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     );
   }
 
+  Widget _buildActivityFocusPanel(ApiVenue venue) {
+    final activities = venue.activitySummary
+        .map((item) => item.activityName)
+        .where((name) => name.trim().isNotEmpty)
+        .take(5)
+        .toList(growable: false);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(context.layout.cardPadding),
+      decoration: BoxDecoration(
+        color: BiCikalimTheme.primary.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(context.layout.cardRadius),
+        border: Border.all(
+          color: BiCikalimTheme.primary.withValues(alpha: .12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: BiCikalimTheme.primary,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.local_activity_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Bu mekanda ne yapabilirsin?',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: BiCikalimTheme.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      activities.isEmpty
+                          ? 'Aktivite bilgileri eklenince burada görünecek.'
+                          : '${activities.length} aktivite öne çıkıyor.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: BiCikalimTheme.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (activities.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: activities
+                  .map(
+                    (name) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: BiCikalimTheme.primary.withValues(alpha: .14),
+                        ),
+                      ),
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: BiCikalimTheme.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  _inventorySearchController.clear();
+                  setState(() {
+                    _inventoryQuery = '';
+                    _showAllInventoryActivities = false;
+                  });
+                  _tabController.animateTo(0);
+                },
+                icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+                label: const Text('Aktiviteleri incele'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildMetaPill(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(999),
@@ -807,7 +957,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
 
   Widget _buildGeneralTab(ApiVenue venue) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.layout.screenPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -818,20 +968,22 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
           const SizedBox(height: 8),
           Text(
             venue.description ?? 'Açıklama bulunmuyor.',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: BiCikalimTheme.textSecondary,
               height: 1.5,
             ),
           ),
           if (venue.media.isNotEmpty) ...[
-            const SizedBox(height: 24),
+            SizedBox(height: context.layout.sectionGap),
             const Text(
               'Galeri',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 150,
+              height: context.layout.fluid(118, 124, 132),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: venue.media.length,
@@ -844,15 +996,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                           borderRadius: BorderRadius.circular(20),
                           child: AppNetworkImage(
                             imageUrl: url,
-                            width: 210,
-                            height: 150,
+                            width: context.layout.fluid(164, 174, 188),
+                            height: context.layout.fluid(118, 124, 132),
                           ),
                         );
                 },
               ),
             ),
           ],
-          const SizedBox(height: 24),
+          SizedBox(height: context.layout.sectionGap),
           const Text(
             'Çalışma Saatleri',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -882,7 +1034,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                   : '${oh.opensAt ?? "09:00"} - ${oh.closesAt ?? "23:00"}';
               return _buildInfoRow(dayName, timeStr);
             }),
-          const SizedBox(height: 24),
+          SizedBox(height: context.layout.sectionGap),
           const Text(
             'Mekan Özellikleri',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -972,38 +1124,77 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
             ].join(' ').toLowerCase();
             return text.contains(query);
           }).toList();
+    final visibleActivities = _showAllInventoryActivities
+        ? filtered
+        : filtered.take(5).toList();
+    final canLoadMore = visibleActivities.length < filtered.length;
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
-      itemCount: filtered.length + 1,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        8,
+        context.layout.screenPadding,
+        context.layout.screenPadding,
+      ),
+      itemCount: visibleActivities.length + 1 + (canLoadMore ? 1 : 0),
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         if (index == 0) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Burada Ne Yapılır?',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              Row(
+                children: [
+                  Text(
+                    'Burada ne yapabilirsin?',
+                    style: TextStyle(
+                      fontSize: context.layout.sectionTitleSize,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${activities.length} seçenek',
+                    style: const TextStyle(
+                      color: BiCikalimTheme.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
-                'Bu mekanda ${activities.length} aktivite bilgisi var.',
+                'Aktiviteleri fiyat, uygunluk ve detaylarıyla incele.',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: BiCikalimTheme.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _inventorySearchController,
-                textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(
-                  hintText: 'Bu mekandaki aktivitelerde ara',
-                  prefixIcon: Icon(Icons.search_rounded),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: context.layout.searchHeight,
+                child: TextField(
+                  controller: _inventorySearchController,
+                  textInputAction: TextInputAction.search,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    hintText: 'Ne yapmak istiyorsun?',
+                    prefixIcon: Icon(Icons.search_rounded, size: 19),
+                    prefixIconConstraints: BoxConstraints(minWidth: 40),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                  onChanged: (value) => setState(() {
+                    _inventoryQuery = value;
+                    _showAllInventoryActivities = false;
+                  }),
                 ),
-                onChanged: (value) => setState(() => _inventoryQuery = value),
               ),
               if (filtered.isEmpty) ...[
                 const SizedBox(height: 18),
@@ -1018,7 +1209,20 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
             ],
           );
         }
-        return _buildInventoryCard(filtered[index - 1], venue);
+        if (canLoadMore && index == visibleActivities.length + 1) {
+          return SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () =>
+                  setState(() => _showAllInventoryActivities = true),
+              icon: const Icon(Icons.expand_more_rounded),
+              label: Text(
+                '${filtered.length - visibleActivities.length} tane daha göster',
+              ),
+            ),
+          );
+        }
+        return _buildInventoryCard(visibleActivities[index - 1], venue);
       },
     );
   }
@@ -1066,23 +1270,13 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
         borderRadius: BorderRadius.circular(20),
         onTap: () => _openVenuesForInventoryActivity(item, venue),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(context.layout.cardPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: BiCikalimTheme.primary.withValues(
-                      alpha: .09,
-                    ),
-                    child: const Icon(
-                      Icons.sports_esports_outlined,
-                      color: BiCikalimTheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1091,8 +1285,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                           item.activityName,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
+                          style: TextStyle(
+                            fontSize: context.layout.cardTitleSize,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -1116,69 +1310,57 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right_rounded),
                 ],
               ),
               if (item.shortDescription != null &&
                   item.shortDescription!.trim().isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   item.shortDescription!.trim(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: BiCikalimTheme.textSecondary,
                     fontSize: 12,
-                    height: 1.4,
+                    height: 1.3,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
               if (verifiedLabel != null) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.verified_outlined,
-                      size: 15,
-                      color: BiCikalimTheme.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        verifiedLabel,
-                        style: const TextStyle(
-                          color: BiCikalimTheme.textSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 6),
+                Text(
+                  verifiedLabel,
+                  style: const TextStyle(
+                    color: BiCikalimTheme.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 2,
+                runSpacing: 2,
                 children: [
-                  OutlinedButton.icon(
+                  TextButton(
                     onPressed: () =>
                         _openVenuesForInventoryActivity(item, venue),
-                    icon: const Icon(Icons.storefront_outlined, size: 16),
-                    label: const Text('Diğer Mekanlar'),
+                    style: _compactInventoryActionStyle(),
+                    child: const Text('Diğer Mekanlar'),
                   ),
-                  OutlinedButton.icon(
+                  TextButton(
                     onPressed: () => _showAddReviewDialog(
                       venue,
                       initialActivityId: item.activityId,
                     ),
-                    icon: const Icon(Icons.rate_review_outlined, size: 16),
-                    label: const Text('Yorum Yaz'),
+                    style: _compactInventoryActionStyle(),
+                    child: const Text('Yorum Yaz'),
                   ),
-                  TextButton.icon(
+                  TextButton(
                     onPressed: () => _reportInventoryItem(venue, item),
-                    icon: const Icon(Icons.flag_outlined, size: 16),
-                    label: const Text('Bilgi Bildir'),
+                    style: _compactInventoryActionStyle(),
+                    child: const Text('Bilgi Bildir'),
                   ),
                 ],
               ),
@@ -1186,6 +1368,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
           ),
         ),
       ),
+    );
+  }
+
+  ButtonStyle _compactInventoryActionStyle() {
+    return TextButton.styleFrom(
+      minimumSize: const Size(0, AppLayout.minTouchTarget),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      visualDensity: VisualDensity.compact,
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
     );
   }
 
@@ -1337,7 +1528,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.layout.screenPadding),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
@@ -1365,7 +1556,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(context.layout.cardPadding),
           child: Row(
             children: [
               Column(
@@ -1436,7 +1627,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
         ),
         const Divider(height: 1),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: context.layout.screenPadding,
+            vertical: 8,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1468,7 +1662,12 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                   padding: EdgeInsets.all(32),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  padding: EdgeInsets.fromLTRB(
+                    context.layout.screenPadding,
+                    8,
+                    context.layout.screenPadding,
+                    0,
+                  ),
                   itemCount: reviews.length,
                   itemBuilder: (context, index) {
                     final review = reviews[index];

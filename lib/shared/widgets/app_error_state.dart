@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/errors/app_exception.dart';
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 import 'app_empty_state.dart';
 
 class AppErrorState extends StatelessWidget {
@@ -109,10 +110,10 @@ class PartialErrorView extends StatelessWidget {
       label: message,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(context.layout.cardPadding),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(context.layout.cardRadius),
           border: Border.all(color: const Color(0xFFF0EDE9)),
         ),
         child: Row(

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
@@ -257,7 +258,12 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
       key: const ValueKey('event-swipe-deck'),
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        padding: EdgeInsets.fromLTRB(
+          context.layout.screenPadding,
+          6,
+          context.layout.screenPadding,
+          10,
+        ),
         child: Column(
           children: [
             const Text(
@@ -342,16 +348,14 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
       );
     }
 
-    final baseScale = depth == 1 ? 0.96 : 0.92;
-    final targetScale = depth == 1 ? 1.0 : 0.96;
-    final scale = baseScale + ((targetScale - baseScale) * progress);
     final verticalOffset = (depth * 12.0) * (1 - progress);
+    final opacity = (depth == 1 ? .94 : .86) + (progress * .06);
 
     return IgnorePointer(
       child: Transform.translate(
         offset: Offset(0, verticalOffset),
-        child: Transform.scale(
-          scale: scale,
+        child: Opacity(
+          opacity: opacity.clamp(0.0, 1.0),
           child: _EventSwipeCard(
             event: event,
             maxHeight: maxHeight,
@@ -398,14 +402,14 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
       key: const ValueKey('event-swipe-finished'),
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(28),
+          padding: EdgeInsets.all(context.layout.screenPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 76,
-                height: 76,
+                width: 62,
+                height: 62,
                 decoration: BoxDecoration(
                   color: BiCikalimTheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -472,8 +476,13 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    context.layout.screenPadding,
+                    0,
+                    context.layout.screenPadding,
+                    10,
+                  ),
                   child: Text(
                     'Seçtiğin Etkinlikler',
                     style: TextStyle(
@@ -490,7 +499,12 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
                           message: 'Henüz bir etkinlik seçmedin.',
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                          padding: EdgeInsets.fromLTRB(
+                            context.layout.screenPadding,
+                            4,
+                            context.layout.screenPadding,
+                            context.layout.sectionGap,
+                          ),
                           itemCount: _selectedEvents.length,
                           separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, index) {
@@ -503,8 +517,8 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
                                 borderRadius: BorderRadius.circular(10),
                                 child: AppNetworkImage(
                                   imageUrl: event.imageUrl,
-                                  width: 56,
-                                  height: 56,
+                                  width: 46,
+                                  height: 46,
                                 ),
                               ),
                               title: Text(

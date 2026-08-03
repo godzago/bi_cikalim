@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_filter_controls.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 
 /// Aktivite bazlı keşif listesi.
@@ -70,10 +72,12 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
               children: [
                 // Kategori filtre bar
                 SizedBox(
-                  height: 40,
+                  height: AppLayout.minTouchTarget,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.layout.screenPadding,
+                    ),
                     itemCount: categories.length + 1,
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -113,7 +117,12 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
                         : ListView.separated(
                             key: ValueKey(_selectedCategoryId),
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              context.layout.screenPadding,
+                              6,
+                              context.layout.screenPadding,
+                              context.layout.sectionGap,
+                            ),
                             itemCount: filteredActivities.length,
                             separatorBuilder: (context, i) =>
                                 const SizedBox(height: 8),
@@ -157,28 +166,12 @@ class _ActivityListTabState extends ConsumerState<ActivityListTab> {
   Widget _buildFilterChip(String label, String? categoryId) {
     final isSelected = _selectedCategoryId == categoryId;
 
-    return GestureDetector(
-      onTap: () => setState(() => _selectedCategoryId = categoryId),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? BiCikalimTheme.primary : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? BiCikalimTheme.primary : Colors.grey.shade200,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : BiCikalimTheme.textSecondary,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: AppFilterChoiceChip(
+        label: label,
+        selected: isSelected,
+        onTap: () => setState(() => _selectedCategoryId = categoryId),
       ),
     );
   }
@@ -204,12 +197,12 @@ class ActivityItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(context.layout.cardRadius),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.all(context.layout.cardPadding),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(context.layout.cardRadius),
           border: Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
@@ -223,19 +216,21 @@ class ActivityItemCard extends StatelessWidget {
           children: [
             // İkon
             Container(
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: BiCikalimTheme.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(13),
+                borderRadius: BorderRadius.circular(
+                  context.layout.controlRadius,
+                ),
               ),
               child: Icon(
                 activity.iconData,
                 color: BiCikalimTheme.primary,
-                size: 24,
+                size: 20,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: context.layout.cardGap),
 
             // İçerik
             Expanded(
@@ -246,8 +241,8 @@ class ActivityItemCard extends StatelessWidget {
                     activity.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: context.layout.cardTitleSize,
                       fontWeight: FontWeight.bold,
                       color: BiCikalimTheme.textPrimary,
                     ),

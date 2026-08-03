@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/user_session_provider.dart';
 
@@ -125,12 +126,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
               ),
             ),
-            SizedBox(height: compactActions ? 12 : 40),
+            SizedBox(height: compactActions ? 12 : 20),
 
             // Kullanıcı Tipi Seçimi
             Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: compactActions ? 16 : 24,
+                horizontal: context.layout.screenPadding,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,7 +174,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ],
               ),
             ),
-            SizedBox(height: compactActions ? 10 : 24),
+            SizedBox(height: compactActions ? 10 : 18),
           ],
         ),
       ),
@@ -184,11 +185,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxHeight < 390;
-        final illustrationSize = compact ? 112.0 : 180.0;
-        final emojiSize = compact ? 50.0 : 80.0;
+        final illustrationSize = compact
+            ? context.layout.fluid(96, 102, 110)
+            : context.layout.fluid(136, 146, 158);
+        final emojiSize = compact ? 46.0 : 64.0;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: EdgeInsets.symmetric(
+            horizontal: context.layout.screenPadding,
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Column(
@@ -209,11 +214,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                   ),
                 ),
-                SizedBox(height: compact ? 20 : 48),
+                SizedBox(height: compact ? 16 : 20),
                 Text(
                   slide.title,
                   style: TextStyle(
-                    fontSize: compact ? 23 : 28,
+                    fontSize: context.layout.pageTitleSize,
                     fontWeight: FontWeight.bold,
                     color: BiCikalimTheme.textPrimary,
                   ),
@@ -223,7 +228,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 Text(
                   slide.description,
                   style: TextStyle(
-                    fontSize: compact ? 13 : 15,
+                    fontSize: context.layout.bodySize,
                     color: BiCikalimTheme.textSecondary,
                     height: compact ? 1.35 : 1.6,
                   ),
@@ -270,16 +275,16 @@ class _UserTypeButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(context.layout.cardRadius),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 14 : 20,
-            vertical: compact ? 10 : 16,
+            horizontal: 12,
+            vertical: compact ? 8 : 9,
           ),
           decoration: BoxDecoration(
             color: isPrimary ? BiCikalimTheme.primary : Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(context.layout.cardRadius),
             border: Border.all(
               color: isPrimary ? BiCikalimTheme.primary : Colors.grey.shade200,
             ),
@@ -296,8 +301,8 @@ class _UserTypeButton extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: compact ? 38 : 44,
-                height: compact ? 38 : 44,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: isPrimary
                       ? Colors.white.withValues(alpha: 0.2)
@@ -310,7 +315,7 @@ class _UserTypeButton extends StatelessWidget {
                   size: 22,
                 ),
               ),
-              SizedBox(width: compact ? 10 : 14),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,7 +323,7 @@ class _UserTypeButton extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: context.layout.cardTitleSize,
                         fontWeight: FontWeight.bold,
 
                         color: isPrimary

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 import 'app_network_image.dart';
 import 'app_pressable_scale.dart';
 
@@ -13,14 +14,15 @@ class EventPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     return AppPressableScale(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: 268,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: layout.fluid(214, 226, 244),
+          margin: EdgeInsets.only(right: layout.cardGap),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(layout.cardRadius),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -38,7 +40,7 @@ class EventPreviewCard extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(18),
+                  padding: EdgeInsets.all(layout.cardPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -64,9 +66,9 @@ class EventPreviewCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         event.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 17,
+                          fontSize: layout.cardTitleSize,
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
@@ -88,9 +90,9 @@ class EventPreviewCard extends StatelessWidget {
                                   event.venue!.name,
                                 event.priceInfo,
                               ].join(' • '),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 12,
+                                fontSize: layout.metadataSize,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

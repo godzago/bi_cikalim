@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 import 'app_pressable_scale.dart';
 
 /// API kategori bilgisini gösteren modern keşif kartı.
@@ -15,31 +16,32 @@ class CategoryCard extends StatelessWidget {
     super.key,
     required this.category,
     required this.onTap,
-    this.width = 130,
+    this.width,
     this.margin = const EdgeInsets.only(right: 10),
   });
 
   @override
   Widget build(BuildContext context) {
     final description = category.description?.trim();
+    final layout = context.layout;
 
     return AppPressableScale(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: width,
+          width: width ?? layout.fluid(112, 118, 126),
           margin: margin,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(layout.cardRadius),
             border: Border.all(
               color: BiCikalimTheme.primary.withValues(alpha: 0.1),
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.045),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -49,8 +51,8 @@ class CategoryCard extends StatelessWidget {
                 right: -22,
                 bottom: -24,
                 child: Container(
-                  width: 82,
-                  height: 82,
+                  width: 68,
+                  height: 68,
                   decoration: BoxDecoration(
                     color: BiCikalimTheme.primary.withValues(alpha: 0.045),
                     shape: BoxShape.circle,
@@ -58,15 +60,15 @@ class CategoryCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(layout.cardPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [
@@ -76,7 +78,7 @@ class CategoryCard extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(11),
                             boxShadow: [
                               BoxShadow(
                                 color: BiCikalimTheme.primary.withValues(
@@ -90,13 +92,13 @@ class CategoryCard extends StatelessWidget {
                           child: Icon(
                             category.icon,
                             color: Colors.white,
-                            size: 22,
+                            size: 19,
                           ),
                         ),
                         const Spacer(),
                         Container(
-                          width: 28,
-                          height: 28,
+                          width: 24,
+                          height: 24,
                           decoration: BoxDecoration(
                             color: BiCikalimTheme.primary.withValues(
                               alpha: 0.07,
@@ -106,7 +108,7 @@ class CategoryCard extends StatelessWidget {
                           child: const Icon(
                             Icons.arrow_outward_rounded,
                             color: BiCikalimTheme.primary,
-                            size: 15,
+                            size: 13,
                           ),
                         ),
                       ],
@@ -114,9 +116,9 @@ class CategoryCard extends StatelessWidget {
                     const Spacer(),
                     Text(
                       category.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: BiCikalimTheme.textPrimary,
-                        fontSize: 14,
+                        fontSize: layout.cardTitleSize,
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                       ),
@@ -127,9 +129,9 @@ class CategoryCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: BiCikalimTheme.textSecondary,
-                          fontSize: 10,
+                          fontSize: layout.metadataSize - 1,
                           fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,

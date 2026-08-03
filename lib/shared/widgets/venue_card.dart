@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 import 'app_pressable_scale.dart';
 import 'app_network_image.dart';
 import 'app_status_badge.dart';
@@ -21,6 +22,7 @@ class VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     final semanticLocation = [
       if (venue.districtName.isNotEmpty) venue.districtName,
       if (venue.cityName.isNotEmpty) venue.cityName,
@@ -32,35 +34,38 @@ class VenueCard extends StatelessWidget {
           '${venue.name}${semanticLocation.isEmpty ? '' : ', $semanticLocation'}. Burada ne yapılır bilgilerini gör.',
       child: AppPressableScale(
         child: Card(
-          margin: EdgeInsets.only(bottom: dense ? 10 : 14),
+          margin: EdgeInsets.only(bottom: layout.cardGap),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(layout.cardRadius),
             side: BorderSide(color: Colors.grey.shade100),
           ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: dense ? _buildDenseCard() : _buildDefaultCard(),
+            borderRadius: BorderRadius.circular(layout.cardRadius),
+            child: dense
+                ? _buildDenseCard(context)
+                : _buildDefaultCard(context),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDefaultCard() {
+  Widget _buildDefaultCard(BuildContext context) {
+    final layout = context.layout;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Stack(
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(layout.cardRadius),
               ),
               child: AppNetworkImage(
                 imageUrl: venue.coverImageUrl,
-                height: 136,
+                height: layout.fluid(112, 118, 126),
                 width: double.infinity,
                 semanticLabel: '${venue.name} mekan görseli',
               ),
@@ -71,14 +76,14 @@ class VenueCard extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          padding: EdgeInsets.all(layout.cardPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(fontSize: 16, showRating: true),
+              _buildHeader(fontSize: layout.cardTitleSize, showRating: true),
               const SizedBox(height: 4),
               _buildLocationRow(),
-              const SizedBox(height: 10),
+              const SizedBox(height: 7),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -91,24 +96,25 @@ class VenueCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDenseCard() {
+  Widget _buildDenseCard(BuildContext context) {
     final activityCount = venue.activitySummary.length;
+    final layout = context.layout;
 
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(layout.cardPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(layout.cardRadius),
             child: AppNetworkImage(
               imageUrl: venue.coverImageUrl,
-              width: 88,
-              height: 88,
+              width: layout.fluid(74, 80, 86),
+              height: layout.fluid(86, 90, 96),
               semanticLabel: '${venue.name} mekan görseli',
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: layout.cardGap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +123,10 @@ class VenueCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: _buildHeader(fontSize: 14, showRating: false),
+                      child: _buildHeader(
+                        fontSize: layout.cardTitleSize,
+                        showRating: false,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     if (venue.verificationStatus == 'verified')
@@ -125,7 +134,7 @@ class VenueCard extends StatelessWidget {
                         message: 'Doğrulanmış mekan',
                         child: Icon(
                           Icons.verified,
-                          size: 18,
+                          size: 16,
                           color: BiCikalimTheme.success,
                         ),
                       ),
@@ -144,7 +153,7 @@ class VenueCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -156,12 +165,12 @@ class VenueCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: layout.cardGap),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _buildRatingPill(),
-              const SizedBox(height: 22),
+              const SizedBox(height: 14),
               const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
             ],
           ),
@@ -201,13 +210,13 @@ class VenueCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star, color: BiCikalimTheme.primary, size: 14),
+          const Icon(Icons.star, color: BiCikalimTheme.primary, size: 13),
           const SizedBox(width: 2),
           Text(
             '${venue.averageRating}',
             style: const TextStyle(
               color: BiCikalimTheme.primary,
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -242,7 +251,7 @@ class VenueCard extends StatelessWidget {
 
   Widget _buildTag(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
@@ -298,14 +307,14 @@ class VenueCard extends StatelessWidget {
               customBorder: const CircleBorder(),
               onTap: onFavoriteTap,
               child: SizedBox(
-                width: 48,
-                height: 48,
+                width: AppLayout.minTouchTarget,
+                height: AppLayout.minTouchTarget,
                 child: Icon(
                   venue.isFavorite
                       ? Icons.bookmark_rounded
                       : Icons.bookmark_border,
                   color: BiCikalimTheme.primary,
-                  size: 22,
+                  size: 19,
                 ),
               ),
             ),

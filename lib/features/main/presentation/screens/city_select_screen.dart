@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
@@ -79,13 +80,13 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
             onRefresh: _refreshCities,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.layout.screenPadding),
               children: [
                 Text(
                   'Mekanları, aktiviteleri ve etkinlikleri seçtiğin şehre göre göstereceğiz.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: context.layout.sectionGap),
                 ...cities.map(_buildCityCard),
               ],
             ),
@@ -97,17 +98,20 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
 
   Widget _buildCityCard(ApiCity city) {
     final isSaving = _savingCityId == city.id;
+    final layout = context.layout;
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: layout.cardGap),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         enabled: city.hasContent && _savingCityId == null,
         onTap: () => _selectCity(city),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 12,
+        minTileHeight: AppLayout.minTouchTarget,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: layout.cardPadding,
+          vertical: 6,
         ),
         leading: CircleAvatar(
+          radius: 18,
           backgroundColor: BiCikalimTheme.primary.withValues(alpha: 0.1),
           child: const Icon(
             Icons.location_on_outlined,
@@ -130,7 +134,10 @@ class _CitySelectScreenState extends ConsumerState<CitySelectScreen> {
               )
             : city.hasContent
             ? const Icon(Icons.chevron_right)
-            : const Chip(label: Text('YAKINDA')),
+            : const Chip(
+                visualDensity: VisualDensity.compact,
+                label: Text('YAKINDA'),
+              ),
       ),
     );
   }

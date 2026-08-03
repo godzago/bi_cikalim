@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/network/api_client.dart';
@@ -59,7 +60,7 @@ class ProfileScreen extends ConsumerWidget {
         onRefresh: () => _refreshProfile(ref),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(context.layout.screenPadding),
           child: Column(
             children: [
               // Kullanıcı Avatar & İsim
@@ -68,8 +69,8 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     // Avatar placeholder
                     Container(
-                      width: 90,
-                      height: 90,
+                      width: context.layout.fluid(66, 72, 80),
+                      height: context.layout.fluid(66, 72, 80),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: BiCikalimTheme.primary.withValues(alpha: 0.1),
@@ -81,7 +82,7 @@ class ProfileScreen extends ConsumerWidget {
                       child: const Icon(
                         Icons.person,
                         color: BiCikalimTheme.primary,
-                        size: 40,
+                        size: 32,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -91,8 +92,8 @@ class ProfileScreen extends ConsumerWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
+                      style: TextStyle(
+                        fontSize: context.layout.sectionTitleSize,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -133,11 +134,11 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: context.layout.sectionGap),
 
               // İşletme Yönetimi
               _buildSectionHeader('İşletme'),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               if (isVenueOwner)
                 _buildMenuCard(
                   context,
@@ -154,7 +155,7 @@ class ProfileScreen extends ConsumerWidget {
                   subtitle: 'Mekanınızı ekleyin veya sahiplenin.',
                   onTap: () => context.push('/submissions/ownership'),
                 ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildMenuCard(
                 context,
                 icon: Icons.add_location_alt_outlined,
@@ -162,7 +163,7 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: 'Listede olmayan bir mekanı admin ekibine ilet.',
                 onTap: () => context.push('/submissions/venue'),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildMenuCard(
                 context,
                 icon: Icons.category_outlined,
@@ -170,11 +171,11 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: 'Yeni taxonomy talebini admin onayına gönder.',
                 onTap: () => context.push('/submissions/taxonomy'),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.layout.sectionGap),
 
               // Hesap Ayarları
               _buildSectionHeader('Hesap'),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildMenuCard(
                 context,
                 icon: Icons.location_city,
@@ -182,7 +183,7 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: 'Aktif şehir: ${selectedCity?.name ?? 'Seçilmedi'}',
                 onTap: () => context.go(AppConstants.citySelectRoute),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildMenuCard(
                 context,
                 icon: Icons.info_outline,
@@ -190,7 +191,7 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: 'BiÇıkalım platformu hakkında bilgi edinin.',
                 onTap: () {},
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: context.layout.sectionGap),
 
               // Çıkış Yap
               _buildMenuCard(
@@ -201,7 +202,7 @@ class ProfileScreen extends ConsumerWidget {
                 isDestructive: true,
                 onTap: () => _showSignOutDialog(context, ref),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: context.layout.sectionGap),
             ],
           ),
         ),
@@ -253,7 +254,7 @@ class ProfileScreen extends ConsumerWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(context.layout.cardRadius),
         side: BorderSide(
           color: isDestructive
               ? BiCikalimTheme.error.withValues(alpha: 0.2)
@@ -262,19 +263,23 @@ class ProfileScreen extends ConsumerWidget {
       ),
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        minTileHeight: AppLayout.minTouchTarget,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: context.layout.cardPadding,
+          vertical: 4,
+        ),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: color, size: 22),
+          child: Icon(icon, color: color, size: 19),
         ),
         title: Text(
           title,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: context.layout.cardTitleSize,
             fontWeight: FontWeight.bold,
 
             color: isDestructive
@@ -304,7 +309,13 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: context.layout.screenPadding,
+          vertical: context.layout.sectionGap,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.layout.cardRadius),
+        ),
         title: const Text(
           'Çıkış Yap',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -347,6 +358,10 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: context.layout.screenPadding,
+            vertical: context.layout.sectionGap,
+          ),
           title: const Text('Profili Düzenle'),
           content: SingleChildScrollView(
             child: Column(

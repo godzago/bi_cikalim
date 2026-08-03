@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_error_state.dart';
+import '../../../../shared/widgets/app_filter_controls.dart';
 
 class AdvancedDiscoverSearchScreen extends ConsumerStatefulWidget {
   final String initialQuery;
@@ -106,38 +108,10 @@ class _AdvancedDiscoverSearchScreenState
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  tooltip: 'Filtreler',
-                  onPressed: _showFilterSheet,
-                  icon: const Icon(Icons.tune_rounded),
-                ),
-                if (_activeFilterCount > 0)
-                  Positioned(
-                    right: 6,
-                    top: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: BiCikalimTheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '$_activeFilterCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            child: AppFilterButton(
+              onPressed: _showFilterSheet,
+              activeCount: _activeFilterCount,
+              iconOnly: true,
             ),
           ),
         ],
@@ -149,7 +123,12 @@ class _AdvancedDiscoverSearchScreenState
           key: const PageStorageKey('advanced-discover-search-scroll'),
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: EdgeInsets.fromLTRB(
+            context.layout.screenPadding,
+            8,
+            context.layout.screenPadding,
+            MediaQuery.viewInsetsOf(context).bottom + context.layout.sectionGap,
+          ),
           children: [
             _SearchInput(
               controller: _controller,
@@ -173,7 +152,7 @@ class _AdvancedDiscoverSearchScreenState
                 onOpenResults: _openFilteredVenues,
               ),
             ],
-            const SizedBox(height: 18),
+            const SizedBox(height: 10),
             if (_query.length < 2)
               _buildStartState()
             else
@@ -215,7 +194,7 @@ class _AdvancedDiscoverSearchScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const _SectionHeader(title: 'Popüler aktiviteler'),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -438,176 +417,142 @@ class _AdvancedDiscoverSearchScreenState
                   ),
                 );
 
-                return SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: 20,
-                      right: 20,
-                      bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Filtreler',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
+                final hasDraftFilters =
+                    draftCategorySlug != null ||
+                    draftSubcategorySlug != null ||
+                    draftActivitySlug != null ||
+                    draftHasCoordinates ||
+                    draftIsVerified;
+
+                return AppFilterSheet(
+                  clearEnabled: hasDraftFilters,
+                  onClear: () => setSheetState(() {
+                    draftCategorySlug = null;
+                    draftSubcategorySlug = null;
+                    draftActivitySlug = null;
+                    draftHasCoordinates = false;
+                    draftIsVerified = false;
+                  }),
+                  onApply: () {
+                    setState(() {
+                      _categorySlug = draftCategorySlug;
+                      _subcategorySlug = draftSubcategorySlug;
+                      _activitySlug = draftActivitySlug;
+                      _hasCoordinates = draftHasCoordinates ? true : null;
+                      _isVerified = draftIsVerified ? true : null;
+                    });
+                    Navigator.pop(sheetContext);
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      categoriesAsync.when(
+                        loading: () => const LinearProgressIndicator(),
+                        error: (error, _) =>
+                            Text('Kategoriler yüklenemedi: $error'),
+                        data: (categories) => DropdownButtonFormField<String>(
+                          initialValue: draftCategorySlug,
+                          decoration: const InputDecoration(
+                            labelText: 'Aktivite kategorisi',
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('Tümü'),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          categoriesAsync.when(
-                            loading: () => const LinearProgressIndicator(),
-                            error: (error, _) =>
-                                Text('Kategoriler yüklenemedi: $error'),
-                            data: (categories) =>
-                                DropdownButtonFormField<String>(
-                                  initialValue: draftCategorySlug,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Aktivite kategorisi',
-                                  ),
-                                  items: [
-                                    const DropdownMenuItem<String>(
-                                      value: null,
-                                      child: Text('Tümü'),
-                                    ),
-                                    ...categories.map(
-                                      (category) => DropdownMenuItem<String>(
-                                        value: category.slug,
-                                        child: Text(category.name),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    setSheetState(() {
-                                      draftCategorySlug = value;
-                                      draftSubcategorySlug = null;
-                                      draftActivitySlug = null;
-                                    });
-                                  },
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          subcategoriesAsync.when(
-                            loading: () => const LinearProgressIndicator(),
-                            error: (error, _) =>
-                                Text('Alt kategoriler yüklenemedi: $error'),
-                            data: (subcategories) =>
-                                DropdownButtonFormField<String>(
-                                  initialValue: draftSubcategorySlug,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Alt kategori',
-                                  ),
-                                  items: [
-                                    const DropdownMenuItem<String>(
-                                      value: null,
-                                      child: Text('Tümü'),
-                                    ),
-                                    ...subcategories.map(
-                                      (subcategory) => DropdownMenuItem<String>(
-                                        value: subcategory.slug,
-                                        child: Text(subcategory.name),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    setSheetState(() {
-                                      draftSubcategorySlug = value;
-                                      draftActivitySlug = null;
-                                    });
-                                  },
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          activitiesAsync.when(
-                            loading: () => const LinearProgressIndicator(),
-                            error: (error, _) =>
-                                Text('Aktiviteler yüklenemedi: $error'),
-                            data: (activities) =>
-                                DropdownButtonFormField<String>(
-                                  initialValue: draftActivitySlug,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Aktivite',
-                                  ),
-                                  items: [
-                                    const DropdownMenuItem<String>(
-                                      value: null,
-                                      child: Text('Tümü'),
-                                    ),
-                                    ...activities.map(
-                                      (activity) => DropdownMenuItem<String>(
-                                        value: activity.slug,
-                                        child: Text(activity.name),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    setSheetState(() {
-                                      draftActivitySlug = value;
-                                    });
-                                  },
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          SwitchListTile(
-                            value: draftIsVerified,
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Doğrulanmış mekanlar'),
-                            onChanged: (value) =>
-                                setSheetState(() => draftIsVerified = value),
-                          ),
-                          SwitchListTile(
-                            value: draftHasCoordinates,
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Konum bilgisi bulunanlar'),
-                            onChanged: (value) => setSheetState(
-                              () => draftHasCoordinates = value,
+                            ...categories.map(
+                              (category) => DropdownMenuItem<String>(
+                                value: category.slug,
+                                child: Text(category.name),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () {
-                                    setSheetState(() {
-                                      draftCategorySlug = null;
-                                      draftSubcategorySlug = null;
-                                      draftActivitySlug = null;
-                                      draftHasCoordinates = false;
-                                      draftIsVerified = false;
-                                    });
-                                  },
-                                  child: const Text('Tümünü Temizle'),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FilledButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _categorySlug = draftCategorySlug;
-                                      _subcategorySlug = draftSubcategorySlug;
-                                      _activitySlug = draftActivitySlug;
-                                      _hasCoordinates = draftHasCoordinates
-                                          ? true
-                                          : null;
-                                      _isVerified = draftIsVerified
-                                          ? true
-                                          : null;
-                                    });
-                                    Navigator.pop(sheetContext);
-                                  },
-                                  child: const Text('Filtreleri Uygula'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                          onChanged: (value) {
+                            setSheetState(() {
+                              draftCategorySlug = value;
+                              draftSubcategorySlug = null;
+                              draftActivitySlug = null;
+                            });
+                          },
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      subcategoriesAsync.when(
+                        loading: () => const LinearProgressIndicator(),
+                        error: (error, _) =>
+                            Text('Alt kategoriler yüklenemedi: $error'),
+                        data: (subcategories) =>
+                            DropdownButtonFormField<String>(
+                              initialValue: draftSubcategorySlug,
+                              decoration: const InputDecoration(
+                                labelText: 'Alt kategori',
+                              ),
+                              items: [
+                                const DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('Tümü'),
+                                ),
+                                ...subcategories.map(
+                                  (subcategory) => DropdownMenuItem<String>(
+                                    value: subcategory.slug,
+                                    child: Text(subcategory.name),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setSheetState(() {
+                                  draftSubcategorySlug = value;
+                                  draftActivitySlug = null;
+                                });
+                              },
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      activitiesAsync.when(
+                        loading: () => const LinearProgressIndicator(),
+                        error: (error, _) =>
+                            Text('Aktiviteler yüklenemedi: $error'),
+                        data: (activities) => DropdownButtonFormField<String>(
+                          initialValue: draftActivitySlug,
+                          decoration: const InputDecoration(
+                            labelText: 'Aktivite',
+                          ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('Tümü'),
+                            ),
+                            ...activities.map(
+                              (activity) => DropdownMenuItem<String>(
+                                value: activity.slug,
+                                child: Text(activity.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setSheetState(() {
+                              draftActivitySlug = value;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        value: draftIsVerified,
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Doğrulanmış mekanlar'),
+                        onChanged: (value) =>
+                            setSheetState(() => draftIsVerified = value),
+                      ),
+                      SwitchListTile(
+                        value: draftHasCoordinates,
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Konum bilgisi bulunanlar'),
+                        onChanged: (value) =>
+                            setSheetState(() => draftHasCoordinates = value),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -654,7 +599,7 @@ class _SearchInput extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(context.layout.controlRadius),
         border: Border.all(
           color: BiCikalimTheme.primary.withValues(alpha: .08),
         ),
@@ -676,6 +621,11 @@ class _SearchInput extends StatelessWidget {
             onChanged: onChanged,
             onSubmitted: onSubmitted,
             decoration: InputDecoration(
+              isDense: true,
+              constraints: BoxConstraints(
+                minHeight: context.layout.searchHeight,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
               labelText: 'Arama',
               hintText: 'Aktivite, mekan veya etkinlik ara',
               prefixIcon: const Icon(Icons.search_rounded),
@@ -719,7 +669,10 @@ class _AppliedFilterSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.layout.cardPadding,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: BiCikalimTheme.primary.withValues(alpha: .07),
         borderRadius: BorderRadius.circular(14),
@@ -759,7 +712,7 @@ class _ResultSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: EdgeInsets.only(bottom: context.layout.sectionGap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -790,7 +743,10 @@ class _SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: context.layout.sectionTitleSize,
+            ),
           ),
         ),
         if (actionLabel != null && onAction != null)
@@ -827,6 +783,10 @@ class _TaxonomyResultCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        minTileHeight: context.layout.fluid(72, 78, 84),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: context.layout.cardPadding,
+        ),
         onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: BiCikalimTheme.primary.withValues(alpha: .09),
@@ -856,6 +816,10 @@ class _VenueSearchResultCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        minTileHeight: context.layout.fluid(86, 90, 98),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: context.layout.cardPadding,
+        ),
         onTap: onTap,
         leading: const CircleAvatar(child: Icon(Icons.storefront_outlined)),
         title: Text(
@@ -886,6 +850,10 @@ class _EventSearchResultCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        minTileHeight: context.layout.fluid(88, 94, 102),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: context.layout.cardPadding,
+        ),
         onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: Colors.black.withValues(alpha: .06),

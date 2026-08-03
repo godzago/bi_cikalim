@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_error_state.dart';
+import '../../../../shared/widgets/app_filter_controls.dart';
+import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
-import '../../../../shared/widgets/app_segmented_option.dart';
 import '../../../../shared/widgets/event_list_card.dart';
 
 class EventsScreen extends ConsumerStatefulWidget {
@@ -113,114 +115,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               key: const ValueKey('events-content'),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          BiCikalimTheme.primary.withValues(alpha: 0.1),
-                          BiCikalimTheme.primary.withValues(alpha: 0.03),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.event_available,
-                            color: BiCikalimTheme.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '${filteredEvents.length} etkinlik listelendi. Tarih ve kategori seçerek akışı daraltabilirsin.',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              height: 1.4,
-                              fontWeight: FontWeight.w600,
-                              color: BiCikalimTheme.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                _buildFilterSummary(
+                  filteredCount: filteredEvents.length,
+                  categories: categories,
                 ),
-                SizedBox(
-                  height: 52,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    children: [
-                      _buildDateSegment('Tumu'),
-                      const SizedBox(width: 8),
-                      _buildDateSegment('Bugun'),
-                      const SizedBox(width: 8),
-                      _buildDateSegment('Yarin'),
-                      const SizedBox(width: 8),
-                      _buildDateSegment('Bu Hafta'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 36,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: categories.length,
-                    separatorBuilder: (_, index) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      final isSelected = _selectedCategoryFilter == category;
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedCategoryFilter = category;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            category,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : Theme.of(context).colorScheme.primary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
@@ -262,8 +160,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                                 final event = filteredEvents[index - 1];
 
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.layout.screenPadding,
                                   ),
                                   child: EventListCard(
                                     event: event,
@@ -287,16 +185,24 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   Widget _buildTonightPlanCard(List<ApiEvent> events) {
     final tonightEvents = events.where(_isTonight).toList();
     final suggestionLabels = (tonightEvents.isNotEmpty ? tonightEvents : events)
-        .take(0)
+        .take(3)
         .map((event) => event.title)
         .where((title) => title.trim().isNotEmpty)
         .toList();
     final countLabel = tonightEvents.isEmpty
         ? 'Aktivite ve etkinlik önerilerini gör.'
         : '${tonightEvents.length} öneri hazır.';
+    final visualEvent = (tonightEvents.isNotEmpty ? tonightEvents : events)
+        .where((event) => event.imageUrl.trim().isNotEmpty)
+        .firstOrNull;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        4,
+        context.layout.screenPadding,
+        6,
+      ),
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(18),
@@ -306,32 +212,64 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.white, Color(0xFFFFF8F4), Color(0xFFFFF1EA)],
+                colors: visualEvent == null
+                    ? const [
+                        Color(0xFF1D1714),
+                        Color(0xFF563021),
+                        BiCikalimTheme.primaryDark,
+                      ]
+                    : const [Color(0xFF171210), Color(0xFF3B211A)],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: BiCikalimTheme.primary.withValues(alpha: 0.12),
+                  blurRadius: 14,
+                  offset: const Offset(0, 7),
                 ),
               ],
             ),
             child: Stack(
               children: [
+                if (visualEvent != null)
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.46,
+                      child: AppNetworkImage(
+                        imageUrl: visualEvent.imageUrl,
+                        fit: BoxFit.cover,
+                        semanticLabel: '${visualEvent.title} görseli',
+                      ),
+                    ),
+                  ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.72),
+                          Colors.black.withValues(alpha: 0.36),
+                          Colors.black.withValues(alpha: 0.08),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 Positioned(
                   right: -18,
                   bottom: -22,
                   child: Icon(
                     Icons.style_outlined,
-                    color: BiCikalimTheme.primary.withValues(alpha: 0.05),
+                    color: Colors.white.withValues(alpha: 0.08),
                     size: 96,
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(context.layout.cardPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -343,20 +281,16 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: BiCikalimTheme.primary.withValues(
-                                alpha: 0.08,
-                              ),
+                              color: Colors.white.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
-                                color: BiCikalimTheme.primary.withValues(
-                                  alpha: 0.12,
-                                ),
+                                color: Colors.white.withValues(alpha: 0.18),
                               ),
                             ),
                             child: const Text(
                               'Bu Akşam',
                               style: TextStyle(
-                                color: BiCikalimTheme.primary,
+                                color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -366,8 +300,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                           Container(
                             width: 34,
                             height: 34,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFFEFE7),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.95),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -384,7 +318,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: BiCikalimTheme.textPrimary,
+                          color: Colors.white,
                           fontSize: 16,
                           height: 1.12,
                           fontWeight: FontWeight.w900,
@@ -396,7 +330,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: BiCikalimTheme.textSecondary,
+                          color: Colors.white.withValues(alpha: 0.78),
                           fontSize: 12,
                           height: 1.3,
                           fontWeight: FontWeight.w600,
@@ -423,24 +357,156 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     );
   }
 
+  Widget _buildFilterSummary({
+    required int filteredCount,
+    required List<String> categories,
+  }) {
+    final activeCount =
+        (_selectedDateFilter == 'Tumu' ? 0 : 1) +
+        (_selectedCategoryFilter == 'Tumu' ? 0 : 1);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        6,
+        context.layout.screenPadding,
+        2,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$filteredCount etkinlik • ${_filterSummaryText()}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: BiCikalimTheme.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          AppFilterButton(
+            onPressed: () => _showFilterSheet(categories),
+            activeCount: activeCount,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _filterSummaryText() {
+    final date = _filterLabel(_selectedDateFilter);
+    if (_selectedCategoryFilter == 'Tumu') return date;
+    return '$date, $_selectedCategoryFilter';
+  }
+
+  String _filterLabel(String value) {
+    return switch (value) {
+      'Bugun' => 'Bugün',
+      'Yarin' => 'Yarın',
+      'Bu Hafta' => 'Bu hafta',
+      _ => 'Tümü',
+    };
+  }
+
+  Future<void> _showFilterSheet(List<String> categories) async {
+    var dateFilter = _selectedDateFilter;
+    var categoryFilter = _selectedCategoryFilter;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Widget optionChip({
+              required String label,
+              required bool selected,
+              required VoidCallback onSelected,
+            }) {
+              return AppFilterChoiceChip(
+                label: label,
+                selected: selected,
+                onTap: onSelected,
+              );
+            }
+
+            return AppFilterSheet(
+              clearEnabled: dateFilter != 'Tumu' || categoryFilter != 'Tumu',
+              onClear: () {
+                setSheetState(() {
+                  dateFilter = 'Tumu';
+                  categoryFilter = 'Tumu';
+                });
+              },
+              onApply: () {
+                setState(() {
+                  _selectedDateFilter = dateFilter;
+                  _selectedCategoryFilter = categoryFilter;
+                });
+                Navigator.pop(context);
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppFilterSectionTitle('Tarih'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['Tumu', 'Bugun', 'Yarin', 'Bu Hafta']
+                        .map(
+                          (value) => optionChip(
+                            label: _filterLabel(value),
+                            selected: dateFilter == value,
+                            onSelected: () =>
+                                setSheetState(() => dateFilter = value),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  const AppFilterSectionTitle('Kategori'),
+                  const SizedBox(height: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 190),
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: categories
+                            .map(
+                              (category) => optionChip(
+                                label: category == 'Tumu' ? 'Tümü' : category,
+                                selected: categoryFilter == category,
+                                onSelected: () => setSheetState(
+                                  () => categoryFilter = category,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   bool _isTonight(ApiEvent event) {
     final local = event.startDate;
     final now = DateTime.now();
     return local.year == now.year &&
         local.month == now.month &&
         local.day == now.day;
-  }
-
-  Widget _buildDateSegment(String label) {
-    return AppSegmentedOption(
-      label: label,
-      isSelected: _selectedDateFilter == label,
-      onTap: () {
-        setState(() {
-          _selectedDateFilter = label;
-        });
-      },
-    );
   }
 }
 

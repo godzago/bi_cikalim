@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/widgets/app_pressable_scale.dart';
 
 class ActivityRecommendationCard extends StatelessWidget {
@@ -18,6 +19,7 @@ class ActivityRecommendationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     final activity = recommendation.activity;
     final venues = recommendation.venues;
     final venueCount = venues.total > 0 ? venues.total : venues.items.length;
@@ -36,14 +38,14 @@ class ActivityRecommendationCard extends StatelessWidget {
           margin: EdgeInsets.zero,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(layout.cardRadius),
             side: const BorderSide(color: Color(0xFFF0EDE9)),
           ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(layout.cardRadius),
             child: Padding(
-              padding: EdgeInsets.all(compact ? 14 : 16),
+              padding: EdgeInsets.all(compact ? 8 : layout.cardPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -51,31 +53,35 @@ class ActivityRecommendationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: compact ? 42 : 48,
-                        height: compact ? 42 : 48,
+                        width: compact ? 32 : 40,
+                        height: compact ? 32 : 40,
                         decoration: BoxDecoration(
                           color: BiCikalimTheme.primary.withValues(alpha: .1),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(
+                            layout.controlRadius,
+                          ),
                         ),
                         child: Icon(
                           activity.iconData,
                           color: BiCikalimTheme.primary,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: compact ? 6 : layout.cardGap),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const _ActivityBadge(),
-                            const SizedBox(height: 7),
+                            if (!compact) ...[
+                              const _ActivityBadge(),
+                              const SizedBox(height: 7),
+                            ],
                             Text(
                               activity.name,
-                              maxLines: 2,
+                              maxLines: compact ? 3 : 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: BiCikalimTheme.textPrimary,
-                                fontSize: compact ? 15 : 17,
+                                fontSize: compact ? 14 : layout.cardTitleSize,
                                 height: 1.15,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -85,7 +91,7 @@ class ActivityRecommendationCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
                     venueCount > 0
                         ? '$venueCount mekânda yapabilirsin'
@@ -98,7 +104,7 @@ class ActivityRecommendationCard extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  if (previewVenues.isNotEmpty) ...[
+                  if (!compact && previewVenues.isNotEmpty) ...[
                     const SizedBox(height: 5),
                     Text(
                       previewVenues,
@@ -111,8 +117,8 @@ class ActivityRecommendationCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ] else if (activity.description?.trim().isNotEmpty ??
-                      false) ...[
+                  ] else if (!compact &&
+                      (activity.description?.trim().isNotEmpty ?? false)) ...[
                     const SizedBox(height: 5),
                     Text(
                       activity.description!.trim(),
@@ -126,14 +132,21 @@ class ActivityRecommendationCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: FilledButton(
                           onPressed: onTap,
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 8,
+                            ),
+                            textStyle: TextStyle(
+                              fontSize: compact ? 11 : layout.bodySize,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           child: const Text('Mekânları Gör'),
                         ),

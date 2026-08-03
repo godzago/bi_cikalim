@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -60,6 +61,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     return Scaffold(
       backgroundColor: BiCikalimTheme.background,
       appBar: AppBar(
@@ -75,7 +77,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.fromLTRB(
+                layout.screenPadding,
+                0,
+                layout.screenPadding,
+                MediaQuery.viewInsetsOf(context).bottom + layout.sectionGap,
+              ),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: _emailSent ? _buildSuccessState() : _buildFormState(),
@@ -93,13 +100,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 32),
+          SizedBox(height: context.layout.sectionGap),
 
           // İllustrasyon
           Center(
             child: Container(
-              width: 120,
-              height: 120,
+              width: context.layout.fluid(82, 92, 104),
+              height: context.layout.fluid(82, 92, 104),
               decoration: BoxDecoration(
                 color: BiCikalimTheme.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
@@ -111,12 +118,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: context.layout.sectionGap),
 
-          const Text(
+          Text(
             'Şifreni Sıfırla',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: context.layout.pageTitleSize,
               fontWeight: FontWeight.bold,
               color: BiCikalimTheme.textPrimary,
             ),
@@ -130,7 +137,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               height: 1.6,
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: context.layout.sectionGap),
 
           AppTextField(
             label: 'E-posta Adresi',
@@ -148,7 +155,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: context.layout.sectionGap),
 
           PrimaryButton(
             label: 'Sıfırlama E-postası Gönder',
@@ -178,8 +185,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       children: [
         // Başarı ikonu
         Container(
-          width: 120,
-          height: 120,
+          width: context.layout.fluid(82, 92, 104),
+          height: context.layout.fluid(82, 92, 104),
           decoration: BoxDecoration(
             color: BiCikalimTheme.success.withValues(alpha: 0.1),
             shape: BoxShape.circle,
@@ -190,12 +197,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             size: 56,
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: context.layout.sectionGap),
 
-        const Text(
+        Text(
           'E-posta Gönderildi! ✅',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: context.layout.pageTitleSize,
             fontWeight: FontWeight.bold,
             color: BiCikalimTheme.textPrimary,
           ),
@@ -211,7 +218,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 40),
+        SizedBox(height: context.layout.sectionGap),
 
         PrimaryButton(
           label: 'Giriş Ekranına Dön',

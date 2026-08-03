@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 
 class AppStatusBadge extends StatelessWidget {
   final String label;
@@ -48,7 +49,7 @@ class AppStatusBadge extends StatelessWidget {
     return Semantics(
       label: semanticLabel ?? label,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: filled ? color : color.withValues(alpha: .1),
           borderRadius: BorderRadius.circular(999),
@@ -56,8 +57,8 @@ class AppStatusBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: foreground),
-            const SizedBox(width: 5),
+            Icon(icon, size: 13, color: foreground),
+            const SizedBox(width: 4),
             Flexible(
               child: Text(
                 label,
@@ -65,7 +66,7 @@ class AppStatusBadge extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: foreground,
-                  fontSize: 11,
+                  fontSize: context.layout.metadataSize,
                   fontWeight: FontWeight.w900,
                   height: 1.1,
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
@@ -47,14 +48,23 @@ class DiscoverCatalogScreen extends ConsumerWidget {
             onRefresh: () => _refresh(ref),
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              padding: EdgeInsets.fromLTRB(
+                context.layout.screenPadding,
+                8,
+                context.layout.screenPadding,
+                context.layout.sectionGap,
+              ),
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
+                  margin: EdgeInsets.only(bottom: context.layout.cardGap),
                   child: ExpansionTile(
+                    tilePadding: EdgeInsets.symmetric(
+                      horizontal: context.layout.cardPadding,
+                    ),
                     leading: CircleAvatar(
+                      radius: 18,
                       backgroundColor: BiCikalimTheme.primary.withValues(
                         alpha: 0.1,
                       ),
@@ -139,7 +149,10 @@ class _Subcategories extends ConsumerWidget {
           children: items
               .map(
                 (item) => ListTile(
-                  contentPadding: const EdgeInsets.only(left: 72, right: 20),
+                  contentPadding: EdgeInsets.only(
+                    left: context.layout.isCompact ? 48 : 56,
+                    right: context.layout.cardPadding,
+                  ),
                   title: Text(item.name),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => DiscoverCatalogScreen._openResults(

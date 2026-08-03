@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
+import '../../../../shared/widgets/app_filter_controls.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_pressable_scale.dart';
 import '../../../events/presentation/widgets/activity_recommendation_card.dart';
@@ -32,6 +34,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   String _selectedFilter = _filters.first;
   int _sliderIndex = 0;
+  int _eventSliderIndex = 0;
 
   Future<void> _refreshDiscover() async {
     ref.invalidate(selectedCityProvider);
@@ -137,8 +140,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 )
               else ...[
                 SliverToBoxAdapter(
+                  child: _buildNearbyMapSection(selectedCity: selectedCity),
+                ),
+                SliverToBoxAdapter(
                   child: _buildHomeImageSlider(events: events, venues: venues),
                 ),
+                SliverToBoxAdapter(child: _buildMoodEventSlider(events)),
+                SliverToBoxAdapter(child: _buildPopularVenuesCarousel(venues)),
                 SliverToBoxAdapter(
                   child: _buildTonightHomeSection(
                     selectedCity: selectedCity,
@@ -172,40 +180,41 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   // ignore: unused_element
   Widget _buildHeader(ApiCity? selectedCity) {
     final cityLabel = selectedCity?.name ?? 'Şehir seç';
+    final layout = context.layout;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Keşfet',
-                  style: TextStyle(
-                    color: BiCikalimTheme.textPrimary,
-                    fontSize: 30,
-                    height: 1.05,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: () => context.go('/city-select'),
+    return SizedBox(
+      height: layout.headerHeight,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: layout.screenPadding),
+        child: Row(
+          children: [
+            Text(
+              'Keşfet',
+              style: TextStyle(
+                color: BiCikalimTheme.textPrimary,
+                fontSize: layout.pageTitleSize,
+                height: 1.05,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: InkWell(
+                  onTap: () => context.go('/profile'),
                   borderRadius: BorderRadius.circular(999),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
                           Icons.location_on_outlined,
                           color: BiCikalimTheme.primary,
-                          size: 17,
+                          size: 16,
                         ),
-                        const SizedBox(width: 5),
+                        const SizedBox(width: 3),
                         Flexible(
                           child: Text(
                             cityLabel,
@@ -213,61 +222,59 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: BiCikalimTheme.textSecondary,
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 3),
-                        const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: BiCikalimTheme.textLight,
-                          size: 18,
                         ),
                       ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-          _HeaderIconButton(
-            icon: Icons.notifications_none_rounded,
-            tooltip: 'Bildirimler',
-            onTap: () {},
-          ),
-          const SizedBox(width: 10),
-          _HeaderIconButton(
-            icon: Icons.person_outline_rounded,
-            tooltip: 'Profil',
-            onTap: () => context.go('/profile'),
-          ),
-        ],
+            if (!layout.isCompact) ...[
+              _HeaderIconButton(
+                icon: Icons.notifications_none_rounded,
+                tooltip: 'Bildirimler',
+                onTap: () {},
+              ),
+              const SizedBox(width: 4),
+            ],
+            _HeaderIconButton(
+              icon: Icons.person_outline_rounded,
+              tooltip: 'Profil',
+              onTap: () => context.go('/profile'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      padding: EdgeInsets.symmetric(horizontal: context.layout.screenPadding),
       child: AppPressableScale(
         child: Material(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(context.layout.controlRadius),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => context.push('/discover/search'),
             child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: context.layout.searchHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 border: Border.all(color: const Color(0xFFF0EDE9)),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(
+                  context.layout.controlRadius,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.035),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -276,9 +283,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   Icon(
                     Icons.search_rounded,
                     color: BiCikalimTheme.primary,
-                    size: 23,
+                    size: 20,
                   ),
-                  SizedBox(width: 12),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Aktivite, mekan veya etkinlik ara',
@@ -286,7 +293,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: BiCikalimTheme.textLight,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -302,36 +309,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildFilterBar() {
     return SizedBox(
-      height: 62,
+      height: AppLayout.minTouchTarget + 4,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        padding: EdgeInsets.symmetric(horizontal: context.layout.screenPadding),
         itemCount: _filters.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = _filters[index];
           final selected = _selectedFilter == filter;
-          return ChoiceChip(
-            label: Text(filter),
+          return AppFilterChoiceChip(
+            label: filter,
             selected: selected,
-            onSelected: (_) => setState(() => _selectedFilter = filter),
-            showCheckmark: false,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            side: BorderSide(
-              color: selected
-                  ? BiCikalimTheme.primary
-                  : const Color(0xFFEDE8E3),
-            ),
-            selectedColor: BiCikalimTheme.primary,
-            backgroundColor: Colors.white,
-            labelStyle: TextStyle(
-              color: selected ? Colors.white : BiCikalimTheme.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-            shape: const StadiumBorder(),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            onTap: () => setState(() => _selectedFilter = filter),
           );
         },
       ),
@@ -344,29 +335,34 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     recommendationsAsync,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 22),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Bu Akşam Ne Yapsak?',
+                      'Sana Göre Aktiviteler',
                       style: TextStyle(
                         color: BiCikalimTheme.textPrimary,
-                        fontSize: 20,
+                        fontSize: context.layout.sectionTitleSize,
                         height: 1.12,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     SizedBox(height: 5),
                     Text(
-                      'Şehirde şu anda yapabileceğin aktiviteleri keşfet.',
+                      'Şehirde yapabileceğin aktiviteleri keşfet.',
                       style: TextStyle(
                         color: BiCikalimTheme.textSecondary,
                         fontSize: 12,
@@ -390,8 +386,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               title: 'Öneriler için şehir seç',
               message:
                   'Aktivite önerilerini şehirdeki gerçek mekanlara göre hazırlıyoruz.',
-              actionLabel: 'Şehir Seç',
-              onAction: () => context.push('/city-select'),
+              actionLabel: 'Ayarlara Git',
+              onAction: () => context.go('/profile'),
             )
           else
             recommendationsAsync!.when(
@@ -416,20 +412,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   );
                 }
 
-                final cardHeight = MediaQuery.textScalerOf(
-                  context,
-                ).scale(236).clamp(236.0, 330.0).toDouble();
+                final cardHeight = MediaQuery.textScalerOf(context)
+                    .scale(context.layout.fluid(170, 176, 188))
+                    .clamp(170.0, 246.0)
+                    .toDouble();
+                final cardWidth = context.layout.carouselCardWidth(
+                  visibleItems: 2.9,
+                  min: 108,
+                  max: 150,
+                );
                 return SizedBox(
                   height: cardHeight,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
                     itemCount: recommendations.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 12),
+                    separatorBuilder: (_, _) =>
+                        SizedBox(width: context.layout.cardGap),
                     itemBuilder: (context, index) {
                       final recommendation = recommendations[index];
                       return SizedBox(
-                        width: 248,
+                        width: cardWidth,
                         child: ActivityRecommendationCard(
                           recommendation: recommendation,
                           compact: true,
@@ -467,6 +470,253 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
+  Widget _buildPopularVenuesCarousel(List<ApiVenue> venues) {
+    if (venues.isEmpty) return const SizedBox.shrink();
+    final layout = context.layout;
+    final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+    final textHeightAllowance = (textScale - 1).clamp(0.0, 1.0) * 52;
+    final cardWidth = layout.carouselCardWidth(
+      visibleItems: 2.45,
+      min: 124,
+      max: 176,
+    );
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: layout.cardGap),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: layout.screenPadding),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Popüler Mekanlar',
+                    style: TextStyle(
+                      color: BiCikalimTheme.textPrimary,
+                      fontSize: layout.sectionTitleSize,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.push(
+                    '/discover/results?type=venues&title=Popüler%20Mekanlar',
+                  ),
+                  child: const Text('Tümü'),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: layout.fluid(154, 164, 178) + textHeightAllowance,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: layout.screenPadding),
+              itemCount: venues.take(8).length,
+              separatorBuilder: (_, _) => SizedBox(width: layout.cardGap),
+              itemBuilder: (context, index) {
+                final venue = venues[index];
+                return SizedBox(
+                  width: cardWidth,
+                  child: _VenueExploreCard(
+                    venue: venue,
+                    large: false,
+                    accent: _accentFor(venue.slug),
+                    onTap: () => context.push('/venues/${venue.slug}'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoodEventSlider(List<ApiEvent> events) {
+    final items = events
+        .where((event) => event.imageUrl.trim().isNotEmpty)
+        .where((event) => !_isSportEvent(event))
+        .take(6)
+        .map(
+          (event) => _HomeSliderItem(
+            title: event.title,
+            subtitle: [
+              _formatEventDate(event.startDate),
+              event.venue?.name ?? event.city.name,
+            ].where((part) => part.isNotEmpty).join(' • '),
+            imageUrl: event.imageUrl,
+            badge: _eventBadge(event),
+            route: '/events/${event.slug}',
+          ),
+        )
+        .toList();
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    final currentIndex = _eventSliderIndex.clamp(0, items.length - 1).toInt();
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        8,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Can sıkıntısına tatlı kaçamaklar',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: BiCikalimTheme.textPrimary,
+                fontSize: context.layout.sectionTitleSize,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          AspectRatio(
+            aspectRatio: 2.7,
+            child: PageView.builder(
+              itemCount: items.length,
+              onPageChanged: (index) =>
+                  setState(() => _eventSliderIndex = index),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 1),
+                  child: AppPressableScale(
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(22),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => context.push(item.route),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            AppNetworkImage(
+                              imageUrl: item.imageUrl,
+                              fit: BoxFit.cover,
+                              semanticLabel: '${item.title} görseli',
+                            ),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: .62),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: 14,
+                              right: 14,
+                              bottom: 12,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 9,
+                                      vertical: 5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: .18,
+                                      ),
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: .2,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      item.badge,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    item.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17,
+                                      height: 1.1,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  if (item.subtitle.isNotEmpty) ...[
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      item.subtitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: .82,
+                                        ),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (items.length > 1) ...[
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(items.length, (index) {
+                final selected = index == currentIndex;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: selected ? 18 : 6,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? BiCikalimTheme.primary
+                        : BiCikalimTheme.primary.withValues(alpha: .2),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildHomeImageSlider({
     required List<ApiEvent> events,
     required List<ApiVenue> venues,
@@ -475,11 +725,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     if (items.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        padding: EdgeInsets.fromLTRB(
+          context.layout.screenPadding,
+          6,
+          context.layout.screenPadding,
+          8,
+        ),
         child: AspectRatio(
-          aspectRatio: 2.35,
+          aspectRatio: 2.7,
           child: Container(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(context.layout.cardPadding),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(22),
@@ -511,11 +766,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final currentIndex = _sliderIndex.clamp(0, items.length - 1).toInt();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        6,
+        context.layout.screenPadding,
+        8,
+      ),
       child: Column(
         children: [
           AspectRatio(
-            aspectRatio: 2.35,
+            aspectRatio: 2.7,
             child: PageView.builder(
               itemCount: items.length,
               onPageChanged: (index) => setState(() => _sliderIndex = index),
@@ -623,7 +883,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
           ),
           if (items.length > 1) ...[
-            const SizedBox(height: 9),
+            const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(items.length, (index) {
@@ -708,7 +968,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final venueNames = venues.take(2).map((venue) => venue.name).toList();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        8,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       child: AppPressableScale(
         child: Material(
           color: Colors.transparent,
@@ -748,7 +1013,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(context.layout.cardPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -792,13 +1057,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ],
                         ),
                         const SizedBox(height: 18),
-                        const Text(
+                        Text(
                           'Bu Akşam Ne Yapsak?',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 22,
+                            fontSize: context.layout.sectionTitleSize,
                             height: 1.12,
                             fontWeight: FontWeight.w900,
                           ),
@@ -844,6 +1109,120 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
+  Widget _buildNearbyMapSection({required ApiCity? selectedCity}) {
+    final hasCity = selectedCity != null;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
+      child: AppPressableScale(
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(context.layout.cardRadius),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => hasCity ? context.go('/map') : context.go('/profile'),
+            child: Ink(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(context.layout.cardRadius),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF171A18),
+                    Color(0xFF24372D),
+                    BiCikalimTheme.primaryDark,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: BiCikalimTheme.primary.withValues(alpha: 0.18),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -16,
+                    bottom: -20,
+                    child: Icon(
+                      Icons.map_rounded,
+                      color: Colors.white.withValues(alpha: 0.08),
+                      size: 132,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(context.layout.cardPadding),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _SolidPill(label: 'Yakınımda'),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Yakınımda ne var?',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: context.layout.sectionTitleSize,
+                                  height: 1.12,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                hasCity
+                                    ? '${selectedCity.name} içindeki mekanları haritada keşfet.'
+                                    : 'Yakındaki mekanları görmek için şehir seçimini profilden tamamla.',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.78),
+                                  fontSize: 12,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            hasCity
+                                ? Icons.near_me_rounded
+                                : Icons.settings_rounded,
+                            color: BiCikalimTheme.primary,
+                            size: 22,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFeedTitle({
     required List<ApiActivity> activities,
     required List<ApiVenue> venues,
@@ -867,7 +1246,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     };
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        4,
+        context.layout.screenPadding,
+        8,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -878,9 +1262,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: BiCikalimTheme.textPrimary,
-                    fontSize: 18,
+                    fontSize: context.layout.sectionTitleSize,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -929,19 +1313,24 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const gap = 12.0;
+          final gap = context.layout.cardGap;
+          final useTwoColumns = !context.layout.isCompact;
           final fullWidth = constraints.maxWidth;
           final halfWidth = (constraints.maxWidth - gap) / 2;
           final cards = <Widget>[];
 
-          void addCard(Widget child, {required bool large, double? height}) {
+          void addCard(Widget child, {required bool large}) {
             cards.add(
               SizedBox(
-                width: large ? fullWidth : halfWidth,
-                height: height ?? (large ? 220 : 188),
+                width: large || !useTwoColumns ? fullWidth : halfWidth,
                 child: child,
               ),
             );
@@ -960,7 +1349,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => _openActivity(activity),
               ),
               large: true,
-              height: 224,
             );
           }
 
@@ -984,7 +1372,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 },
               ),
               large: true,
-              height: 152,
             );
           }
 
@@ -1001,7 +1388,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => _openActivity(activity),
               ),
               large: false,
-              height: i.isEven ? 206 : 188,
             );
           }
 
@@ -1015,7 +1401,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => context.push('/venues/${venue.slug}'),
               ),
               large: i == 0,
-              height: i == 0 ? 226 : 196,
             );
           }
 
@@ -1029,7 +1414,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => context.push('/events/${event.slug}'),
               ),
               large: i == 0 && visibleActivities.length < 3,
-              height: i == 0 && visibleActivities.length < 3 ? 218 : 192,
             );
           }
 
@@ -1050,7 +1434,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                 ),
                 large: false,
-                height: 184,
               );
             }
           }
@@ -1063,29 +1446,82 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildSkeletonFeed() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        8,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SkeletonBox(height: 174, radius: 24),
-          const SizedBox(height: 18),
-          Row(
-            children: const [
-              Expanded(child: _SkeletonBox(height: 182, radius: 22)),
-              SizedBox(width: 12),
-              Expanded(child: _SkeletonBox(height: 206, radius: 22)),
-            ],
+          _SkeletonBox(
+            height: context.layout.fluid(142, 148, 158),
+            radius: context.layout.cardRadius,
           ),
-          const SizedBox(height: 12),
-          const _SkeletonBox(height: 218, radius: 22),
-          const SizedBox(height: 12),
-          Row(
-            children: const [
-              Expanded(child: _SkeletonBox(height: 178, radius: 22)),
-              SizedBox(width: 12),
-              Expanded(child: _SkeletonBox(height: 188, radius: 22)),
-            ],
+          SizedBox(height: context.layout.sectionGap),
+          if (context.layout.isCompact) ...[
+            _SkeletonBox(
+              height: context.layout.fluid(150, 156, 166),
+              radius: context.layout.cardRadius,
+            ),
+            SizedBox(height: context.layout.cardGap),
+            _SkeletonBox(
+              height: context.layout.fluid(168, 174, 186),
+              radius: context.layout.cardRadius,
+            ),
+          ] else
+            Row(
+              children: [
+                Expanded(
+                  child: _SkeletonBox(
+                    height: context.layout.fluid(150, 156, 166),
+                    radius: context.layout.cardRadius,
+                  ),
+                ),
+                SizedBox(width: context.layout.cardGap),
+                Expanded(
+                  child: _SkeletonBox(
+                    height: context.layout.fluid(168, 174, 186),
+                    radius: context.layout.cardRadius,
+                  ),
+                ),
+              ],
+            ),
+          SizedBox(height: context.layout.cardGap),
+          _SkeletonBox(
+            height: context.layout.fluid(178, 184, 196),
+            radius: context.layout.cardRadius,
           ),
+          SizedBox(height: context.layout.cardGap),
+          if (context.layout.isCompact) ...[
+            _SkeletonBox(
+              height: context.layout.fluid(146, 152, 162),
+              radius: context.layout.cardRadius,
+            ),
+            SizedBox(height: context.layout.cardGap),
+            _SkeletonBox(
+              height: context.layout.fluid(154, 160, 170),
+              radius: context.layout.cardRadius,
+            ),
+          ] else
+            Row(
+              children: [
+                Expanded(
+                  child: _SkeletonBox(
+                    height: context.layout.fluid(146, 152, 162),
+                    radius: context.layout.cardRadius,
+                  ),
+                ),
+                SizedBox(width: context.layout.cardGap),
+                Expanded(
+                  child: _SkeletonBox(
+                    height: context.layout.fluid(154, 160, 170),
+                    radius: context.layout.cardRadius,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -1093,7 +1529,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildSkeletonTail() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       child: Row(
         children: const [
           Expanded(child: _SkeletonBox(height: 78, radius: 18)),
@@ -1106,7 +1547,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildErrorState() {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.layout.screenPadding),
       child: _WarmStateCard(
         icon: Icons.cloud_off_outlined,
         title: 'Keşif akışı yüklenemedi',
@@ -1119,7 +1560,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildEmptyState() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        10,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
       child: _WarmStateCard(
         icon: Icons.explore_off_outlined,
         title: 'Yakınında henüz sonuç bulamadık',
@@ -1207,6 +1653,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       ...venue.tags.map((tag) => tag.name),
     ].join(' ');
     return _containsAny(source, terms);
+  }
+
+  bool _isSportEvent(ApiEvent event) {
+    final source = [
+      event.title,
+      event.shortDescription ?? '',
+      ...event.activities.map((activity) => activity.name),
+      ...event.activities.map((activity) => activity.slug),
+    ].join(' ');
+    return _containsAny(source, _sportTerms);
   }
 
   bool _containsAny(String source, List<String> terms) {
@@ -1319,8 +1775,8 @@ class _HeaderIconButton extends StatelessWidget {
         child: Tooltip(
           message: tooltip,
           child: Container(
-            width: 42,
-            height: 42,
+            width: AppLayout.minTouchTarget,
+            height: AppLayout.minTouchTarget,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: const Color(0xFFF0EDE9)),
@@ -1393,55 +1849,60 @@ class _ActivityExploreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
+
     return _ExploreCardShell(
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: large ? 126 : 92,
+            height: large
+                ? layout.fluid(96, 104, 112)
+                : layout.fluid(68, 72, 78),
             child: _GradientCover(
               accent: accent,
               icon: activity.iconData,
               badge: large ? 'Aktivite' : proof,
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(large ? 16 : 12, 12, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    activity.name,
-                    maxLines: large ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: BiCikalimTheme.textPrimary,
-                      fontSize: large ? 20 : 15,
-                      height: 1.12,
-                      fontWeight: FontWeight.w900,
-                    ),
+          Padding(
+            padding: EdgeInsets.all(layout.cardPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity.name,
+                  maxLines: large ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textPrimary,
+                    fontSize: large
+                        ? layout.sectionTitleSize
+                        : layout.cardTitleSize,
+                    height: 1.12,
+                    fontWeight: FontWeight.w900,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    category?.name ?? _participantLabel(activity),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: BiCikalimTheme.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  category?.name ?? _participantLabel(activity),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textSecondary,
+                    fontSize: layout.metadataSize,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const Spacer(),
-                  _SignalRow(
-                    icon: Icons.storefront_outlined,
-                    label: venueSignal,
-                    secondary: proof,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                _SignalRow(
+                  icon: Icons.storefront_outlined,
+                  label: venueSignal,
+                  secondary: proof,
+                ),
+              ],
             ),
           ),
         ],
@@ -1465,6 +1926,7 @@ class _VenueExploreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
     final activityText = venue.activitySummary.isEmpty
         ? venue.shortDescription ?? venue.districtName
         : venue.activitySummary
@@ -1483,7 +1945,9 @@ class _VenueExploreCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: large ? 126 : 92,
+            height: large
+                ? layout.fluid(96, 104, 112)
+                : layout.fluid(68, 72, 78),
             child: _ImageOrGradientCover(
               imageUrl: venue.coverImageUrl,
               accent: accent,
@@ -1491,45 +1955,46 @@ class _VenueExploreCard extends StatelessWidget {
               badge: 'Mekan',
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(large ? 16 : 12, 12, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    venue.name,
-                    maxLines: large ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: BiCikalimTheme.textPrimary,
-                      fontSize: large ? 18 : 14,
-                      height: 1.15,
-                      fontWeight: FontWeight.w900,
-                    ),
+          Padding(
+            padding: EdgeInsets.all(layout.cardPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  venue.name,
+                  maxLines: large ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textPrimary,
+                    fontSize: large
+                        ? layout.sectionTitleSize
+                        : layout.cardTitleSize,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    activityText.isEmpty ? venue.cityName : activityText,
-                    maxLines: large ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: BiCikalimTheme.textSecondary,
-                      fontSize: 11,
-                      height: 1.35,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  activityText.isEmpty ? venue.cityName : activityText,
+                  maxLines: large ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textSecondary,
+                    fontSize: layout.metadataSize,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const Spacer(),
-                  _SignalRow(
-                    icon: Icons.near_me_outlined,
-                    label: venue.districtName.isEmpty
-                        ? venue.cityName
-                        : venue.districtName,
-                    secondary: proof,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                _SignalRow(
+                  icon: Icons.near_me_outlined,
+                  label: venue.districtName.isEmpty
+                      ? venue.cityName
+                      : venue.districtName,
+                  secondary: proof,
+                ),
+              ],
             ),
           ),
         ],
@@ -1553,13 +2018,17 @@ class _EventExploreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final layout = context.layout;
+
     return _ExploreCardShell(
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: large ? 120 : 88,
+            height: large
+                ? layout.fluid(92, 100, 108)
+                : layout.fluid(66, 70, 76),
             child: _ImageOrGradientCover(
               imageUrl: event.imageUrl,
               accent: accent,
@@ -1567,42 +2036,43 @@ class _EventExploreCard extends StatelessWidget {
               badge: _eventBadge(event),
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(large ? 16 : 12, 12, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    event.title,
-                    maxLines: large ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: BiCikalimTheme.textPrimary,
-                      fontSize: large ? 17 : 14,
-                      height: 1.15,
-                      fontWeight: FontWeight.w900,
-                    ),
+          Padding(
+            padding: EdgeInsets.all(layout.cardPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.title,
+                  maxLines: large ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textPrimary,
+                    fontSize: large
+                        ? layout.sectionTitleSize
+                        : layout.cardTitleSize,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    event.venue?.name ?? event.city.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: BiCikalimTheme.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  event.venue?.name ?? event.city.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textSecondary,
+                    fontSize: layout.metadataSize,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const Spacer(),
-                  _SignalRow(
-                    icon: Icons.schedule_outlined,
-                    label: _formatEventDate(event.startAt),
-                    secondary: event.priceInfo,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                _SignalRow(
+                  icon: Icons.schedule_outlined,
+                  label: _formatEventDate(event.startAt),
+                  secondary: event.priceInfo,
+                ),
+              ],
             ),
           ),
         ],
@@ -1632,7 +2102,7 @@ class _PersonalRecommendationCard extends StatelessWidget {
     return _ExploreCardShell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.layout.cardPadding),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -1650,25 +2120,25 @@ class _PersonalRecommendationCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const _SolidPill(label: 'Sana Özel'),
-                  const Spacer(),
+                  const SizedBox(height: 8),
                   Text(
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: 18,
+                      fontSize: context.layout.sectionTitleSize,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: BiCikalimTheme.textSecondary,
-                      fontSize: 12,
+                      fontSize: context.layout.metadataSize,
                       height: 1.35,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1678,8 +2148,8 @@ class _PersonalRecommendationCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Container(
-              width: 62,
-              height: 96,
+              width: context.layout.fluid(52, 56, 62),
+              height: context.layout.fluid(68, 74, 82),
               decoration: BoxDecoration(
                 color: BiCikalimTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(18),
@@ -1716,38 +2186,37 @@ class _CategoryExploreCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: 92,
+            height: context.layout.fluid(60, 64, 70),
             child: _GradientCover(
               accent: accent,
               icon: category.iconData,
               badge: 'Kategori',
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: BiCikalimTheme.textPrimary,
-                      fontSize: 15,
-                      height: 1.15,
-                      fontWeight: FontWeight.w900,
-                    ),
+          Padding(
+            padding: EdgeInsets.all(context.layout.cardPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: BiCikalimTheme.textPrimary,
+                    fontSize: context.layout.cardTitleSize,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
                   ),
-                  const Spacer(),
-                  const _SignalRow(
-                    icon: Icons.explore_outlined,
-                    label: 'Popülerleri gör',
-                    secondary: 'Keşfet',
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                const _SignalRow(
+                  icon: Icons.explore_outlined,
+                  label: 'Popülerleri gör',
+                  secondary: 'Keşfet',
+                ),
+              ],
             ),
           ),
         ],
@@ -1764,10 +2233,12 @@ class _ExploreCardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = context.layout.cardRadius;
+
     return AppPressableScale(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(radius),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.055),
@@ -1778,7 +2249,7 @@ class _ExploreCardShell extends StatelessWidget {
         ),
         child: Material(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(radius),
           clipBehavior: Clip.antiAlias,
           child: InkWell(onTap: onTap, child: child),
         ),
@@ -1993,7 +2464,7 @@ class _WarmStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.layout.screenPadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -2080,7 +2551,7 @@ class _HorizontalActivitySkeleton extends StatelessWidget {
         itemCount: 3,
         separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, index) => SizedBox(
-          width: 248,
+          width: context.layout.fluid(112, 122, 142),
           child: _SkeletonBox(height: height, radius: 20),
         ),
       ),

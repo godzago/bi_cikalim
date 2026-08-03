@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
@@ -42,7 +43,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.layout.screenPadding,
+              vertical: 8,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -141,12 +145,16 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       color: BiCikalimTheme.primary,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: context.layout.screenPadding,
+          vertical: 6,
+        ),
         itemCount: list.length,
         itemBuilder: (context, index) {
           final venue = list[index];
           return VenueCard(
             venue: venue,
+            dense: true,
             onTap: () => context.push('/venues/${venue.slug}'),
           );
         },
@@ -172,7 +180,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       color: BiCikalimTheme.primary,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: context.layout.screenPadding,
+          vertical: 6,
+        ),
         itemCount: list.length,
         itemBuilder: (context, index) {
           final event = list[index];

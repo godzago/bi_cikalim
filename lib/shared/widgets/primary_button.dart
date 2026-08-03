@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
+import '../../core/theme/responsive.dart';
 import 'app_pressable_scale.dart';
 
 /// Uygulamanın genel primary butonu.
@@ -39,8 +40,8 @@ class PrimaryButton extends StatelessWidget {
         key: const ValueKey('label-with-icon'),
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(prefixIcon, size: 20),
-          const SizedBox(width: 8),
+          Icon(prefixIcon, size: 18),
+          const SizedBox(width: 6),
           Flexible(
             child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
@@ -61,7 +62,7 @@ class PrimaryButton extends StatelessWidget {
     );
 
     final sizedButton = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 52),
+      constraints: const BoxConstraints(minHeight: AppLayout.minTouchTarget),
       child: isFullWidth
           ? SizedBox(width: double.infinity, child: button)
           : button,
@@ -98,9 +99,15 @@ class SecondaryButton extends StatelessWidget {
         ? Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(prefixIcon, size: 20, color: BiCikalimTheme.primary),
-              const SizedBox(width: 8),
-              Text(label),
+              Icon(prefixIcon, size: 18, color: BiCikalimTheme.primary),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           )
         : Text(label);
@@ -112,7 +119,9 @@ class SecondaryButton extends StatelessWidget {
       child: AppPressableScale(
         enabled: onPressed != null,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 52),
+          constraints: const BoxConstraints(
+            minHeight: AppLayout.minTouchTarget,
+          ),
           child: SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -121,10 +130,12 @@ class SecondaryButton extends StatelessWidget {
                 foregroundColor: BiCikalimTheme.primary,
                 side: const BorderSide(color: BiCikalimTheme.primary),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(
+                    context.layout.controlRadius,
+                  ),
                 ),
                 textStyle: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
@@ -167,16 +168,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             onRefresh: refreshEvent,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 32),
+              padding: EdgeInsets.only(bottom: context.layout.sectionGap),
               children: [
                 if (event.coverUrl != null)
                   AppNetworkImage(
                     imageUrl: event.coverUrl!,
                     width: double.infinity,
-                    height: 240,
+                    height: context.layout.fluid(176, 188, 204),
                   ),
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(context.layout.screenPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -255,7 +256,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                         const SizedBox(height: 16),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(14),
+                          padding: EdgeInsets.all(context.layout.cardPadding),
                           decoration: BoxDecoration(
                             color: BiCikalimTheme.primary.withValues(
                               alpha: .06,
@@ -337,7 +338,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                         ),
                         const SizedBox(height: 10),
                         SizedBox(
-                          height: 150,
+                          height: context.layout.fluid(118, 124, 132),
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: event.media.length,
@@ -351,8 +352,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                                       borderRadius: BorderRadius.circular(20),
                                       child: AppNetworkImage(
                                         imageUrl: url,
-                                        width: 210,
-                                        height: 150,
+                                        width: context.layout.fluid(
+                                          164,
+                                          174,
+                                          188,
+                                        ),
+                                        height: context.layout.fluid(
+                                          118,
+                                          124,
+                                          132,
+                                        ),
                                       ),
                                     );
                             },
