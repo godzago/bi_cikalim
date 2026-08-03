@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_density.dart';
 import '../models/api_models.dart';
 import '../../core/theme/theme.dart';
 import 'app_pressable_scale.dart';
@@ -22,24 +23,27 @@ class CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final description = category.description?.trim();
+    final cardWidth =
+        width ?? AppDensity.clamp(context, factor: 0.34, min: 112, max: 130);
+    final radius = AppDensity.cardRadius(context);
 
     return AppPressableScale(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: width,
+          width: cardWidth,
           margin: margin,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(radius),
             border: Border.all(
               color: BiCikalimTheme.primary.withValues(alpha: 0.1),
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.045),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -58,7 +62,7 @@ class CategoryCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -76,7 +80,7 @@ class CategoryCard extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
                                 color: BiCikalimTheme.primary.withValues(
@@ -95,8 +99,8 @@ class CategoryCard extends StatelessWidget {
                         ),
                         const Spacer(),
                         Container(
-                          width: 28,
-                          height: 28,
+                          width: 26,
+                          height: 26,
                           decoration: BoxDecoration(
                             color: BiCikalimTheme.primary.withValues(
                               alpha: 0.07,
@@ -116,7 +120,7 @@ class CategoryCard extends StatelessWidget {
                       category.name,
                       style: const TextStyle(
                         color: BiCikalimTheme.textPrimary,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                       ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/app_density.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_network_image.dart';
@@ -248,8 +249,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Widget _buildSearchBar() {
+    final horizontal = AppDensity.screenPadding(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+      padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 0),
       child: AppPressableScale(
         child: Material(
           color: Colors.white,
@@ -258,16 +260,23 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           child: InkWell(
             onTap: () => context.push('/discover/search'),
             child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: AppDensity.searchHeight(context),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppDensity.value(
+                  context,
+                  compact: 12,
+                  standard: 14,
+                  wide: 16,
+                ),
+              ),
               decoration: BoxDecoration(
                 border: Border.all(color: const Color(0xFFF0EDE9)),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.035),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -276,9 +285,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   Icon(
                     Icons.search_rounded,
                     color: BiCikalimTheme.primary,
-                    size: 23,
+                    size: 21,
                   ),
-                  SizedBox(width: 12),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Aktivite, mekan veya etkinlik ara',
@@ -301,37 +310,51 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Widget _buildFilterBar() {
+    final horizontal = AppDensity.screenPadding(context);
     return SizedBox(
-      height: 62,
+      height: 54,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        padding: EdgeInsets.fromLTRB(horizontal, 10, horizontal, 6),
         itemCount: _filters.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = _filters[index];
           final selected = _selectedFilter == filter;
-          return ChoiceChip(
-            label: Text(filter),
-            selected: selected,
-            onSelected: (_) => setState(() => _selectedFilter = filter),
-            showCheckmark: false,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            side: BorderSide(
-              color: selected
-                  ? BiCikalimTheme.primary
-                  : const Color(0xFFEDE8E3),
+          return ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Center(
+              child: ChoiceChip(
+                label: Text(filter),
+                selected: selected,
+                onSelected: (_) => setState(() => _selectedFilter = filter),
+                showCheckmark: false,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                side: BorderSide(
+                  color: selected
+                      ? BiCikalimTheme.primary
+                      : const Color(0xFFEDE8E3),
+                ),
+                selectedColor: BiCikalimTheme.primary,
+                backgroundColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: selected ? Colors.white : BiCikalimTheme.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+                shape: const StadiumBorder(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppDensity.value(
+                    context,
+                    compact: 10,
+                    standard: 12,
+                    wide: 12,
+                  ),
+                  vertical: 7,
+                ),
+              ),
             ),
-            selectedColor: BiCikalimTheme.primary,
-            backgroundColor: Colors.white,
-            labelStyle: TextStyle(
-              color: selected ? Colors.white : BiCikalimTheme.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-            shape: const StadiumBorder(),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           );
         },
       ),
@@ -343,8 +366,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     required AsyncValue<List<TonightActivityRecommendation>>?
     recommendationsAsync,
   }) {
+    final horizontal = AppDensity.screenPadding(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 22),
+      padding: EdgeInsets.fromLTRB(
+        horizontal,
+        0,
+        horizontal,
+        AppDensity.sectionGap(context),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -416,20 +445,32 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   );
                 }
 
+                final baseHeight = AppDensity.value(
+                  context,
+                  compact: 204,
+                  standard: 214,
+                  wide: 224,
+                );
                 final cardHeight = MediaQuery.textScalerOf(
                   context,
-                ).scale(236).clamp(236.0, 330.0).toDouble();
+                ).scale(baseHeight).clamp(baseHeight, 306.0).toDouble();
+                final cardWidth = AppDensity.clamp(
+                  context,
+                  factor: 0.6,
+                  min: 212,
+                  max: 240,
+                );
                 return SizedBox(
                   height: cardHeight,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
                     itemCount: recommendations.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 12),
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
                     itemBuilder: (context, index) {
                       final recommendation = recommendations[index];
                       return SizedBox(
-                        width: 248,
+                        width: cardWidth,
                         child: ActivityRecommendationCard(
                           recommendation: recommendation,
                           compact: true,
@@ -472,17 +513,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     required List<ApiVenue> venues,
   }) {
     final items = _homeSliderItems(events: events, venues: venues);
+    final horizontal = AppDensity.screenPadding(context);
 
     if (items.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 16),
         child: AspectRatio(
-          aspectRatio: 2.35,
+          aspectRatio: 2.55,
           child: Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFF0EDE9)),
             ),
             child: const Row(
@@ -511,11 +553,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final currentIndex = _sliderIndex.clamp(0, items.length - 1).toInt();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 16),
       child: Column(
         children: [
           AspectRatio(
-            aspectRatio: 2.35,
+            aspectRatio: 2.55,
             child: PageView.builder(
               itemCount: items.length,
               onPageChanged: (index) => setState(() => _sliderIndex = index),
@@ -526,7 +568,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   child: AppPressableScale(
                     child: Material(
                       color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(16),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
                         onTap: () => context.push(item.route),
@@ -551,9 +593,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               ),
                             ),
                             Positioned(
-                              left: 14,
-                              right: 14,
-                              bottom: 12,
+                              left: 12,
+                              right: 12,
+                              bottom: 10,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
@@ -583,14 +625,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 5),
                                   Text(
                                     item.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 17,
+                                      fontSize: 16,
                                       height: 1.1,
                                       fontWeight: FontWeight.w900,
                                     ),
@@ -623,7 +665,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
           ),
           if (items.length > 1) ...[
-            const SizedBox(height: 9),
+            const SizedBox(height: 7),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(items.length, (index) {
@@ -867,7 +909,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     };
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+      padding: AppDensity.screenInsets(context, top: 2, bottom: 10),
       child: Row(
         children: [
           Expanded(
@@ -880,7 +922,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: BiCikalimTheme.textPrimary,
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -929,19 +971,36 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+      padding: AppDensity.screenInsets(context, bottom: 22),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const gap = 12.0;
+          final gap = AppDensity.value(
+            context,
+            compact: 8,
+            standard: 10,
+            wide: 10,
+          );
           final fullWidth = constraints.maxWidth;
           final halfWidth = (constraints.maxWidth - gap) / 2;
+          final largeHeight = AppDensity.value(
+            context,
+            compact: 196,
+            standard: 206,
+            wide: 216,
+          );
+          final smallHeight = AppDensity.value(
+            context,
+            compact: 168,
+            standard: 178,
+            wide: 188,
+          );
           final cards = <Widget>[];
 
           void addCard(Widget child, {required bool large, double? height}) {
             cards.add(
               SizedBox(
                 width: large ? fullWidth : halfWidth,
-                height: height ?? (large ? 220 : 188),
+                height: height ?? (large ? largeHeight : smallHeight),
                 child: child,
               ),
             );
@@ -960,7 +1019,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => _openActivity(activity),
               ),
               large: true,
-              height: 224,
+              height: largeHeight,
             );
           }
 
@@ -984,7 +1043,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 },
               ),
               large: true,
-              height: 152,
+              height: AppDensity.value(
+                context,
+                compact: 132,
+                standard: 140,
+                wide: 148,
+              ),
             );
           }
 
@@ -1001,7 +1065,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => _openActivity(activity),
               ),
               large: false,
-              height: i.isEven ? 206 : 188,
+              height: i.isEven ? smallHeight + 12 : smallHeight,
             );
           }
 
@@ -1015,7 +1079,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => context.push('/venues/${venue.slug}'),
               ),
               large: i == 0,
-              height: i == 0 ? 226 : 196,
+              height: i == 0 ? largeHeight : smallHeight + 8,
             );
           }
 
@@ -1029,7 +1093,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 onTap: () => context.push('/events/${event.slug}'),
               ),
               large: i == 0 && visibleActivities.length < 3,
-              height: i == 0 && visibleActivities.length < 3 ? 218 : 192,
+              height: i == 0 && visibleActivities.length < 3
+                  ? largeHeight
+                  : smallHeight + 4,
             );
           }
 
@@ -1050,7 +1116,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                 ),
                 large: false,
-                height: 184,
+                height: smallHeight,
               );
             }
           }
@@ -1063,27 +1129,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildSkeletonFeed() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+      padding: AppDensity.screenInsets(context, top: 6, bottom: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SkeletonBox(height: 174, radius: 24),
-          const SizedBox(height: 18),
+          const _SkeletonBox(height: 146, radius: 16),
+          const SizedBox(height: 14),
           Row(
             children: const [
-              Expanded(child: _SkeletonBox(height: 182, radius: 22)),
-              SizedBox(width: 12),
-              Expanded(child: _SkeletonBox(height: 206, radius: 22)),
+              Expanded(child: _SkeletonBox(height: 166, radius: 14)),
+              SizedBox(width: 10),
+              Expanded(child: _SkeletonBox(height: 186, radius: 14)),
             ],
           ),
-          const SizedBox(height: 12),
-          const _SkeletonBox(height: 218, radius: 22),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
+          const _SkeletonBox(height: 196, radius: 14),
+          const SizedBox(height: 10),
           Row(
             children: const [
-              Expanded(child: _SkeletonBox(height: 178, radius: 22)),
-              SizedBox(width: 12),
-              Expanded(child: _SkeletonBox(height: 188, radius: 22)),
+              Expanded(child: _SkeletonBox(height: 168, radius: 14)),
+              SizedBox(width: 10),
+              Expanded(child: _SkeletonBox(height: 178, radius: 14)),
             ],
           ),
         ],
@@ -1093,12 +1159,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildSkeletonTail() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      padding: AppDensity.screenInsets(context, bottom: 20),
       child: Row(
         children: const [
-          Expanded(child: _SkeletonBox(height: 78, radius: 18)),
-          SizedBox(width: 12),
-          Expanded(child: _SkeletonBox(height: 78, radius: 18)),
+          Expanded(child: _SkeletonBox(height: 68, radius: 14)),
+          SizedBox(width: 10),
+          Expanded(child: _SkeletonBox(height: 68, radius: 14)),
         ],
       ),
     );
@@ -1106,7 +1172,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildErrorState() {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: AppDensity.screenInsets(context, top: 16, bottom: 20),
       child: _WarmStateCard(
         icon: Icons.cloud_off_outlined,
         title: 'Keşif akışı yüklenemedi',
@@ -1119,7 +1185,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildEmptyState() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
+      padding: AppDensity.screenInsets(context, top: 10, bottom: 24),
       child: _WarmStateCard(
         icon: Icons.explore_off_outlined,
         title: 'Yakınında henüz sonuç bulamadık',
@@ -1399,7 +1465,7 @@ class _ActivityExploreCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: large ? 126 : 92,
+            height: large ? 108 : 78,
             child: _GradientCover(
               accent: accent,
               icon: activity.iconData,
@@ -1408,7 +1474,7 @@ class _ActivityExploreCard extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(large ? 16 : 12, 12, 12, 12),
+              padding: EdgeInsets.fromLTRB(large ? 12 : 10, 10, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1418,7 +1484,7 @@ class _ActivityExploreCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: large ? 20 : 15,
+                      fontSize: large ? 18 : 14,
                       height: 1.12,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1483,7 +1549,7 @@ class _VenueExploreCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: large ? 126 : 92,
+            height: large ? 108 : 78,
             child: _ImageOrGradientCover(
               imageUrl: venue.coverImageUrl,
               accent: accent,
@@ -1493,7 +1559,7 @@ class _VenueExploreCard extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(large ? 16 : 12, 12, 12, 12),
+              padding: EdgeInsets.fromLTRB(large ? 12 : 10, 10, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1503,7 +1569,7 @@ class _VenueExploreCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: large ? 18 : 14,
+                      fontSize: large ? 16 : 13,
                       height: 1.15,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1559,7 +1625,7 @@ class _EventExploreCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: large ? 120 : 88,
+            height: large ? 104 : 76,
             child: _ImageOrGradientCover(
               imageUrl: event.imageUrl,
               accent: accent,
@@ -1569,7 +1635,7 @@ class _EventExploreCard extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(large ? 16 : 12, 12, 12, 12),
+              padding: EdgeInsets.fromLTRB(large ? 12 : 10, 10, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1579,7 +1645,7 @@ class _EventExploreCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: large ? 17 : 14,
+                      fontSize: large ? 16 : 13,
                       height: 1.15,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1632,7 +1698,7 @@ class _PersonalRecommendationCard extends StatelessWidget {
     return _ExploreCardShell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -1657,7 +1723,7 @@ class _PersonalRecommendationCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -1678,16 +1744,16 @@ class _PersonalRecommendationCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Container(
-              width: 62,
-              height: 96,
+              width: 54,
+              height: 84,
               decoration: BoxDecoration(
                 color: BiCikalimTheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 activity?.iconData ?? Icons.auto_awesome_rounded,
                 color: BiCikalimTheme.primary,
-                size: 30,
+                size: 26,
               ),
             ),
           ],
@@ -1716,7 +1782,7 @@ class _CategoryExploreCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            height: 92,
+            height: 78,
             child: _GradientCover(
               accent: accent,
               icon: category.iconData,
@@ -1725,7 +1791,7 @@ class _CategoryExploreCard extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1735,7 +1801,7 @@ class _CategoryExploreCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: 15,
+                      fontSize: 14,
                       height: 1.15,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1767,18 +1833,18 @@ class _ExploreCardShell extends StatelessWidget {
     return AppPressableScale(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.055),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Material(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(14),
           clipBehavior: Clip.antiAlias,
           child: InkWell(onTap: onTap, child: child),
         ),
@@ -1993,16 +2059,18 @@ class _WarmStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(
+        AppDensity.value(context, compact: 16, standard: 18, wide: 20),
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFF0EDE9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.045),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -2010,21 +2078,21 @@ class _WarmStateCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 62,
-            height: 62,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: BiCikalimTheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: BiCikalimTheme.primary, size: 30),
+            child: Icon(icon, color: BiCikalimTheme.primary, size: 26),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             title,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: BiCikalimTheme.textPrimary,
-              fontSize: 18,
+              fontSize: 16,
               height: 1.2,
               fontWeight: FontWeight.w900,
             ),
@@ -2036,11 +2104,11 @@ class _WarmStateCard extends StatelessWidget {
             style: const TextStyle(
               color: BiCikalimTheme.textSecondary,
               fontSize: 13,
-              height: 1.45,
+              height: 1.35,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           FilledButton(onPressed: onAction, child: Text(actionLabel)),
         ],
       ),
@@ -2069,19 +2137,26 @@ class _HorizontalActivitySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseHeight = AppDensity.value(
+      context,
+      compact: 204,
+      standard: 214,
+      wide: 224,
+    );
     final height = MediaQuery.textScalerOf(
       context,
-    ).scale(236).clamp(236.0, 330.0).toDouble();
+    ).scale(baseHeight).clamp(baseHeight, 306.0).toDouble();
+    final width = AppDensity.clamp(context, factor: 0.6, min: 212, max: 240);
     return SizedBox(
       height: height,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: 3,
-        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) => SizedBox(
-          width: 248,
-          child: _SkeletonBox(height: height, radius: 20),
+          width: width,
+          child: _SkeletonBox(height: height, radius: 14),
         ),
       ),
     );

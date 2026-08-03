@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/api_models.dart';
+import '../../core/theme/app_density.dart';
 import '../../core/theme/theme.dart';
 import 'app_network_image.dart';
 import 'app_pressable_scale.dart';
@@ -19,6 +20,13 @@ class EventListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = AppDensity.cardRadius(context);
+    final imageHeight = AppDensity.value(
+      context,
+      compact: 124,
+      standard: 136,
+      wide: 144,
+    );
     final venueName = venue?.name ?? event.venue?.name;
     final location = [
       if (venue?.districtName.isNotEmpty ?? false) venue!.districtName,
@@ -30,27 +38,34 @@ class EventListCard extends StatelessWidget {
 
     return AppPressableScale(
       child: Card(
-        margin: const EdgeInsets.only(bottom: 18),
+        margin: EdgeInsets.only(
+          bottom: AppDensity.value(
+            context,
+            compact: 10,
+            standard: 12,
+            wide: 14,
+          ),
+        ),
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(radius),
           side: BorderSide(color: Colors.grey.shade100),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(radius),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(radius),
                     ),
                     child: AppNetworkImage(
                       imageUrl: event.imageUrl,
-                      height: 152,
+                      height: imageHeight,
                       width: double.infinity,
                     ),
                   ),
@@ -107,7 +122,14 @@ class EventListCard extends StatelessWidget {
                 ],
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(
+                  AppDensity.value(
+                    context,
+                    compact: 10,
+                    standard: 12,
+                    wide: 14,
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -157,18 +179,19 @@ class EventListCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
                       event.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: BiCikalimTheme.textPrimary,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        height: 1.18,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       event.description ?? '',
                       style: const TextStyle(
@@ -179,9 +202,9 @@ class EventListCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     const Divider(height: 1),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     if (venueName != null || location.isNotEmpty)
                       Row(
                         children: [

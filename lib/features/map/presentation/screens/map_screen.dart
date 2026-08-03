@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/app_density.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_error_state.dart';
@@ -426,36 +427,36 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: 96,
+            height: 82,
             child: RefreshIndicator(
               color: BiCikalimTheme.primary,
               onRefresh: _refreshMap,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [SizedBox(height: 97)],
+                children: const [SizedBox(height: 83)],
               ),
             ),
           ),
 
           // Üst Bilgilendirme Bandı
           Positioned(
-            top: 16,
-            left: 16,
-            right: 16,
+            top: 12,
+            left: AppDensity.screenPadding(context),
+            right: AppDensity.screenPadding(context),
             child: IgnorePointer(
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+                  horizontal: 12,
+                  vertical: 9,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
@@ -481,9 +482,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
           // Alt Mekan Detay Kartı
           Positioned(
-            top: 84,
-            left: 16,
-            right: 16,
+            top: 68,
+            left: AppDensity.screenPadding(context),
+            right: AppDensity.screenPadding(context),
             child: venuesAsync.when(
               loading: () => _buildMapInfoCard(
                 icon: Icons.hourglass_top_rounded,
@@ -507,31 +508,31 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
           if (_selectedVenue != null)
             Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
+              bottom: 14,
+              left: AppDensity.screenPadding(context),
+              right: AppDensity.screenPadding(context),
               child: Card(
-                elevation: 6,
-                shadowColor: Colors.black.withValues(alpha: 0.15),
+                elevation: 4,
+                shadowColor: Colors.black.withValues(alpha: 0.12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(11),
                         child: AppNetworkImage(
                           imageUrl: _selectedVenue!.coverImageUrl,
-                          width: 80,
-                          height: 80,
+                          width: 58,
+                          height: 58,
                           semanticLabel:
                               '${_selectedVenue!.name} kapak görseli',
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 9),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,12 +543,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
+                                height: 1.14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             if (_selectedVenue!.isVerified) ...[
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               const AppStatusBadge.verified(),
                             ],
                             const SizedBox(height: 4),
@@ -556,13 +558,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                 const Icon(
                                   Icons.star,
                                   color: BiCikalimTheme.primary,
-                                  size: 14,
+                                  size: 13,
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
                                   _ratingText(_selectedVenue!),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -573,7 +577,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       color: BiCikalimTheme.textSecondary,
                                     ),
                                   ),
@@ -581,56 +585,57 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               ],
                             ),
                             if (_selectedVenue!.activitySummary.isNotEmpty) ...[
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               _buildActivityPreview(_selectedVenue!),
                             ],
-                            const SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () {
-                                context.push('/venues/${_selectedVenue!.slug}');
-                              },
-                              child: const Row(
-                                children: [
-                                  Text(
-                                    'Detaylı İncele',
-                                    style: TextStyle(
-                                      color: BiCikalimTheme.primary,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Icon(
-                                    Icons.arrow_forward,
-                                    color: BiCikalimTheme.primary,
-                                    size: 14,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
+                            const SizedBox(height: 2),
                             Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
+                              spacing: 6,
+                              runSpacing: 2,
                               children: [
                                 TextButton.icon(
                                   onPressed: () => context.push(
                                     '/venues/${_selectedVenue!.slug}',
                                   ),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(0, 34),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                  ),
                                   icon: const Icon(
                                     Icons.arrow_forward_rounded,
-                                    size: 16,
+                                    size: 14,
                                   ),
-                                  label: const Text('Detayı Gör'),
+                                  label: const Text(
+                                    'Detay',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
                                 ),
                                 TextButton.icon(
                                   onPressed: () =>
                                       _openDirections(_selectedVenue!),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(0, 34),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                  ),
                                   icon: const Icon(
                                     Icons.directions_rounded,
-                                    size: 16,
+                                    size: 14,
                                   ),
-                                  label: const Text('Yol Tarifi'),
+                                  label: const Text(
+                                    'Yol tarifi',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
                                 ),
                               ],
                             ),
@@ -651,8 +656,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ),
           Positioned(
-            bottom: _selectedVenue != null ? 250 : 30,
-            right: 20,
+            bottom: _selectedVenue != null ? 142 : 24,
+            right: AppDensity.screenPadding(context),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -722,8 +727,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
           return Marker(
             point: point,
-            width: 96,
-            height: 78,
+            width: 84,
+            height: 68,
             alignment: Alignment.topCenter,
             child: Semantics(
               button: true,
@@ -739,17 +744,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     AnimatedContainer(
                       key: ValueKey('map-marker-${venue.id}'),
                       duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.all(9),
+                      padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? BiCikalimTheme.primary
                             : Colors.white,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.16),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                         border: Border.all(
@@ -764,15 +769,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         color: isSelected
                             ? Colors.white
                             : BiCikalimTheme.primary,
-                        size: 20,
+                        size: 18,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Container(
-                      constraints: const BoxConstraints(maxWidth: 92),
+                      constraints: const BoxConstraints(maxWidth: 82),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
+                        horizontal: 6,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.76),
@@ -859,15 +864,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     bool compact = false,
   }) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: compact ? 10 : 12,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: compact ? 8 : 10),
       decoration: _overlayDecoration(),
       child: Row(
         children: [
-          Icon(icon, color: BiCikalimTheme.primary, size: compact ? 19 : 22),
-          const SizedBox(width: 10),
+          Icon(icon, color: BiCikalimTheme.primary, size: compact ? 18 : 20),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -877,17 +879,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   title,
                   style: const TextStyle(
                     color: BiCikalimTheme.textPrimary,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 if (!compact) ...[
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
                     message,
                     style: const TextStyle(
                       color: BiCikalimTheme.textSecondary,
-                      fontSize: 11,
+                      fontSize: 10,
                       height: 1.25,
                     ),
                   ),
@@ -902,7 +904,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Widget _buildMapErrorCard(Object error, VenueFilters filters) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: _overlayDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -930,7 +932,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
             child: FilledButton(
@@ -945,7 +947,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Widget _buildMapEmptyCard(VenueFilters filters) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: _overlayDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -955,7 +957,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             'Haritada gösterilebilecek mekân bulunamadı',
             style: TextStyle(
               color: BiCikalimTheme.textPrimary,
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -968,7 +970,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -993,12 +995,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   BoxDecoration _overlayDecoration() {
     return BoxDecoration(
       color: Colors.white.withValues(alpha: .96),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(14),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withValues(alpha: .08),
-          blurRadius: 18,
-          offset: const Offset(0, 8),
+          blurRadius: 10,
+          offset: const Offset(0, 5),
         ),
       ],
     );
@@ -1008,7 +1010,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final names = venue.activitySummary
         .map((item) => item.activityName)
         .where((name) => name.trim().isNotEmpty)
-        .take(3)
+        .take(2)
         .toList(growable: false);
     if (names.isEmpty) return const SizedBox.shrink();
     return Wrap(
@@ -1017,16 +1019,19 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       children: names
           .map(
             (name) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              constraints: const BoxConstraints(maxWidth: 132),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: BiCikalimTheme.primary.withValues(alpha: .09),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: BiCikalimTheme.primary,
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                 ),
               ),

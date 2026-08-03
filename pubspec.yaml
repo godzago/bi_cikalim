@@ -1,6 +1,6 @@
 name: bi_cikalim
 description: 'BiÇıkalım - Şehrindeki Eğlenceyi Keşfet'
-publish_to: 'This is a Demirdoven Holding Project. Do not use in production.'
+publish_to: 'none'
 
 version: 1.0.0+2
 

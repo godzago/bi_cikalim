@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/app_density.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
@@ -114,9 +115,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  padding: AppDensity.screenInsets(context, top: 8),
                   child: Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -129,8 +133,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     child: Row(
                       children: [
                         Container(
-                          width: 42,
-                          height: 42,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(14),
@@ -143,10 +147,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${filteredEvents.length} etkinlik listelendi. Tarih ve kategori seçerek akışı daraltabilirsin.',
+                            '${filteredEvents.length} etkinlik listelendi',
                             style: const TextStyle(
                               fontSize: 12,
-                              height: 1.4,
+                              height: 1.25,
                               fontWeight: FontWeight.w600,
                               color: BiCikalimTheme.textPrimary,
                             ),
@@ -157,10 +161,15 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   ),
                 ),
                 SizedBox(
-                  height: 52,
+                  height: 50,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      AppDensity.screenPadding(context),
+                      8,
+                      AppDensity.screenPadding(context),
+                      0,
+                    ),
                     children: [
                       _buildDateSegment('Tumu'),
                       const SizedBox(width: 8),
@@ -174,10 +183,12 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 36,
+                  height: 44,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppDensity.screenPadding(context),
+                    ),
                     itemCount: categories.length,
                     separatorBuilder: (_, index) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
@@ -193,7 +204,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
-                            vertical: 8,
+                            vertical: 7,
                           ),
                           decoration: BoxDecoration(
                             color: isSelected
@@ -220,7 +231,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
@@ -262,8 +273,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                                 final event = filteredEvents[index - 1];
 
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: AppDensity.screenPadding(
+                                      context,
+                                    ),
                                   ),
                                   child: EventListCard(
                                     event: event,
@@ -296,7 +309,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
         : '${tonightEvents.length} öneri hazır.';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      padding: AppDensity.screenInsets(context, top: 6),
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(18),

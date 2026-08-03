@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_density.dart';
 import '../../core/theme/theme.dart';
 
 class AppSectionHeader extends StatelessWidget {
@@ -19,7 +20,9 @@ class AppSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDensity.screenPadding(context),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -33,7 +36,13 @@ class AppSectionHeader extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: BiCikalimTheme.textPrimary,
-                      fontSize: 18,
+                      fontSize: AppDensity.value(
+                        context,
+                        compact: 18,
+                        standard: 18,
+                        wide: 19,
+                      ),
+                      height: 1.18,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -43,7 +52,7 @@ class AppSectionHeader extends StatelessWidget {
                       subtitle!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: BiCikalimTheme.textSecondary,
-                        height: 1.35,
+                        height: 1.3,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -55,9 +64,16 @@ class AppSectionHeader extends StatelessWidget {
           if (actionLabel != null && onActionTap != null)
             TextButton(
               onPressed: onActionTap,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(44, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
               child: Text(
                 actionLabel!,
-                style: const TextStyle(color: BiCikalimTheme.primary),
+                style: const TextStyle(
+                  color: BiCikalimTheme.primary,
+                  fontSize: 13,
+                ),
               ),
             ),
         ],

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
+import '../../../../core/theme/app_density.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
@@ -479,7 +480,12 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
                   SliverAppBar(
-                    expandedHeight: 240,
+                    expandedHeight: AppDensity.value(
+                      context,
+                      compact: 160,
+                      standard: 172,
+                      wide: 180,
+                    ),
                     pinned: true,
                     backgroundColor: BiCikalimTheme.primary,
                     flexibleSpace: FlexibleSpaceBar(
@@ -512,13 +518,17 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
               body: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: AppDensity.screenInsets(
+                      context,
+                      top: 14,
+                      bottom: 14,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Wrap(
                           spacing: 8,
-                          runSpacing: 8,
+                          runSpacing: 6,
                           children: [
                             _buildMetaPill(
                               Icons.star_rounded,
@@ -534,15 +544,16 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
                         Text(
                           venue.name,
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 22,
+                            height: 1.16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Container(
@@ -613,10 +624,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
                             if (venue.googleMapsUrl != null ||
                                 (venue.latitude != null &&
@@ -746,9 +757,14 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            width: 96,
-            constraints: const BoxConstraints(minHeight: 56),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            width: AppDensity.value(
+              context,
+              compact: 78,
+              standard: 84,
+              wide: 90,
+            ),
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -757,15 +773,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: BiCikalimTheme.primary, size: 20),
-                const SizedBox(height: 5),
+                Icon(icon, color: BiCikalimTheme.primary, size: 19),
+                const SizedBox(height: 4),
                 Text(
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: BiCikalimTheme.textPrimary,
                     height: 1.15,
@@ -781,7 +797,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
 
   Widget _buildMetaPill(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(999),
@@ -807,7 +823,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
 
   Widget _buildGeneralTab(ApiVenue venue) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: AppDensity.screenInsets(context, top: 16, bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -820,7 +836,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
             venue.description ?? 'Açıklama bulunmuyor.',
             style: const TextStyle(
               color: BiCikalimTheme.textSecondary,
-              height: 1.5,
+              height: 1.38,
             ),
           ),
           if (venue.media.isNotEmpty) ...[
@@ -974,7 +990,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
           }).toList();
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
+      padding: AppDensity.screenInsets(context, top: 16, bottom: 20),
       itemCount: filtered.length + 1,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
@@ -1066,7 +1082,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
         borderRadius: BorderRadius.circular(20),
         onTap: () => _openVenuesForInventoryActivity(item, venue),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1082,7 +1098,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                       color: BiCikalimTheme.primary,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,10 +1112,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(height: 7),
+                        const SizedBox(height: 6),
                         Wrap(
-                          spacing: 7,
-                          runSpacing: 7,
+                          spacing: 6,
+                          runSpacing: 6,
                           children: [
                             _buildInventoryPill(
                               _availabilityLabel(item.availability),
@@ -1122,19 +1138,19 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
               ),
               if (item.shortDescription != null &&
                   item.shortDescription!.trim().isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   item.shortDescription!.trim(),
                   style: const TextStyle(
                     color: BiCikalimTheme.textSecondary,
                     fontSize: 12,
-                    height: 1.4,
+                    height: 1.34,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
               if (verifiedLabel != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(
@@ -1156,10 +1172,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                   ],
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   OutlinedButton.icon(
                     onPressed: () =>
@@ -1191,7 +1207,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
 
   Widget _buildInventoryPill(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .09),
         borderRadius: BorderRadius.circular(999),
@@ -1337,7 +1353,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: AppDensity.screenInsets(context, top: 16, bottom: 20),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
@@ -1365,7 +1381,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(20),
+          padding: AppDensity.screenInsets(context, top: 14, bottom: 14),
           child: Row(
             children: [
               Column(
@@ -1399,7 +1415,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                   ),
                 ],
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   children: [

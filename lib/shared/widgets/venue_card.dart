@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/api_models.dart';
+import '../../core/theme/app_density.dart';
 import '../../core/theme/theme.dart';
 import 'app_pressable_scale.dart';
 import 'app_network_image.dart';
@@ -21,6 +22,7 @@ class VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = AppDensity.cardRadius(context);
     final semanticLocation = [
       if (venue.districtName.isNotEmpty) venue.districtName,
       if (venue.cityName.isNotEmpty) venue.cityName,
@@ -32,37 +34,49 @@ class VenueCard extends StatelessWidget {
           '${venue.name}${semanticLocation.isEmpty ? '' : ', $semanticLocation'}. Burada ne yapılır bilgilerini gör.',
       child: AppPressableScale(
         child: Card(
-          margin: EdgeInsets.only(bottom: dense ? 10 : 14),
+          margin: EdgeInsets.only(
+            bottom: dense
+                ? AppDensity.value(context, compact: 8, standard: 10, wide: 10)
+                : AppDensity.value(
+                    context,
+                    compact: 10,
+                    standard: 12,
+                    wide: 14,
+                  ),
+          ),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(radius),
             side: BorderSide(color: Colors.grey.shade100),
           ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: dense ? _buildDenseCard() : _buildDefaultCard(),
+            borderRadius: BorderRadius.circular(radius),
+            child: dense
+                ? _buildDenseCard(context)
+                : _buildDefaultCard(context),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDefaultCard() {
+  Widget _buildDefaultCard(BuildContext context) {
+    final radius = AppDensity.cardRadius(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Stack(
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: AppNetworkImage(
-                imageUrl: venue.coverImageUrl,
-                height: 136,
-                width: double.infinity,
-                semanticLabel: '${venue.name} mekan görseli',
+              borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
+              child: AspectRatio(
+                aspectRatio: 1.72,
+                child: AppNetworkImage(
+                  imageUrl: venue.coverImageUrl,
+                  width: double.infinity,
+                  semanticLabel: '${venue.name} mekan görseli',
+                ),
               ),
             ),
             if (onFavoriteTap != null) _buildBookmarkButton(top: 12, right: 12),
@@ -71,18 +85,20 @@ class VenueCard extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          padding: EdgeInsets.all(
+            AppDensity.value(context, compact: 10, standard: 12, wide: 14),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(fontSize: 16, showRating: true),
               const SizedBox(height: 4),
               _buildLocationRow(),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
-                children: venue.activityTags.map(_buildTag).toList(),
+                children: venue.activityTags.take(3).map(_buildTag).toList(),
               ),
             ],
           ),
@@ -91,11 +107,19 @@ class VenueCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDenseCard() {
+  Widget _buildDenseCard(BuildContext context) {
     final activityCount = venue.activitySummary.length;
+    final imageSize = AppDensity.value(
+      context,
+      compact: 76,
+      standard: 82,
+      wide: 88,
+    );
 
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(
+        AppDensity.value(context, compact: 8, standard: 10, wide: 10),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -103,12 +127,12 @@ class VenueCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: AppNetworkImage(
               imageUrl: venue.coverImageUrl,
-              width: 88,
-              height: 88,
+              width: imageSize,
+              height: imageSize,
               semanticLabel: '${venue.name} mekan görseli',
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +157,7 @@ class VenueCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 _buildLocationRow(fontSize: 11),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   '$activityCount aktivite - ${venue.reviewCount} yorum',
                   maxLines: 1,
@@ -144,7 +168,7 @@ class VenueCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -156,12 +180,12 @@ class VenueCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _buildRatingPill(),
-              const SizedBox(height: 22),
+              SizedBox(height: AppDensity.isCompact(context) ? 14 : 20),
               const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
             ],
           ),

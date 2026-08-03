@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_density.dart';
 import '../../core/theme/theme.dart';
 
 class AppSegmentedOption extends StatelessWidget {
@@ -24,8 +25,24 @@ class AppSegmentedOption extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          constraints: const BoxConstraints(minWidth: 84),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          constraints: BoxConstraints(
+            minWidth: AppDensity.value(
+              context,
+              compact: 76,
+              standard: 84,
+              wide: 88,
+            ),
+            minHeight: 44,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDensity.value(
+              context,
+              compact: 12,
+              standard: 14,
+              wide: 14,
+            ),
+            vertical: 8,
+          ),
           decoration: BoxDecoration(
             color: isSelected ? BiCikalimTheme.primary : Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -40,7 +57,7 @@ class AppSegmentedOption extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isSelected ? Colors.white : BiCikalimTheme.textSecondary,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             ),
           ),
