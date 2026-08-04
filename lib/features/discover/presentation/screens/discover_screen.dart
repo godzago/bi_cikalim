@@ -102,6 +102,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               .toList();
     final selectedVenueActivityExists =
         _selectedVenueActivitySlug == null ||
+        activities.any(
+          (activity) => activity.slug == _selectedVenueActivitySlug,
+        ) ||
         venues.any(
           (venue) => venue.activitySummary.any(
             (activity) => activity.activitySlug == _selectedVenueActivitySlug,
@@ -183,6 +186,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   child: _buildPopularVenuesCarousel(
                     venues: filteredVenues,
                     allVenues: venues,
+                    activities: activities,
                     effectiveSelectedActivitySlug:
                         effectiveSelectedVenueActivitySlug,
                   ),
@@ -522,9 +526,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildPopularVenuesCarousel({
     required List<ApiVenue> venues,
     required List<ApiVenue> allVenues,
+    required List<ApiActivity> activities,
     required String? effectiveSelectedActivitySlug,
   }) {
-    if (venues.isEmpty) return const SizedBox.shrink();
+    if (allVenues.isEmpty) return const SizedBox.shrink();
     final layout = context.layout;
     final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
     final textHeightAllowance = (textScale - 1).clamp(0.0, 1.0) * 52;
@@ -564,31 +569,46 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ),
           _buildPopularVenueFilterBar(
             allVenues,
+            activities: activities,
             effectiveSelectedActivitySlug: effectiveSelectedActivitySlug,
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            height: layout.fluid(154, 164, 178) + textHeightAllowance,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
+          if (venues.isEmpty)
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: layout.screenPadding),
-              itemCount: venues.take(8).length,
-              separatorBuilder: (_, _) => SizedBox(width: layout.cardGap),
-              itemBuilder: (context, index) {
-                final venue = venues[index];
-                return SizedBox(
-                  width: cardWidth,
-                  child: _VenueExploreCard(
-                    venue: venue,
-                    large: false,
-                    accent: _accentFor(venue.slug),
-                    onTap: () => context.push('/venues/${venue.slug}'),
-                  ),
-                );
-              },
+              child: _WarmStateCard(
+                icon: Icons.storefront_outlined,
+                title: 'Bu filtrede mekan bulamadık',
+                message:
+                    'Farklı bir aktivite seçerek popüler mekanları görebilirsin.',
+                actionLabel: 'Popülerleri Göster',
+                onAction: () =>
+                    setState(() => _selectedVenueActivitySlug = null),
+              ),
+            )
+          else
+            SizedBox(
+              height: layout.fluid(154, 164, 178) + textHeightAllowance,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: layout.screenPadding),
+                itemCount: venues.take(8).length,
+                separatorBuilder: (_, _) => SizedBox(width: layout.cardGap),
+                itemBuilder: (context, index) {
+                  final venue = venues[index];
+                  return SizedBox(
+                    width: cardWidth,
+                    child: _VenueExploreCard(
+                      venue: venue,
+                      large: false,
+                      accent: _accentFor(venue.slug),
+                      onTap: () => context.push('/venues/${venue.slug}'),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -596,9 +616,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildPopularVenueFilterBar(
     List<ApiVenue> venues, {
+    required List<ApiActivity> activities,
     required String? effectiveSelectedActivitySlug,
   }) {
-    final filters = _popularVenueActivityFilters(venues);
+    final filters = _popularVenueActivityFilters(
+      venues: venues,
+      activities: activities,
+    );
     if (filters.isEmpty) return const SizedBox.shrink();
 
     return SizedBox(
@@ -626,10 +650,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  List<_VenueActivityFilter> _popularVenueActivityFilters(
-    List<ApiVenue> venues,
-  ) {
+  List<_VenueActivityFilter> _popularVenueActivityFilters({
+    required List<ApiVenue> venues,
+    required List<ApiActivity> activities,
+  }) {
     final bySlug = <String, _VenueActivityFilter>{};
+    for (final activity in activities) {
+      final slug = activity.slug.trim();
+      final label = activity.name.trim();
+      if (slug.isEmpty || label.isEmpty || bySlug.containsKey(slug)) {
+        continue;
+      }
+      bySlug[slug] = _VenueActivityFilter(slug: slug, label: label);
+    }
     for (final venue in venues) {
       for (final activity in venue.activitySummary) {
         final slug = activity.activitySlug.trim();
