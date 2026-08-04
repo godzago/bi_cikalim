@@ -19,20 +19,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
-  static const _filters = [
-    'Sana Özel',
-    'Trend',
-    'Yakınında',
-    'Bu Akşam',
-    'Spor',
-    'Oyun',
-    'Eğlence',
-    'Yeni',
-    'Ücretsiz',
-    'Grupça',
-  ];
-
-  String _selectedFilter = _filters.first;
+  String? _selectedEventSlug;
   int _sliderIndex = 0;
   int _eventSliderIndex = 0;
 
@@ -101,6 +88,17 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final activities = activitiesAsync.value?.items ?? const <ApiActivity>[];
     final venues = venuesAsync.value?.items ?? const <ApiVenue>[];
     final events = eventsAsync.value?.items ?? const <ApiEvent>[];
+    final selectedEventExists =
+        _selectedEventSlug == null ||
+        events.any((event) => event.slug == _selectedEventSlug);
+    final effectiveSelectedEventSlug = selectedEventExists
+        ? _selectedEventSlug
+        : null;
+    final sliderEvents = effectiveSelectedEventSlug == null
+        ? events
+        : events
+              .where((event) => event.slug == effectiveSelectedEventSlug)
+              .toList();
 
     final hasAnyContent =
         categories.isNotEmpty ||
@@ -130,7 +128,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(child: _buildSearchBar()),
-              SliverToBoxAdapter(child: _buildFilterBar()),
+              SliverToBoxAdapter(
+                child: _buildFilterBar(
+                  events,
+                  effectiveSelectedEventSlug: effectiveSelectedEventSlug,
+                ),
+              ),
               if (isFirstLoad)
                 SliverToBoxAdapter(child: _buildSkeletonFeed())
               else if (hasBlockingError)
@@ -143,9 +146,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   child: _buildNearbyMapSection(selectedCity: selectedCity),
                 ),
                 SliverToBoxAdapter(
-                  child: _buildHomeImageSlider(events: events, venues: venues),
+                  child: _buildHomeImageSlider(
+                    events: sliderEvents,
+                    venues: effectiveSelectedEventSlug == null
+                        ? venues
+                        : const <ApiVenue>[],
+                  ),
                 ),
-                SliverToBoxAdapter(child: _buildMoodEventSlider(events)),
+                SliverToBoxAdapter(
+                  child: _buildMoodEventSlider(
+                    sliderEvents,
+                    includeSports: effectiveSelectedEventSlug != null,
+                  ),
+                ),
                 SliverToBoxAdapter(child: _buildPopularVenuesCarousel(venues)),
                 SliverToBoxAdapter(
                   child: _buildTonightHomeSection(
@@ -307,22 +320,31 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildFilterBar(
+    List<ApiEvent> events, {
+    required String? effectiveSelectedEventSlug,
+  }) {
     return SizedBox(
       height: AppLayout.minTouchTarget + 4,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.symmetric(horizontal: context.layout.screenPadding),
-        itemCount: _filters.length,
+        itemCount: events.length + 1,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final filter = _filters[index];
-          final selected = _selectedFilter == filter;
+          final event = index == 0 ? null : events[index - 1];
+          final selected = event == null
+              ? effectiveSelectedEventSlug == null
+              : effectiveSelectedEventSlug == event.slug;
           return AppFilterChoiceChip(
-            label: filter,
+            label: event?.title ?? 'Trendler',
             selected: selected,
-            onTap: () => setState(() => _selectedFilter = filter),
+            onTap: () => setState(() {
+              _selectedEventSlug = event?.slug;
+              _sliderIndex = 0;
+              _eventSliderIndex = 0;
+            }),
           );
         },
       ),
@@ -536,10 +558,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildMoodEventSlider(List<ApiEvent> events) {
+  Widget _buildMoodEventSlider(
+    List<ApiEvent> events, {
+    bool includeSports = false,
+  }) {
     final items = events
         .where((event) => event.imageUrl.trim().isNotEmpty)
-        .where((event) => !_isSportEvent(event))
+        .where((event) => includeSports || !_isSportEvent(event))
         .take(6)
         .map(
           (event) => _HomeSliderItem(
@@ -585,6 +610,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           AspectRatio(
             aspectRatio: 2.7,
             child: PageView.builder(
+              key: ValueKey('mood-${_selectedEventSlug ?? 'trends'}'),
               itemCount: items.length,
               onPageChanged: (index) =>
                   setState(() => _eventSliderIndex = index),
@@ -777,6 +803,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           AspectRatio(
             aspectRatio: 2.7,
             child: PageView.builder(
+              key: ValueKey('home-${_selectedEventSlug ?? 'trends'}'),
               itemCount: items.length,
               onPageChanged: (index) => setState(() => _sliderIndex = index),
               itemBuilder: (context, index) {
@@ -1232,18 +1259,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         _visibleActivities(activities).length +
         _visibleVenues(venues).length +
         _visibleEvents(events).length;
-    final title = switch (_selectedFilter) {
-      'Trend' => 'Trend keşifler',
-      'Yakınında' => 'Yakınındaki fikirler',
-      'Bu Akşam' => 'Bu akşam için',
-      'Spor' => 'Spor aktiviteleri',
-      'Oyun' => 'Oyun odaklı keşif',
-      'Eğlence' => 'Eğlence akışı',
-      'Yeni' => 'Yeni eklenenler',
-      'Ücretsiz' => 'Ücretsiz seçenekler',
-      'Grupça' => 'Grupça yapılacaklar',
-      _ => 'Sana özel akış',
-    };
+    final selectedEventTitle = events
+        .where((event) => event.slug == _selectedEventSlug)
+        .firstOrNull
+        ?.title;
+    final title = selectedEventTitle ?? 'Trend keşifler';
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -1572,54 +1592,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         message:
             'Şehir genelindeki popüler aktiviteleri keşfet veya farklı filtreler dene.',
         actionLabel: 'Popülerleri Gör',
-        onAction: () => setState(() => _selectedFilter = 'Trend'),
+        onAction: () => setState(() {
+          _selectedEventSlug = null;
+          _sliderIndex = 0;
+          _eventSliderIndex = 0;
+        }),
       ),
     );
   }
 
   List<ApiActivity> _visibleActivities(List<ApiActivity> activities) {
-    final filtered = switch (_selectedFilter) {
-      'Spor' => activities.where(_isSportActivity).toList(),
-      'Oyun' => activities.where(_isGameActivity).toList(),
-      'Eğlence' => activities.where(_isEntertainmentActivity).toList(),
-      'Grupça' => activities.where(_isGroupActivity).toList(),
-      _ => List<ApiActivity>.from(activities),
-    };
-    return filtered.take(12).toList();
+    return activities.take(12).toList();
   }
 
   List<ApiVenue> _visibleVenues(List<ApiVenue> venues) {
-    final filtered = switch (_selectedFilter) {
-      'Spor' =>
-        venues.where((venue) => _venueContains(venue, _sportTerms)).toList(),
-      'Oyun' =>
-        venues.where((venue) => _venueContains(venue, _gameTerms)).toList(),
-      'Eğlence' =>
-        venues
-            .where((venue) => _venueContains(venue, _entertainmentTerms))
-            .toList(),
-      'Yeni' => List<ApiVenue>.from(venues.reversed),
-      _ => List<ApiVenue>.from(venues),
-    };
-    return filtered.take(8).toList();
+    return venues.take(8).toList();
   }
 
   List<ApiEvent> _visibleEvents(List<ApiEvent> events) {
-    final now = DateTime.now();
-    final filtered = switch (_selectedFilter) {
-      'Bu Akşam' => events.where((event) {
-        final start = event.startAt.toLocal();
-        return start.year == now.year &&
-            start.month == now.month &&
-            start.day == now.day;
-      }).toList(),
-      'Ücretsiz' =>
-        events
-            .where((event) => event.priceType.toLowerCase() == 'free')
-            .toList(),
-      'Yeni' => List<ApiEvent>.from(events.reversed),
-      _ => List<ApiEvent>.from(events),
-    };
+    final filtered = _selectedEventSlug == null
+        ? List<ApiEvent>.from(events)
+        : events.where((event) => event.slug == _selectedEventSlug).toList();
     filtered.sort((left, right) => left.startAt.compareTo(right.startAt));
     return filtered.take(8).toList();
   }
@@ -1634,25 +1627,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         _containsAny(activity.name, _gameTerms);
   }
 
-  bool _isEntertainmentActivity(ApiActivity activity) {
-    return activity.kind.toLowerCase() == 'entertainment' ||
-        _containsAny(activity.name, _entertainmentTerms);
-  }
-
   bool _isGroupActivity(ApiActivity activity) {
     return (activity.maxPeople ?? 0) >= 3 ||
         (activity.minPeople ?? 0) >= 2 ||
         _containsAny(activity.name, _groupTerms);
-  }
-
-  bool _venueContains(ApiVenue venue, List<String> terms) {
-    final source = [
-      venue.name,
-      venue.shortDescription ?? '',
-      ...venue.activitySummary.map((item) => item.activityName),
-      ...venue.tags.map((tag) => tag.name),
-    ].join(' ');
-    return _containsAny(source, terms);
   }
 
   bool _isSportEvent(ApiEvent event) {
@@ -1719,15 +1697,6 @@ const _gameTerms = [
   'masa',
   'vr',
   'playstation',
-];
-const _entertainmentTerms = [
-  'eğlence',
-  'eglence',
-  'karaoke',
-  'müzik',
-  'muzik',
-  'parti',
-  'sinema',
 ];
 const _groupTerms = ['grup', 'takım', 'takim', 'arkadaş', 'arkadas', 'masa'];
 
