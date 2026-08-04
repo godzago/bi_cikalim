@@ -664,9 +664,9 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                                 ),
                               _buildQuickAction(
                                 isFavorite
-                                    ? Icons.bookmark
-                                    : Icons.bookmark_border,
-                                isFavorite ? 'Kaydedildi' : 'Kaydet',
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                isFavorite ? 'Favoride' : 'Favorile',
                                 () => _toggleFavorite(venue),
                               ),
                               _buildQuickAction(

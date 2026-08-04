@@ -93,9 +93,9 @@ class NavigationShell extends StatelessWidget {
                   label: 'Harita',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.bookmark_outline),
-                  activeIcon: Icon(Icons.bookmark_rounded),
-                  label: 'Kaydedilenler',
+                  icon: Icon(Icons.favorite_border_rounded),
+                  activeIcon: Icon(Icons.favorite_rounded),
+                  label: 'Favorilerim',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline),

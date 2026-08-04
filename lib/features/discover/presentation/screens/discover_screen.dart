@@ -20,6 +20,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   String? _selectedEventSlug;
+  String? _selectedVenueActivitySlug;
   int _sliderIndex = 0;
   int _eventSliderIndex = 0;
 
@@ -99,6 +100,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         : events
               .where((event) => event.slug == effectiveSelectedEventSlug)
               .toList();
+    final selectedVenueActivityExists =
+        _selectedVenueActivitySlug == null ||
+        venues.any(
+          (venue) => venue.activitySummary.any(
+            (activity) => activity.activitySlug == _selectedVenueActivitySlug,
+          ),
+        );
+    final effectiveSelectedVenueActivitySlug = selectedVenueActivityExists
+        ? _selectedVenueActivitySlug
+        : null;
+    final filteredVenues = effectiveSelectedVenueActivitySlug == null
+        ? venues
+        : venues
+              .where(
+                (venue) => venue.activitySummary.any(
+                  (activity) =>
+                      activity.activitySlug ==
+                      effectiveSelectedVenueActivitySlug,
+                ),
+              )
+              .toList();
 
     final hasAnyContent =
         categories.isNotEmpty ||
@@ -153,13 +175,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         : const <ApiVenue>[],
                   ),
                 ),
+                if (effectiveSelectedEventSlug == null)
+                  SliverToBoxAdapter(
+                    child: _buildMoodEventSlider(sliderEvents),
+                  ),
                 SliverToBoxAdapter(
-                  child: _buildMoodEventSlider(
-                    sliderEvents,
-                    includeSports: effectiveSelectedEventSlug != null,
+                  child: _buildPopularVenuesCarousel(
+                    venues: filteredVenues,
+                    allVenues: venues,
+                    effectiveSelectedActivitySlug:
+                        effectiveSelectedVenueActivitySlug,
                   ),
                 ),
-                SliverToBoxAdapter(child: _buildPopularVenuesCarousel(venues)),
                 SliverToBoxAdapter(
                   child: _buildTonightHomeSection(
                     selectedCity: selectedCity,
@@ -492,7 +519,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildPopularVenuesCarousel(List<ApiVenue> venues) {
+  Widget _buildPopularVenuesCarousel({
+    required List<ApiVenue> venues,
+    required List<ApiVenue> allVenues,
+    required String? effectiveSelectedActivitySlug,
+  }) {
     if (venues.isEmpty) return const SizedBox.shrink();
     final layout = context.layout;
     final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
@@ -531,6 +562,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ],
             ),
           ),
+          _buildPopularVenueFilterBar(
+            allVenues,
+            effectiveSelectedActivitySlug: effectiveSelectedActivitySlug,
+          ),
+          const SizedBox(height: 8),
           SizedBox(
             height: layout.fluid(154, 164, 178) + textHeightAllowance,
             child: ListView.separated(
@@ -556,6 +592,55 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPopularVenueFilterBar(
+    List<ApiVenue> venues, {
+    required String? effectiveSelectedActivitySlug,
+  }) {
+    final filters = _popularVenueActivityFilters(venues);
+    if (filters.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: AppLayout.minTouchTarget + 4,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: context.layout.screenPadding),
+        itemCount: filters.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final filter = index == 0 ? null : filters[index - 1];
+          final selected = filter == null
+              ? effectiveSelectedActivitySlug == null
+              : effectiveSelectedActivitySlug == filter.slug;
+          return AppFilterChoiceChip(
+            label: filter?.label ?? 'Popüler',
+            selected: selected,
+            onTap: () => setState(() {
+              _selectedVenueActivitySlug = filter?.slug;
+            }),
+          );
+        },
+      ),
+    );
+  }
+
+  List<_VenueActivityFilter> _popularVenueActivityFilters(
+    List<ApiVenue> venues,
+  ) {
+    final bySlug = <String, _VenueActivityFilter>{};
+    for (final venue in venues) {
+      for (final activity in venue.activitySummary) {
+        final slug = activity.activitySlug.trim();
+        final label = activity.activityName.trim();
+        if (slug.isEmpty || label.isEmpty || bySlug.containsKey(slug)) {
+          continue;
+        }
+        bySlug[slug] = _VenueActivityFilter(slug: slug, label: label);
+      }
+    }
+    return bySlug.values.take(10).toList();
   }
 
   Widget _buildMoodEventSlider(
@@ -597,7 +682,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              'Can sıkıntısına tatlı kaçamaklar',
+              'Sıkı can iyidir çabuk çıkmaz AMA',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -2502,6 +2587,13 @@ class _HomeSliderItem {
     required this.badge,
     required this.route,
   });
+}
+
+class _VenueActivityFilter {
+  final String slug;
+  final String label;
+
+  const _VenueActivityFilter({required this.slug, required this.label});
 }
 
 class _HorizontalActivitySkeleton extends StatelessWidget {

@@ -472,12 +472,15 @@ class _AdvancedDiscoverResultsScreenState
                   right: 8,
                   top: 8,
                   child: IconButton.filledTonal(
-                    tooltip: isFavorite ? 'Kaydedilenlerden çıkar' : 'Kaydet',
+                    tooltip: isFavorite
+                        ? 'Favorilerden çıkar'
+                        : 'Favoriye ekle',
                     onPressed: isBusy ? null : () => _toggleFavorite(venue),
                     icon: Icon(
                       isFavorite
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: BiCikalimTheme.primary,
                     ),
                   ),
                 ),

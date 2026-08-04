@@ -39,7 +39,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     final favoriteEventsAsync = ref.watch(favoriteEventsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Kaydedilenler')),
+      appBar: AppBar(title: const Text('Favorilerim')),
       body: Column(
         children: [
           Padding(
@@ -132,10 +132,10 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       return AppRefreshableContent(
         onRefresh: _refreshVenues,
         child: const AppEmptyState(
-          icon: Icons.bookmark_border,
-          title: 'Henüz kaydettiğin bir yer yok',
+          icon: Icons.favorite_border_rounded,
+          title: 'Henüz favori mekanın yok',
           message:
-              'Beğendiğin mekânları kaydederek daha sonra kolayca bulabilirsin.',
+              'Beğendiğin mekânları favorilerine ekleyerek daha sonra kolayca bulabilirsin.',
         ),
       );
     }
@@ -168,9 +168,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
         onRefresh: _refreshEvents,
         child: const AppEmptyState(
           icon: Icons.event_busy,
-          title: 'Henüz kaydettiğin bir etkinlik yok',
+          title: 'Henüz favori etkinliğin yok',
           message:
-              'İlgini çeken etkinlikleri kaydederek daha sonra hızlıca ulaşabilirsin.',
+              'İlgini çeken etkinlikleri favorilerine ekleyerek daha sonra hızlıca ulaşabilirsin.',
         ),
       );
     }

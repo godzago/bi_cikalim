@@ -311,8 +311,8 @@ class VenueCard extends StatelessWidget {
                 height: AppLayout.minTouchTarget,
                 child: Icon(
                   venue.isFavorite
-                      ? Icons.bookmark_rounded
-                      : Icons.bookmark_border,
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
                   color: BiCikalimTheme.primary,
                   size: 19,
                 ),
