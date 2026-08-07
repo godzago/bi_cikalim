@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
+import '../../../../shared/utils/app_url_launcher.dart';
 import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 
@@ -1174,15 +1174,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Future<void> _openDirections(ApiVenue venue) async {
     final url = venue.googleMapsUrl?.trim().isNotEmpty == true
         ? venue.googleMapsUrl!.trim()
-        : 'https://www.google.com/maps/search/?api=1&query=${venue.latitude},${venue.longitude}';
-    final uri = Uri.tryParse(url);
-    if (uri == null ||
-        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Yol tarifi açılamadı.')));
-    }
+        : venue.latitude != null && venue.longitude != null
+        ? 'https://www.google.com/maps/search/?api=1&query='
+              '${venue.latitude},${venue.longitude}'
+        : null;
+    await launchAppExternalUrl(
+      context: context,
+      rawUrl: url,
+      allowedSchemes: webUrlSchemes,
+      failureMessage: 'Yol tarifi açılamadı.',
+    );
   }
 
   IconData _getVenueIcon(String firstTag) {

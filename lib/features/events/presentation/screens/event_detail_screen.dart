@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
+import '../../../../shared/utils/app_url_launcher.dart';
 import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
@@ -86,11 +86,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Future<void> _openUrl(String? value) async {
-    final uri = value == null ? null : Uri.tryParse(value);
-    if (uri == null ||
-        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      _showError('Bağlantı açılamadı.');
-    }
+    await launchAppExternalUrl(
+      context: context,
+      rawUrl: value,
+      allowedSchemes: webUrlSchemes,
+      failureMessage: 'Bağlantı açılamadı.',
+    );
   }
 
   Future<void> _reportEvent(ApiEvent event) async {

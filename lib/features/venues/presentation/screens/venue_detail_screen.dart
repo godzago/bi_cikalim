@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
+import '../../../../shared/utils/app_url_launcher.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
 import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
@@ -394,22 +394,17 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
     }
   }
 
-  Future<void> _launchExternal(String? rawUrl) async {
-    if (rawUrl == null || rawUrl.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bu bilgi mekan için eklenmemiş.')),
-      );
-      return;
-    }
-    final uri = Uri.tryParse(rawUrl);
-    if (uri == null ||
-        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Bağlantı açılamadı.')));
-      }
-    }
+  Future<void> _launchExternal(
+    String? rawUrl, {
+    bool allowPhone = false,
+  }) async {
+    await launchAppExternalUrl(
+      context: context,
+      rawUrl: rawUrl,
+      allowedSchemes: allowPhone ? phoneUrlSchemes : webUrlSchemes,
+      emptyMessage: 'Bu bilgi mekan için eklenmemiş.',
+      failureMessage: 'Bağlantı açılamadı.',
+    );
   }
 
   Future<void> _launchDirections(ApiVenue venue) async {
@@ -646,7 +641,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen>
                                 _buildQuickAction(
                                   Icons.phone,
                                   'Ara',
-                                  () => _launchExternal('tel:${venue.phone}'),
+                                  () => _launchExternal(
+                                    'tel:${venue.phone}',
+                                    allowPhone: true,
+                                  ),
                                 ),
                               if (venue.websiteUrl != null &&
                                   venue.websiteUrl!.isNotEmpty)
