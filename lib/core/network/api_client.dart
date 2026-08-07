@@ -52,11 +52,13 @@ class ApiClient {
         onError: (error, handler) async {
           final requestId =
               error.response?.headers.value('x-request-id') ?? 'unknown';
-          debugPrint(
-            'API ${error.response?.statusCode ?? '-'} '
-            '${error.requestOptions.method} ${error.requestOptions.path} '
-            'requestId=$requestId',
-          );
+          if (kDebugMode) {
+            debugPrint(
+              'API ${error.response?.statusCode ?? '-'} '
+              '${error.requestOptions.method} ${error.requestOptions.path} '
+              'requestId=$requestId',
+            );
+          }
 
           if (_canRefresh(error)) {
             final accessToken = await _refreshAccessToken();

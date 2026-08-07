@@ -836,7 +836,9 @@ class AnalyticsApiService extends _ApiService {
     Map<String, dynamic> properties = const {},
   }) async {
     if (!AnalyticsEventName.values.contains(eventName)) {
-      debugPrint('Analytics event reddedildi: $eventName');
+      if (kDebugMode) {
+        debugPrint('Analytics event reddedildi: $eventName');
+      }
       return false;
     }
 
@@ -859,7 +861,11 @@ class AnalyticsApiService extends _ApiService {
       );
       return true;
     } catch (error) {
-      debugPrint('Analytics gönderilemedi: ${apiServiceException(error).code}');
+      if (kDebugMode) {
+        debugPrint(
+          'Analytics gönderilemedi: ${apiServiceException(error).code}',
+        );
+      }
       return false;
     }
   }

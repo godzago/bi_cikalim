@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,7 +79,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         await _getCurrentLocation();
       }
     } on Object catch (error) {
-      debugPrint('Error checking location permission: $error');
+      if (kDebugMode) {
+        debugPrint('Error checking location permission: $error');
+      }
     }
   }
 
@@ -150,7 +153,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error getting location: $e');
+      if (kDebugMode) {
+        debugPrint('Error getting location: $e');
+      }
     } finally {
       if (manageLoading && mounted) setState(() => _loadingLocation = false);
     }

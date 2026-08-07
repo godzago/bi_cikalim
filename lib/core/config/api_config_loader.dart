@@ -43,9 +43,11 @@ class ApiConfigLoader {
         _baseUrl = overrideUrl;
       }
     } catch (e) {
-      debugPrint(
-        'api_config.json yüklenirken hata oluştu, varsayılan değer kullanılıyor: $e',
-      );
+      if (kDebugMode) {
+        debugPrint(
+          'api_config.json yüklenirken hata oluştu, varsayılan değer kullanılıyor: $e',
+        );
+      }
     }
   }
 }

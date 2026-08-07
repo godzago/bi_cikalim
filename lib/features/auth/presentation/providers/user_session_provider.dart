@@ -120,7 +120,9 @@ class UserSessionNotifier extends AsyncNotifier<void> {
         _setActiveUser(user);
       }
     } catch (e) {
-      debugPrint('Kayıtlı oturum yüklenirken hata oluştu: $e');
+      if (kDebugMode) {
+        debugPrint('Kayıtlı oturum yüklenirken hata oluştu: $e');
+      }
       final tokenStillExists = await ApiClient.instance.getToken() != null;
       if (!tokenStillExists) {
         _clearActiveUser();
