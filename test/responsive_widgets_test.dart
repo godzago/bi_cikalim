@@ -1,6 +1,7 @@
 import 'package:bi_cikalim/shared/models/api_models.dart';
 import 'package:bi_cikalim/shared/widgets/app_empty_state.dart';
 import 'package:bi_cikalim/shared/widgets/app_error_state.dart';
+import 'package:bi_cikalim/shared/widgets/app_filter_controls.dart';
 import 'package:bi_cikalim/shared/widgets/app_refreshable_content.dart';
 import 'package:bi_cikalim/shared/widgets/category_card.dart';
 import 'package:bi_cikalim/shared/widgets/event_list_card.dart';
@@ -513,6 +514,53 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('filtre alt sayfası dar ekranda ve büyük yazıda taşma üretmez', (
+    tester,
+  ) async {
+    configureCompactView(tester);
+
+    await tester.pumpWidget(
+      testApp(
+        AppFilterSheet(
+          onClear: _noop,
+          onApply: _noop,
+          child: Column(
+            children: [
+              const AppFilterGroup(
+                title: 'Aktivite seçimi',
+                subtitle: 'Kategori seçtikçe seçenekler yenilenir.',
+                icon: Icons.local_activity_outlined,
+                child: SizedBox(height: 240),
+              ),
+              const SizedBox(height: 12),
+              AppFilterToggleTile(
+                title: 'Doğrulanmış mekanlar',
+                subtitle: 'Yalnızca bilgileri onaylanmış mekanları göster.',
+                icon: Icons.verified_outlined,
+                value: false,
+                onChanged: _noopBool,
+              ),
+              const SizedBox(height: 10),
+              AppFilterToggleTile(
+                title: 'Konumu belli mekanlar',
+                subtitle: 'Haritada görüntülenebilen mekanlarla sınırla.',
+                icon: Icons.location_on_outlined,
+                value: true,
+                onChanged: _noopBool,
+              ),
+            ],
+          ),
+        ),
+        textScale: 1.5,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Filtreler'), findsOneWidget);
+    expect(find.text('Filtreleri Uygula'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('harita mekan alt kartı 320 px ve 1.5 yazı ölçeğinde taşmaz', (
     tester,
   ) async {
@@ -594,6 +642,8 @@ void main() {
 }
 
 void _noop() {}
+
+void _noopBool(bool _) {}
 
 const _eskisehir = ApiLocationSummary(
   id: 'city',

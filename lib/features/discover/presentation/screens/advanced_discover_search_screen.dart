@@ -399,6 +399,13 @@ class _AdvancedDiscoverSearchScreenState
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      useSafeArea: true,
+      backgroundColor: const Color(0xFFFFFBF9),
+      barrierColor: Colors.black.withValues(alpha: .46),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      clipBehavior: Clip.antiAlias,
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -447,108 +454,136 @@ class _AdvancedDiscoverSearchScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      categoriesAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, _) =>
-                            Text('Kategoriler yüklenemedi: $error'),
-                        data: (categories) => DropdownButtonFormField<String>(
-                          initialValue: draftCategorySlug,
-                          decoration: const InputDecoration(
-                            labelText: 'Aktivite kategorisi',
-                          ),
-                          items: [
-                            const DropdownMenuItem<String>(
-                              value: null,
-                              child: Text('Tümü'),
-                            ),
-                            ...categories.map(
-                              (category) => DropdownMenuItem<String>(
-                                value: category.slug,
-                                child: Text(category.name),
-                              ),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            setSheetState(() {
-                              draftCategorySlug = value;
-                              draftSubcategorySlug = null;
-                              draftActivitySlug = null;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      subcategoriesAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, _) =>
-                            Text('Alt kategoriler yüklenemedi: $error'),
-                        data: (subcategories) =>
-                            DropdownButtonFormField<String>(
-                              initialValue: draftSubcategorySlug,
-                              decoration: const InputDecoration(
-                                labelText: 'Alt kategori',
-                              ),
-                              items: [
-                                const DropdownMenuItem<String>(
-                                  value: null,
-                                  child: Text('Tümü'),
-                                ),
-                                ...subcategories.map(
-                                  (subcategory) => DropdownMenuItem<String>(
-                                    value: subcategory.slug,
-                                    child: Text(subcategory.name),
+                      AppFilterGroup(
+                        title: 'Aktivite seçimi',
+                        subtitle:
+                            'Kategori seçtikçe alt seçenekler sana göre yenilenir.',
+                        icon: Icons.local_activity_outlined,
+                        child: Column(
+                          children: [
+                            categoriesAsync.when(
+                              loading: () => const LinearProgressIndicator(),
+                              error: (error, _) =>
+                                  Text('Kategoriler yüklenemedi: $error'),
+                              data: (categories) =>
+                                  DropdownButtonFormField<String>(
+                                    initialValue: draftCategorySlug,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Aktivite kategorisi',
+                                      prefixIcon: Icon(Icons.category_outlined),
+                                    ),
+                                    isExpanded: true,
+                                    items: [
+                                      const DropdownMenuItem<String>(
+                                        value: null,
+                                        child: Text('Tümü'),
+                                      ),
+                                      ...categories.map(
+                                        (category) => DropdownMenuItem<String>(
+                                          value: category.slug,
+                                          child: Text(category.name),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      setSheetState(() {
+                                        draftCategorySlug = value;
+                                        draftSubcategorySlug = null;
+                                        draftActivitySlug = null;
+                                      });
+                                    },
                                   ),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setSheetState(() {
-                                  draftSubcategorySlug = value;
-                                  draftActivitySlug = null;
-                                });
-                              },
                             ),
-                      ),
-                      const SizedBox(height: 12),
-                      activitiesAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, _) =>
-                            Text('Aktiviteler yüklenemedi: $error'),
-                        data: (activities) => DropdownButtonFormField<String>(
-                          initialValue: draftActivitySlug,
-                          decoration: const InputDecoration(
-                            labelText: 'Aktivite',
-                          ),
-                          items: [
-                            const DropdownMenuItem<String>(
-                              value: null,
-                              child: Text('Tümü'),
+                            const SizedBox(height: 12),
+                            subcategoriesAsync.when(
+                              loading: () => const LinearProgressIndicator(),
+                              error: (error, _) =>
+                                  Text('Alt kategoriler yüklenemedi: $error'),
+                              data: (subcategories) =>
+                                  DropdownButtonFormField<String>(
+                                    initialValue: draftSubcategorySlug,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Alt kategori',
+                                      prefixIcon: Icon(
+                                        Icons.account_tree_outlined,
+                                      ),
+                                    ),
+                                    isExpanded: true,
+                                    items: [
+                                      const DropdownMenuItem<String>(
+                                        value: null,
+                                        child: Text('Tümü'),
+                                      ),
+                                      ...subcategories.map(
+                                        (subcategory) =>
+                                            DropdownMenuItem<String>(
+                                              value: subcategory.slug,
+                                              child: Text(subcategory.name),
+                                            ),
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      setSheetState(() {
+                                        draftSubcategorySlug = value;
+                                        draftActivitySlug = null;
+                                      });
+                                    },
+                                  ),
                             ),
-                            ...activities.map(
-                              (activity) => DropdownMenuItem<String>(
-                                value: activity.slug,
-                                child: Text(activity.name),
-                              ),
+                            const SizedBox(height: 12),
+                            activitiesAsync.when(
+                              loading: () => const LinearProgressIndicator(),
+                              error: (error, _) =>
+                                  Text('Aktiviteler yüklenemedi: $error'),
+                              data: (activities) =>
+                                  DropdownButtonFormField<String>(
+                                    initialValue: draftActivitySlug,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Aktivite',
+                                      prefixIcon: Icon(Icons.sports_outlined),
+                                    ),
+                                    isExpanded: true,
+                                    items: [
+                                      const DropdownMenuItem<String>(
+                                        value: null,
+                                        child: Text('Tümü'),
+                                      ),
+                                      ...activities.map(
+                                        (activity) => DropdownMenuItem<String>(
+                                          value: activity.slug,
+                                          child: Text(activity.name),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (value) {
+                                      setSheetState(() {
+                                        draftActivitySlug = value;
+                                      });
+                                    },
+                                  ),
                             ),
                           ],
-                          onChanged: (value) {
-                            setSheetState(() {
-                              draftActivitySlug = value;
-                            });
-                          },
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      SwitchListTile(
+                      const SizedBox(height: 14),
+                      AppFilterSectionTitle('Mekan tercihleri'),
+                      const SizedBox(height: 8),
+                      AppFilterToggleTile(
                         value: draftIsVerified,
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Doğrulanmış mekanlar'),
+                        icon: Icons.verified_outlined,
+                        title: 'Doğrulanmış mekanlar',
+                        subtitle:
+                            'Yalnızca bilgileri onaylanmış mekanları göster.',
                         onChanged: (value) =>
                             setSheetState(() => draftIsVerified = value),
                       ),
-                      SwitchListTile(
+                      const SizedBox(height: 10),
+                      AppFilterToggleTile(
                         value: draftHasCoordinates,
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Konum bilgisi bulunanlar'),
+                        icon: Icons.location_on_outlined,
+                        title: 'Konumu belli mekanlar',
+                        subtitle:
+                            'Haritada görüntülenebilen mekanlarla sınırla.',
                         onChanged: (value) =>
                             setSheetState(() => draftHasCoordinates = value),
                       ),
