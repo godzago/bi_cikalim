@@ -1,5 +1,7 @@
 import 'package:bi_cikalim/core/network/api_client.dart';
+import 'package:bi_cikalim/core/errors/app_exception.dart';
 import 'package:bi_cikalim/core/services/api_services.dart';
+import 'package:bi_cikalim/shared/widgets/app_error_state.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -87,6 +89,27 @@ void main() {
       );
 
       expect(exception.message, 'İnternet bağlantınızı kontrol edin.');
+    });
+  });
+
+  group('friendlyErrorMessage', () {
+    test('422 servis doğrulama mesajını korur', () {
+      const error = ServiceException(
+        message: 'Kullanıcı adı zaten kullanılıyor.',
+        statusCode: 422,
+      );
+
+      expect(friendlyErrorMessage(error), 'Kullanıcı adı zaten kullanılıyor.');
+    });
+
+    test('ham mutation hatası yerine verilen fallback mesajını kullanır', () {
+      expect(
+        friendlyErrorMessage(
+          StateError('internal implementation detail'),
+          fallback: 'İşlem tamamlanamadı.',
+        ),
+        'İşlem tamamlanamadı.',
+      );
     });
   });
 

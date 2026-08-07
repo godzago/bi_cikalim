@@ -6,6 +6,7 @@ import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../providers/user_session_provider.dart';
 
 /// Yeni kullanıcı kayıt ekranı.
@@ -38,7 +39,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _signUp() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isLoading) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isLoading = true);
     try {
@@ -58,9 +60,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       } else {
         context.go(AppConstants.citySelectRoute);
       }
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      _showError(
+        friendlyErrorMessage(
+          error,
+          fallback: 'Hesap oluşturulamadı. Lütfen tekrar deneyin.',
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

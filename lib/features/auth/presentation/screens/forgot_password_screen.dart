@@ -6,6 +6,7 @@ import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 
 /// Şifremi unuttum ekranı.
 /// E-posta adresi girerek şifre sıfırlama linki alır.
@@ -30,7 +31,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   Future<void> _sendResetEmail() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isLoading) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isLoading = true);
     try {
@@ -42,12 +44,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         _emailSent = true;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(
+            friendlyErrorMessage(
+              error,
+              fallback:
+                  'Şifre sıfırlama e-postası gönderilemedi. Lütfen tekrar deneyin.',
+            ),
+          ),
           backgroundColor: BiCikalimTheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(

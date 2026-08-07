@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
 enum SubmissionType { venueSuggestion, ownership, taxonomy }
@@ -106,7 +107,7 @@ class _SubmissionScreenState extends ConsumerState<SubmissionScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);

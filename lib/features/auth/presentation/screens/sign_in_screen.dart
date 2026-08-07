@@ -6,6 +6,7 @@ import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../providers/user_session_provider.dart';
 
 /// Email / şifre giriş ekranı.
@@ -34,7 +35,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _signIn() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_isLoading) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isLoading = true);
     try {
       await ref
@@ -53,9 +55,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       } else {
         context.go(AppConstants.discoverRoute);
       }
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      _showError(
+        friendlyErrorMessage(
+          error,
+          fallback: 'Giriş yapılamadı. Lütfen tekrar deneyin.',
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

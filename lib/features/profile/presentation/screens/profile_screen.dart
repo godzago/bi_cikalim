@@ -7,6 +7,7 @@ import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
 /// Kullanıcı profil ekranı.
@@ -404,7 +405,9 @@ class ProfileScreen extends ConsumerWidget {
                       } catch (error) {
                         if (dialogContext.mounted) {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(content: Text(error.toString())),
+                            SnackBar(
+                              content: Text(friendlyErrorMessage(error)),
+                            ),
                           );
                           setDialogState(() => saving = false);
                         }
