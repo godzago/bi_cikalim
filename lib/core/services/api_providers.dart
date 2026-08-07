@@ -1023,8 +1023,11 @@ class SearchFilters {
   int get hashCode => Object.hash(query, citySlug, limit);
 }
 
-final searchResultsProvider =
-    FutureProvider.family<ApiSearchResult, SearchFilters>((ref, filters) async {
+final searchResultsProvider = FutureProvider.autoDispose
+    .family<ApiSearchResult, SearchFilters>((ref, filters) async {
+      var isDisposed = false;
+      ref.onDispose(() => isDisposed = true);
+
       final result = await ref
           .read(searchApiServiceProvider)
           .search(
@@ -1032,6 +1035,8 @@ final searchResultsProvider =
             citySlug: filters.citySlug,
             limit: filters.limit,
           );
+      if (isDisposed) return result;
+
       ref
           .read(analyticsApiServiceProvider)
           .track(
