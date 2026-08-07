@@ -21,10 +21,6 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   String? _selectedEventSlug;
   String? _selectedVenueActivitySlug;
-  String? _mapCategorySlug;
-  String? _mapSubcategorySlug;
-  String? _mapActivitySlug;
-  bool _mapVerifiedOnly = false;
   int _sliderIndex = 0;
   int _eventSliderIndex = 0;
 
@@ -684,7 +680,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     List<ApiEvent> events, {
     bool includeSports = false,
   }) {
-    final items = events
+    final items = events.reversed
         .where((event) => event.imageUrl.trim().isNotEmpty)
         .where((event) => includeSports || !_isSportEvent(event))
         .take(6)
@@ -719,7 +715,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              'Sıkı can iyidir çabuk çıkmaz AMA',
+              'Sıcı Cana iyi gider',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -1260,7 +1256,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildNearbyMapSection({required ApiCity? selectedCity}) {
     final hasCity = selectedCity != null;
-    final activeFilterCount = _mapActiveFilterCount;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -1350,15 +1345,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _MapCardAction(
-                              tooltip: 'Harita filtreleri',
-                              child: AppFilterButton(
-                                onPressed: _showMapFilterSheet,
-                                activeCount: activeFilterCount,
-                                iconOnly: true,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _MapCardAction(
                               tooltip: hasCity
                                   ? 'Haritada göster'
                                   : 'Şehir seç',
@@ -1385,15 +1371,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  int get _mapActiveFilterCount {
-    var count = 0;
-    if (_mapCategorySlug != null) count++;
-    if (_mapSubcategorySlug != null) count++;
-    if (_mapActivitySlug != null) count++;
-    if (_mapVerifiedOnly) count++;
-    return count;
-  }
-
   void _openMap(ApiCity? selectedCity) {
     if (selectedCity == null) {
       context.go('/profile');
@@ -1403,213 +1380,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   String _mapRoute(ApiCity selectedCity) {
-    final queryParameters = <String, String>{
-      'citySlug': selectedCity.slug,
-      'activityCategorySlug': ?_mapCategorySlug,
-      'activitySubCategorySlug': ?_mapSubcategorySlug,
-      'activitySlug': ?_mapActivitySlug,
-      if (_mapVerifiedOnly) 'isVerified': 'true',
-    };
-
-    return Uri(path: '/map', queryParameters: queryParameters).toString();
-  }
-
-  Future<void> _showMapFilterSheet() async {
-    var draftCategorySlug = _mapCategorySlug;
-    var draftSubcategorySlug = _mapSubcategorySlug;
-    var draftActivitySlug = _mapActivitySlug;
-    var draftVerifiedOnly = _mapVerifiedOnly;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Consumer(
-              builder: (context, ref, _) {
-                final categoriesAsync = ref.watch(categoriesProvider);
-                final subcategoriesAsync = ref.watch(
-                  subcategoriesProvider(draftCategorySlug),
-                );
-                final activitiesAsync = ref.watch(
-                  filteredActivitiesProvider(
-                    ActivityFilters(
-                      categorySlug: draftCategorySlug,
-                      subcategorySlug: draftSubcategorySlug,
-                    ),
-                  ),
-                );
-                final hasDraftFilters =
-                    draftCategorySlug != null ||
-                    draftSubcategorySlug != null ||
-                    draftActivitySlug != null ||
-                    draftVerifiedOnly;
-
-                return AppFilterSheet(
-                  title: 'Harita filtreleri',
-                  subtitle: 'Haritada göreceğin mekanları daralt.',
-                  clearEnabled: hasDraftFilters,
-                  onClear: () => setSheetState(() {
-                    draftCategorySlug = null;
-                    draftSubcategorySlug = null;
-                    draftActivitySlug = null;
-                    draftVerifiedOnly = false;
-                  }),
-                  onApply: () {
-                    setState(() {
-                      _mapCategorySlug = draftCategorySlug;
-                      _mapSubcategorySlug = draftSubcategorySlug;
-                      _mapActivitySlug = draftActivitySlug;
-                      _mapVerifiedOnly = draftVerifiedOnly;
-                    });
-                    Navigator.pop(sheetContext);
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      categoriesAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, _) => const Text(
-                          'Kategoriler yüklenemedi. Tekrar deneyebilirsin.',
-                        ),
-                        data: (categories) {
-                          final selectedValue =
-                              categories.any(
-                                (category) =>
-                                    category.slug == draftCategorySlug,
-                              )
-                              ? draftCategorySlug
-                              : null;
-
-                          return DropdownButtonFormField<String>(
-                            initialValue: selectedValue,
-                            decoration: const InputDecoration(
-                              labelText: 'Aktivite kategorisi',
-                            ),
-                            items: [
-                              const DropdownMenuItem<String>(
-                                value: null,
-                                child: Text('Tümü'),
-                              ),
-                              ...categories.map(
-                                (category) => DropdownMenuItem<String>(
-                                  value: category.slug,
-                                  child: Text(category.name),
-                                ),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setSheetState(() {
-                                draftCategorySlug = value;
-                                draftSubcategorySlug = null;
-                                draftActivitySlug = null;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      subcategoriesAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, _) =>
-                            const Text('Alt kategoriler yüklenemedi.'),
-                        data: (subcategories) {
-                          final selectedValue =
-                              subcategories.any(
-                                (subcategory) =>
-                                    subcategory.slug == draftSubcategorySlug,
-                              )
-                              ? draftSubcategorySlug
-                              : null;
-
-                          return DropdownButtonFormField<String>(
-                            initialValue: selectedValue,
-                            decoration: const InputDecoration(
-                              labelText: 'Alt kategori',
-                            ),
-                            items: [
-                              const DropdownMenuItem<String>(
-                                value: null,
-                                child: Text('Tümü'),
-                              ),
-                              ...subcategories.map(
-                                (subcategory) => DropdownMenuItem<String>(
-                                  value: subcategory.slug,
-                                  child: Text(subcategory.name),
-                                ),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setSheetState(() {
-                                draftSubcategorySlug = value;
-                                draftActivitySlug = null;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      activitiesAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (error, _) =>
-                            const Text('Aktiviteler yüklenemedi.'),
-                        data: (activities) {
-                          final selectedValue =
-                              activities.any(
-                                (activity) =>
-                                    activity.slug == draftActivitySlug,
-                              )
-                              ? draftActivitySlug
-                              : null;
-
-                          return DropdownButtonFormField<String>(
-                            initialValue: selectedValue,
-                            decoration: const InputDecoration(
-                              labelText: 'Aktivite',
-                            ),
-                            items: [
-                              const DropdownMenuItem<String>(
-                                value: null,
-                                child: Text('Tümü'),
-                              ),
-                              ...activities.map(
-                                (activity) => DropdownMenuItem<String>(
-                                  value: activity.slug,
-                                  child: Text(activity.name),
-                                ),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setSheetState(() {
-                                draftActivitySlug = value;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchListTile(
-                        value: draftVerifiedOnly,
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Doğrulanmış mekanlar'),
-                        subtitle: const Text(
-                          'Sadece onaylı mekanları haritada göster.',
-                        ),
-                        onChanged: (value) =>
-                            setSheetState(() => draftVerifiedOnly = value),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
+    return Uri(
+      path: '/map',
+      queryParameters: {'citySlug': selectedCity.slug},
+    ).toString();
   }
 
   Widget _buildFeedTitle({
