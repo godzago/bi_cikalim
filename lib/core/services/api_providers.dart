@@ -43,19 +43,95 @@ final cityDetailProvider = FutureProvider.family<ApiCity, String>(
   (ref, slug) => ref.read(userApiServiceProvider).fetchCity(slug),
 );
 
-class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
-  static const _storage = FlutterSecureStorage();
+class SelectedCityStorage {
+  final FlutterSecureStorage _storage;
+
+  const SelectedCityStorage([this._storage = const FlutterSecureStorage()]);
+
   static const _citySlugKey = 'selected_city_slug';
   static const _cityCacheKey = 'selected_city_cache';
 
+  Future<String?> readSlug() => _storage.read(key: _citySlugKey);
+
+  Future<ApiCity?> readCachedCity() async {
+    final raw = await _storage.read(key: _cityCacheKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return ApiCity.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Cache is written before the slug so an interrupted write never points
+  /// startup at a new city with an old cache fallback.
+  Future<void> persist(ApiCity city) async {
+    await _storage.write(
+      key: _cityCacheKey,
+      value: jsonEncode(_cityToJson(city)),
+    );
+    await _storage.write(key: _citySlugKey, value: city.slug);
+  }
+
+  /// Best-effort restore that always attempts both keys, even if one storage
+  /// operation fails.
+  Future<void> restore(ApiCity? city) async {
+    Object? firstError;
+    StackTrace? firstStackTrace;
+
+    Future<void> attempt(Future<void> Function() operation) async {
+      try {
+        await operation();
+      } catch (error, stackTrace) {
+        firstError ??= error;
+        firstStackTrace ??= stackTrace;
+      }
+    }
+
+    if (city == null) {
+      await attempt(() => _storage.delete(key: _cityCacheKey));
+      await attempt(() => _storage.delete(key: _citySlugKey));
+    } else {
+      await attempt(
+        () => _storage.write(
+          key: _cityCacheKey,
+          value: jsonEncode(_cityToJson(city)),
+        ),
+      );
+      await attempt(() => _storage.write(key: _citySlugKey, value: city.slug));
+    }
+
+    if (firstError != null) {
+      Error.throwWithStackTrace(firstError!, firstStackTrace!);
+    }
+  }
+
+  Map<String, dynamic> _cityToJson(ApiCity city) => {
+    'id': city.id,
+    'name': city.name,
+    'slug': city.slug,
+    'plate_code': city.plateCode,
+    'country_code': city.countryCode,
+    'has_content': city.hasContent,
+    'launch_status': city.launchStatus,
+    'empty_state_title': city.emptyStateTitle,
+    'empty_state_description': city.emptyStateDescription,
+  };
+}
+
+class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
+  final SelectedCityStorage _storage;
+
+  SelectedCityNotifier([this._storage = const SelectedCityStorage()]);
+
   @override
   Future<ApiCity?> build() async {
-    final slug = await _storage.read(key: _citySlugKey);
-    final cached = await _readCachedCity();
+    final slug = await _storage.readSlug();
+    final cached = await _storage.readCachedCity();
     if (slug == null || slug.isEmpty) return cached;
     try {
       final city = await ref.read(userApiServiceProvider).fetchCity(slug);
-      await _persist(city);
+      await _storage.persist(city);
       return city;
     } catch (_) {
       // Geçici ağ hatasında kullanıcının şehir tercihini silme.
@@ -65,25 +141,27 @@ class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
 
   Future<void> select(ApiCity city) async {
     final previous = state;
+    final previousCity = previous.value;
     state = AsyncData(city);
     try {
-      await _storage.write(key: _citySlugKey, value: city.slug);
-      await _storage.write(
-        key: _cityCacheKey,
-        value: jsonEncode(_cityToJson(city)),
-      );
       if (await ApiClient.instance.getToken() != null) {
         await ref.read(userApiServiceProvider).updateSelectedCity(city.id);
       }
+      await _storage.persist(city);
     } catch (error, stackTrace) {
+      try {
+        await _storage.restore(previousCity);
+      } on Object {
+        // Preserve the operation's original error. restore() still attempts
+        // both keys before reporting its own storage failure.
+      }
       state = previous;
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
   Future<void> clear() async {
-    await _storage.delete(key: _citySlugKey);
-    await _storage.delete(key: _cityCacheKey);
+    await _storage.restore(null);
     state = const AsyncData(null);
   }
 
@@ -101,7 +179,7 @@ class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
       for (final city in response.items) {
         if (city.id == cityId) {
           state = AsyncData(city);
-          await _persist(city);
+          await _storage.persist(city);
           return city;
         }
       }
@@ -110,41 +188,11 @@ class SelectedCityNotifier extends AsyncNotifier<ApiCity?> {
     }
     return null;
   }
-
-  Future<void> _persist(ApiCity city) async {
-    await _storage.write(key: _citySlugKey, value: city.slug);
-    await _storage.write(
-      key: _cityCacheKey,
-      value: jsonEncode(_cityToJson(city)),
-    );
-  }
-
-  Future<ApiCity?> _readCachedCity() async {
-    final raw = await _storage.read(key: _cityCacheKey);
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      return ApiCity.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    } on Object {
-      return null;
-    }
-  }
-
-  Map<String, dynamic> _cityToJson(ApiCity city) => {
-    'id': city.id,
-    'name': city.name,
-    'slug': city.slug,
-    'plate_code': city.plateCode,
-    'country_code': city.countryCode,
-    'has_content': city.hasContent,
-    'launch_status': city.launchStatus,
-    'empty_state_title': city.emptyStateTitle,
-    'empty_state_description': city.emptyStateDescription,
-  };
 }
 
 final selectedCityProvider =
     AsyncNotifierProvider<SelectedCityNotifier, ApiCity?>(
-      SelectedCityNotifier.new,
+      () => SelectedCityNotifier(),
     );
 
 final categoriesProvider = FutureProvider<List<ApiCategory>>((ref) {
