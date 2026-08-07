@@ -118,7 +118,7 @@ class ApiClient {
         return AuthSession.fromJson(
           jsonDecode(encoded) as Map<String, dynamic>,
         );
-      } on FormatException {
+      } on Object {
         await clearSession();
       }
     }

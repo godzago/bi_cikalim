@@ -905,37 +905,88 @@ ServiceException apiServiceException(Object error) {
   if (error is ServiceException) return error;
   if (error is DioException) {
     final response = error.response;
-    final responseData = response?.data;
-    final data = responseData is Map<String, dynamic>
-        ? responseData
-        : const <String, dynamic>{};
-    final errorBody = data['error'] is Map<String, dynamic>
-        ? data['error'] as Map<String, dynamic>
-        : const <String, dynamic>{};
     final statusCode = response?.statusCode;
-    final fallbackMessage = switch (statusCode) {
-      401 => 'Oturumunuz sona erdi. Lütfen tekrar giriş yapın.',
-      403 => 'Bu işlem için yetkiniz bulunmuyor.',
-      404 => 'İstenen kayıt bulunamadı.',
-      409 => 'Bu işlem mevcut kayıtla çakışıyor.',
-      422 => 'Gönderilen bilgileri kontrol edin.',
-      429 => 'Çok fazla istek gönderildi. Lütfen biraz bekleyin.',
-      _ =>
-        error.type == DioExceptionType.connectionTimeout ||
-                error.type == DioExceptionType.receiveTimeout
-            ? 'API bağlantısı zaman aşımına uğradı.'
-            : 'API sunucusuna bağlanılamadı.',
-    };
-    return ServiceException(
-      message:
-          errorBody['message'] as String? ??
-          data['detail'] as String? ??
-          fallbackMessage,
-      code: errorBody['code'] as String? ?? 'api_error',
-      statusCode: statusCode,
-      requestId: response?.headers.value('x-request-id'),
-      details: errorBody['details'] ?? data['detail'],
-    );
+    final fallbackMessage = _dioFallbackMessage(error, statusCode);
+
+    try {
+      final data = response?.data;
+      final body = data is Map ? data : const <String, dynamic>{};
+      final rawErrorBody = body['error'];
+      final errorBody = rawErrorBody is Map
+          ? rawErrorBody
+          : const <String, dynamic>{};
+      final detail = body['detail'];
+
+      return ServiceException(
+        message:
+            _apiErrorText(errorBody['message']) ??
+            _apiErrorText(detail) ??
+            fallbackMessage,
+        code: _apiPrimitiveText(errorBody['code']) ?? 'api_error',
+        statusCode: statusCode,
+        requestId: response?.headers.value('x-request-id'),
+        details: errorBody['details'] ?? detail,
+      );
+    } on Object {
+      // Hata gövdesi beklenmedik bir tipte olsa da Dio hatasını UI'a
+      // dönüştürmek ikinci bir exception üretmemeli.
+      return ServiceException(
+        message: fallbackMessage,
+        code: 'api_error',
+        statusCode: statusCode,
+        requestId: response?.headers.value('x-request-id'),
+      );
+    }
   }
   return ServiceException(message: error.toString(), code: 'unexpected_error');
+}
+
+String _dioFallbackMessage(DioException error, int? statusCode) {
+  return switch (statusCode) {
+    401 => 'Oturumunuz sona erdi. Lütfen tekrar giriş yapın.',
+    403 => 'Bu işlem için yetkiniz bulunmuyor.',
+    404 => 'İstenen kayıt bulunamadı.',
+    409 => 'Bu işlem mevcut kayıtla çakışıyor.',
+    422 => 'Gönderilen bilgileri kontrol edin.',
+    429 => 'Çok fazla istek gönderildi. Lütfen biraz bekleyin.',
+    500 => 'Sunucuda bir hata oluştu. Lütfen daha sonra tekrar deneyin.',
+    _ => switch (error.type) {
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout => 'API bağlantısı zaman aşımına uğradı.',
+      DioExceptionType.connectionError => 'İnternet bağlantınızı kontrol edin.',
+      _ => 'API sunucusuna bağlanılamadı.',
+    },
+  };
+}
+
+String? _apiPrimitiveText(Object? value) {
+  if (value is String) {
+    final text = value.trim();
+    return text.isEmpty ? null : text;
+  }
+  if (value is num || value is bool) return value.toString();
+  return null;
+}
+
+String? _apiErrorText(Object? value) {
+  final primitive = _apiPrimitiveText(value);
+  if (primitive != null) return primitive;
+
+  if (value is Map) {
+    return _apiErrorText(value['message']) ??
+        _apiErrorText(value['msg']) ??
+        _apiErrorText(value['detail']);
+  }
+
+  if (value is List) {
+    final messages = value
+        .map(_apiErrorText)
+        .whereType<String>()
+        .where((message) => message.isNotEmpty)
+        .toList();
+    return messages.isEmpty ? null : messages.join('\n');
+  }
+
+  return null;
 }
