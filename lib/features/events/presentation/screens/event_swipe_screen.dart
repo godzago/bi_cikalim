@@ -9,6 +9,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/widgets/app_empty_state.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_refreshable_content.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -160,7 +161,7 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
   @override
   Widget build(BuildContext context) {
     final citySlug = ref.watch(selectedCityProvider).value?.slug;
-    final filters = EventFilters(citySlug: citySlug);
+    final filters = _eventSwipeDayFilters(citySlug: citySlug);
     final provider = eventsListProvider(filters);
     final eventsAsync = ref.watch(provider);
 
@@ -187,11 +188,10 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
           error: (error, _) => AppRefreshableContent(
             key: const ValueKey('event-swipe-error'),
             onRefresh: refreshEvents,
-            child: AppEmptyState(
-              icon: Icons.cloud_off,
-              message: 'Etkinlikler yüklenemedi.\n$error',
-              actionLabel: 'Tekrar Dene',
-              onAction: () => ref.invalidate(provider),
+            child: AppErrorState(
+              error: error,
+              fallbackMessage: 'Etkinlikleri şu anda yükleyemedik.',
+              onRetry: () => ref.invalidate(provider),
             ),
           ),
           data: (allEvents) {
@@ -546,6 +546,25 @@ class _EventSwipeScreenState extends ConsumerState<EventSwipeScreen>
       },
     );
   }
+}
+
+/// Keeps the swipe request bounded to the local calendar day shown by the UI.
+///
+/// The end is the last microsecond before the next local midnight. The
+/// client-side date check remains the final guard for backend/timezone drift.
+EventFilters _eventSwipeDayFilters({String? citySlug, DateTime? now}) {
+  final localNow = now ?? DateTime.now();
+  final dayStart = DateTime(localNow.year, localNow.month, localNow.day);
+  final nextDayStart = DateTime(
+    localNow.year,
+    localNow.month,
+    localNow.day + 1,
+  );
+  return EventFilters(
+    citySlug: citySlug,
+    dateFrom: dayStart,
+    dateTo: nextDayStart.subtract(const Duration(microseconds: 1)),
+  );
 }
 
 enum _SwipeDirection { left, right }
