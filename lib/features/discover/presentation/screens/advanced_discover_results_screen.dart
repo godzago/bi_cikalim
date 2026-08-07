@@ -65,11 +65,11 @@ class _AdvancedDiscoverResultsScreenState
   final _favoriteOverrides = <String, bool>{};
   final _favoriteBusy = <String>{};
 
-  late String? _activityCategorySlug = widget.activityCategorySlug;
-  late String? _activitySubCategorySlug = widget.activitySubCategorySlug;
-  late String? _activitySlug = widget.scope == null
-      ? widget.activitySlug
-      : null;
+  late String? _activityCategorySlug =
+      widget.activityCategorySlug ?? widget.categorySlug;
+  late String? _activitySubCategorySlug =
+      widget.activitySubCategorySlug ?? widget.subcategorySlug;
+  late String? _activitySlug = widget.activitySlug;
   late bool? _hasCoordinates = widget.hasCoordinates;
   late bool? _isVerified = widget.isVerified;
 
@@ -80,6 +80,7 @@ class _AdvancedDiscoverResultsScreenState
   int _page = 1;
   int _pages = 1;
   int _total = 0;
+  int _requestGeneration = 0;
 
   bool get _isEvents => widget.type == 'events';
   bool get _canLoadMore => !_loadingMore && _page < _pages;
@@ -115,8 +116,11 @@ class _AdvancedDiscoverResultsScreenState
   }
 
   Future<void> _loadFirstPage() async {
+    if (!mounted) return;
+    final generation = ++_requestGeneration;
     setState(() {
       _initialLoading = true;
+      _loadingMore = false;
       _error = null;
       _needsCity = false;
       _page = 1;
@@ -125,7 +129,7 @@ class _AdvancedDiscoverResultsScreenState
       _venues.clear();
       _events.clear();
     });
-    await _loadPage(1, replace: true);
+    await _loadPage(1, replace: true, generation: generation);
   }
 
   Future<void> _refresh() async {
@@ -134,16 +138,25 @@ class _AdvancedDiscoverResultsScreenState
 
   Future<void> _loadNextPage() async {
     if (!_canLoadMore) return;
+    final generation = _requestGeneration;
     setState(() => _loadingMore = true);
-    await _loadPage(_page + 1, replace: false);
+    await _loadPage(_page + 1, replace: false, generation: generation);
   }
 
-  Future<void> _loadPage(int page, {required bool replace}) async {
+  bool _isCurrentRequest(int generation) {
+    return mounted && generation == _requestGeneration;
+  }
+
+  Future<void> _loadPage(
+    int page, {
+    required bool replace,
+    required int generation,
+  }) async {
     try {
       final selectedCity = await ref.read(selectedCityProvider.future);
+      if (!_isCurrentRequest(generation)) return;
       final citySlug = selectedCity?.slug ?? widget.citySlug;
       if (!_isEvents && widget.scope != null && citySlug == null) {
-        if (!mounted) return;
         setState(() {
           _needsCity = true;
           _initialLoading = false;
@@ -162,10 +175,13 @@ class _AdvancedDiscoverResultsScreenState
               activitySlug: widget.activitySlug,
               q: widget.query,
             );
-        if (!mounted) return;
+        if (!_isCurrentRequest(generation)) return;
         setState(() {
           if (replace) _events.clear();
-          _events.addAll(response.items);
+          final seenIds = _events.map((event) => event.id).toSet();
+          _events.addAll(
+            response.items.where((event) => seenIds.add(event.id)),
+          );
           _page = response.page;
           _pages = response.pages;
           _total = response.total;
@@ -176,10 +192,11 @@ class _AdvancedDiscoverResultsScreenState
       }
 
       final response = await _loadVenuePage(page, citySlug);
-      if (!mounted) return;
+      if (!_isCurrentRequest(generation)) return;
       setState(() {
         if (replace) _venues.clear();
-        _venues.addAll(response.items);
+        final seenIds = _venues.map((venue) => venue.id).toSet();
+        _venues.addAll(response.items.where((venue) => seenIds.add(venue.id)));
         _page = response.page;
         _pages = response.pages;
         _total = response.total;
@@ -205,7 +222,7 @@ class _AdvancedDiscoverResultsScreenState
             );
       }
     } catch (error) {
-      if (!mounted) return;
+      if (!_isCurrentRequest(generation)) return;
       setState(() {
         _error = error;
         _initialLoading = false;
@@ -260,23 +277,6 @@ class _AdvancedDiscoverResultsScreenState
     int page,
     String? citySlug,
   ) {
-    if (widget.scope != null && citySlug != null) {
-      final slug =
-          widget.categorySlug ?? widget.subcategorySlug ?? widget.activitySlug;
-      if (slug != null && slug.isNotEmpty) {
-        return ref
-            .read(venueApiServiceProvider)
-            .fetchVenuesForDiscovery(
-              scope: widget.scope!,
-              slug: slug,
-              citySlug: citySlug,
-              page: page,
-              pageSize: _pageSize,
-              q: widget.query,
-            );
-      }
-    }
-
     return ref
         .read(venueApiServiceProvider)
         .fetchVenuesPage(
