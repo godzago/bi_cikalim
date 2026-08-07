@@ -45,15 +45,7 @@ class ProfileScreen extends ConsumerWidget {
     final email = user?.email ?? 'kullanici@bicikalim.com';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: user == null
-                ? null
-                : () => _showEditProfileDialog(context, ref),
-          ),
+      appBar: AppBar(title: const Text('Profil'), actions: [
         ],
       ),
       body: RefreshIndicator(
