@@ -466,6 +466,7 @@ class _AdvancedDiscoverResultsScreenState
                 VenueCard(
                   venue: venue,
                   dense: true,
+                  denseTrailingTopPadding: 48,
                   onTap: () => context.push('/venues/${venue.slug}'),
                 ),
                 Positioned(

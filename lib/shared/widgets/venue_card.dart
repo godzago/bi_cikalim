@@ -11,6 +11,7 @@ class VenueCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onFavoriteTap;
   final bool dense;
+  final double denseTrailingTopPadding;
 
   const VenueCard({
     super.key,
@@ -18,6 +19,7 @@ class VenueCard extends StatelessWidget {
     required this.onTap,
     this.onFavoriteTap,
     this.dense = false,
+    this.denseTrailingTopPadding = 0,
   });
 
   @override
@@ -169,6 +171,8 @@ class VenueCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              if (denseTrailingTopPadding > 0)
+                SizedBox(height: denseTrailingTopPadding),
               _buildRatingPill(),
               const SizedBox(height: 14),
               const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
