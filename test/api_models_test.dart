@@ -72,4 +72,28 @@ void main() {
     expect(AnalyticsEventName.values, contains('venue_view'));
     expect(AnalyticsEventName.values, isNot(contains('venue_viewed')));
   });
+
+  test('reservation price type kullanıcıya gösterilecek fiyat üretmez', () {
+    final event = ApiEvent(
+      id: 'event-id',
+      title: 'Test Etkinlik',
+      slug: 'test-etkinlik',
+      startAt: DateTime(2026, 8, 12, 20),
+      timezone: 'Europe/Istanbul',
+      status: 'published',
+      priceType: 'reservation_required',
+      currency: 'TRY',
+      city: const ApiLocationSummary(
+        id: 'city-id',
+        name: 'Eskişehir',
+        slug: 'eskisehir',
+      ),
+      activities: const [],
+      isFavorite: false,
+    );
+
+    expect(event.hasPublicPriceInfo, isFalse);
+    expect(event.priceInfo.toLowerCase(), isNot(contains('rezervasyon')));
+    expect(event.priceInfo.toLowerCase(), isNot(contains('reservation')));
+  });
 }

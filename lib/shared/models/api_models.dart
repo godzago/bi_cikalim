@@ -606,19 +606,24 @@ class ApiEvent {
 
   String get priceInfo {
     final normalized = priceType.toLowerCase();
-    if (normalized == 'free') return 'Ücretsiz';
-    if (normalized == 'reservation_required') {
-      return 'Rezervasyon gerekli';
-    }
-    if (normalized == 'included_with_entry') return 'Girişe dahil';
     if (minPrice != null && maxPrice != null) {
       return '$minPrice - $maxPrice $currency';
     }
     if (minPrice != null) {
       return '$minPrice $currency\'den başlayan';
     }
+    if (normalized == 'free') return 'Ücretsiz';
+    if (normalized == 'included_with_entry') return 'Girişe dahil';
     if (normalized == 'paid') return 'Ücretli';
     return 'Fiyat bilgisi yok';
+  }
+
+  bool get hasPublicPriceInfo {
+    if (minPrice != null || maxPrice != null) return true;
+    return switch (priceType.toLowerCase()) {
+      'free' || 'paid' || 'included_with_entry' => true,
+      _ => false,
+    };
   }
 
   String get imageUrl => coverUrl ?? '';

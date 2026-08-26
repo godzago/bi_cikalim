@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/theme/responsive.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../shared/models/api_models.dart';
+import '../../../../shared/widgets/app_error_state.dart';
 import '../../../../shared/widgets/app_filter_controls.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_pressable_scale.dart';
@@ -19,10 +21,13 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
+  final _favoriteOverrides = <String, bool>{};
+  final _attendanceOverrides = <String, String?>{};
+  final _eventBusy = <String>{};
+
   String? _selectedEventSlug;
   String? _selectedVenueActivitySlug;
   int _sliderIndex = 0;
-  int _eventSliderIndex = 0;
 
   Future<void> _refreshDiscover() async {
     ref.invalidate(selectedCityProvider);
@@ -178,10 +183,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         : const <ApiVenue>[],
                   ),
                 ),
-                if (effectiveSelectedEventSlug == null)
-                  SliverToBoxAdapter(
-                    child: _buildMoodEventSlider(sliderEvents),
-                  ),
+                SliverToBoxAdapter(child: _buildUpcomingEventFeed(events)),
                 SliverToBoxAdapter(
                   child: _buildPopularVenuesCarousel(
                     venues: filteredVenues,
@@ -212,7 +214,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     events: events,
                   ),
                 ),
-                SliverToBoxAdapter(child: _buildSkeletonTail()),
               ],
             ],
           ),
@@ -374,7 +375,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             onTap: () => setState(() {
               _selectedEventSlug = event?.slug;
               _sliderIndex = 0;
-              _eventSliderIndex = 0;
             }),
           );
         },
@@ -676,191 +676,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return bySlug.values.take(10).toList();
   }
 
-  Widget _buildMoodEventSlider(
-    List<ApiEvent> events, {
-    bool includeSports = false,
-  }) {
-    final items = events.reversed
-        .where((event) => event.imageUrl.trim().isNotEmpty)
-        .where((event) => includeSports || !_isSportEvent(event))
-        .take(6)
-        .map(
-          (event) => _HomeSliderItem(
-            title: event.title,
-            subtitle: [
-              _formatEventDate(event.startDate),
-              event.venue?.name ?? event.city.name,
-            ].where((part) => part.isNotEmpty).join(' • '),
-            imageUrl: event.imageUrl,
-            badge: _eventBadge(event),
-            route: '/events/${event.slug}',
-          ),
-        )
-        .toList();
-
-    if (items.isEmpty) return const SizedBox.shrink();
-
-    final currentIndex = _eventSliderIndex.clamp(0, items.length - 1).toInt();
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        context.layout.screenPadding,
-        0,
-        context.layout.screenPadding,
-        8,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              'Sıcı Cana iyi gider',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: BiCikalimTheme.textPrimary,
-                fontSize: context.layout.sectionTitleSize,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          AspectRatio(
-            aspectRatio: 2.7,
-            child: PageView.builder(
-              key: ValueKey('mood-${_selectedEventSlug ?? 'trends'}'),
-              itemCount: items.length,
-              onPageChanged: (index) =>
-                  setState(() => _eventSliderIndex = index),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 1),
-                  child: AppPressableScale(
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(22),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () => context.push(item.route),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            AppNetworkImage(
-                              imageUrl: item.imageUrl,
-                              fit: BoxFit.cover,
-                              semanticLabel: '${item.title} görseli',
-                            ),
-                            DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: .62),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 14,
-                              right: 14,
-                              bottom: 12,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 9,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
-                                        alpha: .18,
-                                      ),
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(
-                                        color: Colors.white.withValues(
-                                          alpha: .2,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      item.badge,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    item.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 17,
-                                      height: 1.1,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  if (item.subtitle.isNotEmpty) ...[
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      item.subtitle,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(
-                                          alpha: .82,
-                                        ),
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          if (items.length > 1) ...[
-            const SizedBox(height: 5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(items.length, (index) {
-                final selected = index == currentIndex;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: selected ? 18 : 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? BiCikalimTheme.primary
-                        : BiCikalimTheme.primary.withValues(alpha: .2),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                );
-              }),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildHomeImageSlider({
     required List<ApiEvent> events,
     required List<ApiVenue> venues,
@@ -876,7 +691,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           8,
         ),
         child: AspectRatio(
-          aspectRatio: 2.7,
+          aspectRatio: 2.45,
           child: Container(
             padding: EdgeInsets.all(context.layout.cardPadding),
             decoration: BoxDecoration(
@@ -919,7 +734,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: Column(
         children: [
           AspectRatio(
-            aspectRatio: 2.7,
+            aspectRatio: 2.45,
             child: PageView.builder(
               key: ValueKey('home-${_selectedEventSlug ?? 'trends'}'),
               itemCount: items.length,
@@ -1600,6 +1415,117 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
+  Widget _buildUpcomingEventFeed(List<ApiEvent> events) {
+    final visibleEvents = _visibleUpcomingEvents(events);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        context.layout.screenPadding,
+        0,
+        context.layout.screenPadding,
+        context.layout.sectionGap,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            key: const ValueKey('upcoming-events-section'),
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: BiCikalimTheme.primary.withValues(
+                              alpha: .12,
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Icon(
+                            Icons.near_me_rounded,
+                            color: BiCikalimTheme.primary,
+                            size: 17,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Yakınımda Ne Var?',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: BiCikalimTheme.textPrimary,
+                              fontSize: context.layout.sectionTitleSize,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      visibleEvents.isEmpty
+                          ? 'Şehirde sıradaki planlar burada görünür.'
+                          : '${visibleEvents.length} etkinlik • şehirde sıradaki planlar',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: BiCikalimTheme.textSecondary,
+                        fontSize: context.layout.metadataSize,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => context.push('/events'),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                label: const Text('Tümü'),
+                style: TextButton.styleFrom(
+                  foregroundColor: BiCikalimTheme.primary,
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: context.layout.cardGap * 0.7),
+          if (visibleEvents.isEmpty)
+            _buildUpcomingEventsEmptyState()
+          else
+            for (final event in visibleEvents)
+              Padding(
+                padding: EdgeInsets.only(bottom: context.layout.cardGap),
+                child: _UpcomingEventCard(
+                  key: ValueKey('upcoming-event-card-${event.id}'),
+                  event: event,
+                  isFavorite: _favoriteOverrides[event.id] ?? event.isFavorite,
+                  attendanceStatus:
+                      _attendanceOverrides[event.id] ?? event.attendanceStatus,
+                  isBusy: _eventBusy.contains(event.id),
+                  onTap: () => context.push('/events/${event.slug}'),
+                  onFavoriteTap: () => _toggleEventFavorite(event),
+                  onAttendanceTap: () => _toggleEventAttendance(event),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSkeletonFeed() {
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -1683,24 +1609,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildSkeletonTail() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        context.layout.screenPadding,
-        0,
-        context.layout.screenPadding,
-        context.layout.sectionGap,
-      ),
-      child: Row(
-        children: const [
-          Expanded(child: _SkeletonBox(height: 78, radius: 18)),
-          SizedBox(width: 12),
-          Expanded(child: _SkeletonBox(height: 78, radius: 18)),
-        ],
-      ),
-    );
-  }
-
   Widget _buildErrorState() {
     return Padding(
       padding: EdgeInsets.all(context.layout.screenPadding),
@@ -1731,8 +1639,30 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         onAction: () => setState(() {
           _selectedEventSlug = null;
           _sliderIndex = 0;
-          _eventSliderIndex = 0;
         }),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingEventsEmptyState() {
+    final hasActiveFilter = _selectedEventSlug != null;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: _WarmStateCard(
+        icon: Icons.event_busy_outlined,
+        title: hasActiveFilter
+            ? 'Bu filtrede yakın etkinlik yok'
+            : 'Yakınında etkinlik görünmüyor',
+        message: hasActiveFilter
+            ? 'Yakınındaki tüm planları görmek için filtreyi temizleyebilirsin.'
+            : 'Şehirde yeni bir plan açıldığında burada öne çıkar.',
+        actionLabel: hasActiveFilter ? 'Filtreyi Temizle' : 'Etkinlikleri Gör',
+        onAction: hasActiveFilter
+            ? () => setState(() {
+                _selectedEventSlug = null;
+                _sliderIndex = 0;
+              })
+            : () => context.push('/events'),
       ),
     );
   }
@@ -1753,6 +1683,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return filtered.take(8).toList();
   }
 
+  List<ApiEvent> _visibleUpcomingEvents(List<ApiEvent> events) {
+    final now = DateTime.now();
+    final filtered = _visibleEvents(events);
+    filtered.removeWhere((event) {
+      final eventEnd = (event.endAt ?? event.startAt).toLocal();
+      return eventEnd.isBefore(now);
+    });
+    return filtered;
+  }
+
   bool _isSportActivity(ApiActivity activity) {
     return activity.kind.toLowerCase() == 'sport' ||
         _containsAny(activity.name, _sportTerms);
@@ -1767,16 +1707,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return (activity.maxPeople ?? 0) >= 3 ||
         (activity.minPeople ?? 0) >= 2 ||
         _containsAny(activity.name, _groupTerms);
-  }
-
-  bool _isSportEvent(ApiEvent event) {
-    final source = [
-      event.title,
-      event.shortDescription ?? '',
-      ...event.activities.map((activity) => activity.name),
-      ...event.activities.map((activity) => activity.slug),
-    ].join(' ');
-    return _containsAny(source, _sportTerms);
   }
 
   bool _containsAny(String source, List<String> terms) {
@@ -1813,6 +1743,83 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         },
       ).toString(),
     );
+  }
+
+  Future<bool> _requireEventAuth() async {
+    if (await ApiClient.instance.getToken() != null) return true;
+    if (!mounted) return false;
+    context.push('/sign-in?accountType=user');
+    return false;
+  }
+
+  Future<void> _toggleEventFavorite(ApiEvent event) async {
+    if (_eventBusy.contains(event.id) || !await _requireEventAuth()) return;
+    final current = _favoriteOverrides[event.id] ?? event.isFavorite;
+    final next = !current;
+    setState(() {
+      _eventBusy.add(event.id);
+      _favoriteOverrides[event.id] = next;
+    });
+
+    try {
+      final saved = next
+          ? await ref.read(eventApiServiceProvider).addFavoriteEvent(event.id)
+          : await ref
+                .read(eventApiServiceProvider)
+                .removeFavoriteEvent(event.id);
+      ref
+        ..invalidate(favoriteEventsProvider)
+        ..read(analyticsApiServiceProvider).track(
+          eventName: AnalyticsEventName.favorite,
+          eventRefId: event.id,
+          properties: {
+            'source': 'discover_upcoming_events',
+            'target_type': 'event',
+            'action': saved ? 'add' : 'remove',
+          },
+        );
+      if (!mounted) return;
+      setState(() => _favoriteOverrides[event.id] = saved);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _favoriteOverrides[event.id] = current);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
+    } finally {
+      if (mounted) setState(() => _eventBusy.remove(event.id));
+    }
+  }
+
+  Future<void> _toggleEventAttendance(ApiEvent event) async {
+    if (_eventBusy.contains(event.id) || !await _requireEventAuth()) return;
+    final current = _attendanceOverrides[event.id] ?? event.attendanceStatus;
+    final removing = current == 'going';
+    final next = removing ? null : 'going';
+    setState(() {
+      _eventBusy.add(event.id);
+      _attendanceOverrides[event.id] = next;
+    });
+
+    try {
+      if (removing) {
+        await ref.read(eventApiServiceProvider).deleteAttendance(event.id);
+      } else {
+        final attendance = await ref
+            .read(eventApiServiceProvider)
+            .setAttendance(event.id, 'going');
+        _attendanceOverrides[event.id] = attendance.status;
+      }
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _attendanceOverrides[event.id] = current);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(error))));
+    } finally {
+      if (mounted) setState(() => _eventBusy.remove(event.id));
+    }
   }
 }
 
@@ -1852,10 +1859,6 @@ Color _accentFor(String seed) {
     (value, unit) => (value + unit) % _accentPalette.length,
   );
   return _accentPalette[index];
-}
-
-extension _FirstOrNull<T> on List<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }
 
 class _HeaderIconButton extends StatelessWidget {
@@ -2175,7 +2178,7 @@ class _EventExploreCard extends StatelessWidget {
                 _SignalRow(
                   icon: Icons.schedule_outlined,
                   label: _formatEventDate(event.startAt),
-                  secondary: event.priceInfo,
+                  secondary: event.hasPublicPriceInfo ? event.priceInfo : null,
                 ),
               ],
             ),
@@ -2475,6 +2478,401 @@ class _CoverBadge extends StatelessWidget {
   }
 }
 
+class _UpcomingEventCard extends StatelessWidget {
+  final ApiEvent event;
+  final bool isFavorite;
+  final String? attendanceStatus;
+  final bool isBusy;
+  final VoidCallback onTap;
+  final VoidCallback onFavoriteTap;
+  final VoidCallback onAttendanceTap;
+
+  const _UpcomingEventCard({
+    super.key,
+    required this.event,
+    required this.isFavorite,
+    required this.attendanceStatus,
+    required this.isBusy,
+    required this.onTap,
+    required this.onFavoriteTap,
+    required this.onAttendanceTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final layout = context.layout;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final cardHeight =
+        layout.fluid(132, 140, 150) + ((textScale - 1).clamp(0, 0.6) * 72);
+    final imageWidth = layout.fluid(96, 112, 126);
+    final venue = event.venue?.name.trim();
+    final venueLabel = venue == null || venue.isEmpty ? event.city.name : venue;
+    final isGoing = attendanceStatus == 'going';
+    final showPrice = event.hasPublicPriceInfo;
+
+    return Semantics(
+      container: true,
+      button: true,
+      label: '${event.title}, ${_formatEventDate(event.startAt)}, $venueLabel',
+      child: AppPressableScale(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(layout.cardRadius),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .12),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Material(
+            color: const Color(0xFF171717),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(layout.cardRadius),
+              side: BorderSide(color: Colors.white.withValues(alpha: .06)),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: SizedBox(
+                height: cardHeight,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF25201D),
+                            const Color(0xFF171717),
+                            Colors.black.withValues(alpha: .95),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          width: imageWidth,
+                          child: _UpcomingEventImage(event: event),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(layout.cardPadding * 0.76),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: _DarkEventSignal(
+                                        label: _eventBadge(event),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    const SizedBox(width: 6),
+                                    _DarkEventIconAction(
+                                      tooltip: isFavorite
+                                          ? 'Favoriden çıkar'
+                                          : 'Favoriye ekle',
+                                      icon: isFavorite
+                                          ? Icons.bookmark_rounded
+                                          : Icons.bookmark_border_rounded,
+                                      selected: isFavorite,
+                                      onTap: isBusy ? null : onFavoriteTap,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 5),
+                                Expanded(
+                                  child: Text(
+                                    event.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: layout.cardTitleSize,
+                                      height: 1.12,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                _DarkEventMetadata(
+                                  icon: Icons.schedule_rounded,
+                                  label: _formatEventDate(event.startAt),
+                                  highlighted: true,
+                                ),
+                                const SizedBox(height: 4),
+                                _DarkEventMetadata(
+                                  icon: Icons.location_on_outlined,
+                                  label: venueLabel,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    if (showPrice) ...[
+                                      Expanded(
+                                        child: _DarkEventPill(
+                                          label: event.priceInfo,
+                                          icon:
+                                              event.priceType.toLowerCase() ==
+                                                  'free'
+                                              ? Icons
+                                                    .check_circle_outline_rounded
+                                              : Icons.local_activity_outlined,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                    ] else
+                                      const Spacer(),
+                                    _DarkEventPill(
+                                      label: isGoing ? 'Katılıyorum' : 'Katıl',
+                                      icon: isGoing
+                                          ? Icons.check_rounded
+                                          : Icons.group_add_outlined,
+                                      selected: isGoing,
+                                      onTap: isBusy ? null : onAttendanceTap,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DarkEventSignal extends StatelessWidget {
+  final String label;
+
+  const _DarkEventSignal({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 26),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: BiCikalimTheme.primary.withValues(alpha: .2),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: BiCikalimTheme.primary.withValues(alpha: .24),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: BiCikalimTheme.accent,
+            size: 13,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UpcomingEventImage extends StatelessWidget {
+  final ApiEvent event;
+
+  const _UpcomingEventImage({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    if (event.imageUrl.trim().isEmpty) {
+      return const DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [BiCikalimTheme.primaryDark, Color(0xFF3A1710)],
+          ),
+        ),
+        child: Center(
+          child: Icon(Icons.event_rounded, color: Colors.white70, size: 34),
+        ),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AppNetworkImage(
+          imageUrl: event.imageUrl,
+          semanticLabel: '${event.title} etkinlik görseli',
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [Colors.transparent, Colors.black.withValues(alpha: .28)],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DarkEventMetadata extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool highlighted;
+
+  const _DarkEventMetadata({
+    required this.icon,
+    required this.label,
+    this.highlighted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = highlighted
+        ? BiCikalimTheme.accent
+        : Colors.white.withValues(alpha: .64);
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 13),
+        const SizedBox(width: 5),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: context.layout.metadataSize,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DarkEventIconAction extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  const _DarkEventIconAction({
+    required this.tooltip,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 36,
+      height: 36,
+      child: IconButton(
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        onPressed: onTap,
+        icon: Icon(
+          icon,
+          size: 20,
+          color: selected ? BiCikalimTheme.accent : Colors.white70,
+        ),
+      ),
+    );
+  }
+}
+
+class _DarkEventPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  const _DarkEventPill({
+    required this.label,
+    required this.icon,
+    this.selected = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      constraints: const BoxConstraints(minHeight: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: selected
+            ? BiCikalimTheme.primary
+            : Colors.white.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: selected
+              ? BiCikalimTheme.primary
+              : Colors.white.withValues(alpha: .1),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 13),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(999),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(onTap: onTap, child: content),
+    );
+  }
+}
+
 class _SolidPill extends StatelessWidget {
   final String label;
 
@@ -2505,7 +2903,7 @@ class _SolidPill extends StatelessWidget {
 class _SignalRow extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String secondary;
+  final String? secondary;
 
   const _SignalRow({
     required this.icon,
@@ -2531,20 +2929,22 @@ class _SignalRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 5),
-        Flexible(
-          child: Text(
-            secondary,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: BiCikalimTheme.textLight,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+        if (secondary != null && secondary!.isNotEmpty) ...[
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              secondary!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: BiCikalimTheme.textLight,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

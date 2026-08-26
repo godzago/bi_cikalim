@@ -1,8 +1,8 @@
 name: bi_cikalim
-description: 'BiÇıkalım - Şehrindeki Eğlenceyi Keşfet'
-publish_to: 'This is a Demirdoven Holding Project. Do not use in production.'
+description: "BiÇıkalım - Şehrindeki Eğlenceyi Keşfet"
+publish_to: "This is a ShiftWave Holding Project. Do not use in production."
 
-version: 1.0.0+2
+version: 1.0.0+3
 
 environment:
   sdk: ^3.12.0

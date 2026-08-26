@@ -41,6 +41,7 @@ class TonightEventCard extends StatelessWidget {
         '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
     final semanticLabel =
         '${event.title}, $day/$month saat $time${location.isEmpty ? '' : ', $location'}. Etkinlik detayını aç.';
+    final showPrice = event.hasPublicPriceInfo;
 
     return Semantics(
       button: true,
@@ -112,7 +113,7 @@ class TonightEventCard extends StatelessWidget {
                             runSpacing: 8,
                             children: [
                               const _EventBadge(),
-                              _SmallPill(label: event.priceInfo),
+                              if (showPrice) _SmallPill(label: event.priceInfo),
                               if (attendanceStatus != null &&
                                   attendanceStatus!.isNotEmpty)
                                 _SmallPill(

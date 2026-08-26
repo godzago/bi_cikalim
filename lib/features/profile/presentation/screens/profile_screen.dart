@@ -7,7 +7,6 @@ import '../../../../core/theme/responsive.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_providers.dart';
 import '../../../../core/network/api_client.dart';
-import '../../../../shared/widgets/app_error_state.dart';
 import '../../../auth/presentation/providers/user_session_provider.dart';
 
 /// Kullanıcı profil ekranı.
@@ -45,9 +44,7 @@ class ProfileScreen extends ConsumerWidget {
     final email = user?.email ?? 'kullanici@bicikalim.com';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil'), actions: [
-        ],
-      ),
+      appBar: AppBar(title: const Text('Profil'), actions: []),
       body: RefreshIndicator(
         color: BiCikalimTheme.primary,
         onRefresh: () => _refreshProfile(ref),
@@ -338,81 +335,5 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  void _showEditProfileDialog(BuildContext context, WidgetRef ref) {
-    final user = ref.read(currentUserProvider);
-    if (user == null) return;
-    final nameController = TextEditingController(text: user.displayName);
-    final usernameController = TextEditingController(text: user.username);
-    var saving = false;
-
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: context.layout.screenPadding,
-            vertical: context.layout.sectionGap,
-          ),
-          title: const Text('Profili Düzenle'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Ad Soyad'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: usernameController,
-                  decoration: const InputDecoration(labelText: 'Kullanıcı adı'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: saving ? null : () => Navigator.pop(dialogContext),
-              child: const Text('Vazgeç'),
-            ),
-            FilledButton(
-              onPressed: saving
-                  ? null
-                  : () async {
-                      setDialogState(() => saving = true);
-                      try {
-                        final updated = await ref
-                            .read(userApiServiceProvider)
-                            .updateProfile(
-                              fullName: nameController.text.trim(),
-                              username: usernameController.text.trim(),
-                            );
-                        ref.read(currentUserProvider.notifier).setUser(updated);
-                        await ApiClient.instance.saveCachedUser(updated);
-                        if (dialogContext.mounted) {
-                          Navigator.pop(dialogContext);
-                        }
-                      } catch (error) {
-                        if (dialogContext.mounted) {
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(
-                              content: Text(friendlyErrorMessage(error)),
-                            ),
-                          );
-                          setDialogState(() => saving = false);
-                        }
-                      }
-                    },
-              child: const Text('Kaydet'),
-            ),
-          ],
-        ),
-      ),
-    ).whenComplete(() {
-      nameController.dispose();
-      usernameController.dispose();
-    });
   }
 }

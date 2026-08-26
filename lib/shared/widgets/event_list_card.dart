@@ -29,6 +29,7 @@ class EventListCard extends StatelessWidget {
     final dateStr = '${event.startDate.day} / ${event.startDate.month}';
     final timeStr =
         '${event.startDate.hour.toString().padLeft(2, '0')}:${event.startDate.minute.toString().padLeft(2, '0')}';
+    final showPrice = event.hasPublicPriceInfo;
 
     return AppPressableScale(
       child: Card(
@@ -143,20 +144,22 @@ class EventListCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            event.priceInfo,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
-                            style: const TextStyle(
-                              color: BiCikalimTheme.success,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                        if (showPrice) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              event.priceInfo,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                color: BiCikalimTheme.success,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 8),

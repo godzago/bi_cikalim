@@ -15,6 +15,11 @@ class EventPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final layout = context.layout;
+    final metadata = [
+      if (event.venue?.name.isNotEmpty ?? false) event.venue!.name,
+      if (event.hasPublicPriceInfo) event.priceInfo,
+    ].join(' • ');
+
     return AppPressableScale(
       child: GestureDetector(
         onTap: onTap,
@@ -75,31 +80,28 @@ class EventPreviewCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.store,
-                            color: Colors.white70,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              [
-                                if (event.venue?.name.isNotEmpty ?? false)
-                                  event.venue!.name,
-                                event.priceInfo,
-                              ].join(' • '),
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: layout.metadataSize,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                      if (metadata.isNotEmpty)
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.store,
+                              color: Colors.white70,
+                              size: 12,
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                metadata,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: layout.metadataSize,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),

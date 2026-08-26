@@ -414,7 +414,7 @@ void main() {
   });
 
   testWidgets(
-    'keşfet sabit yükseklikli kartları 320 px ve 1.5 yazı ölçeğinde taşmaz',
+    'keşfet sıcak cana bölümü yerine etkinlik akışı 320 px ve 1.5 yazıda taşmaz',
     (tester) async {
       configureCompactView(tester);
       const venuePage = ApiPaginatedResponse<ApiVenue>(
@@ -466,15 +466,41 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       final scrollable = find.byType(CustomScrollView);
-      for (var index = 0; index < 8; index++) {
+      final upcomingSection = find.byKey(
+        const ValueKey('upcoming-events-section'),
+      );
+      final eventCard = find.byKey(
+        const ValueKey('upcoming-event-card-long-event'),
+      );
+      var sawUpcomingSection = false;
+      var sawDarkEventCard = false;
+      for (var index = 0; index < 14; index++) {
         expect(
           tester.takeException(),
           isNull,
-          reason: 'Keşfet akışında $index. viewport',
+          reason: 'Keşfet etkinlik akışında $index. viewport',
         );
+        sawUpcomingSection =
+            sawUpcomingSection || upcomingSection.evaluate().isNotEmpty;
+        if (eventCard.evaluate().isNotEmpty) {
+          sawDarkEventCard = true;
+          expect(
+            find.descendant(
+              of: eventCard,
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is Material &&
+                    widget.color == const Color(0xFF171717),
+              ),
+            ),
+            findsOneWidget,
+          );
+        }
         await tester.drag(scrollable, const Offset(0, -260));
         await tester.pump();
       }
+      expect(sawUpcomingSection, isTrue);
+      expect(sawDarkEventCard, isTrue);
       expect(tester.takeException(), isNull);
     },
   );
@@ -750,7 +776,7 @@ ApiEvent _longEvent() => ApiEvent(
   slug: 'long-event',
   description:
       'Uzun açıklamalı, tarih ve fiyat bilgisini koruyan örnek etkinlik.',
-  startAt: DateTime(2026, 8, 12, 20),
+  startAt: DateTime.now().add(const Duration(days: 2)),
   timezone: 'Europe/Istanbul',
   status: 'published',
   priceType: 'free',

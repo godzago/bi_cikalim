@@ -83,4 +83,19 @@ void main() {
     expect(cachedImage(tester).memCacheWidth, isNull);
     expect(cachedImage(tester).memCacheHeight, isNull);
   });
+
+  testWidgets('uses local fallback for empty image urls', (tester) async {
+    await tester.pumpWidget(
+      testApp(
+        child: const SizedBox(
+          width: 120,
+          height: 80,
+          child: AppNetworkImage(imageUrl: ' '),
+        ),
+      ),
+    );
+
+    expect(find.byType(CachedNetworkImage), findsNothing);
+    expect(find.byIcon(Icons.image_outlined), findsOneWidget);
+  });
 }

@@ -13,6 +13,7 @@ import '../../../../core/theme/responsive.dart';
 import '../../../../shared/models/api_models.dart';
 import '../../../../shared/utils/app_url_launcher.dart';
 import '../../../../shared/widgets/app_error_state.dart';
+import '../../../../shared/widgets/app_filter_chip.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 
 /// Gerçek OpenStreetMap (Google Maps Yol görünümü tasarımı ile) entegre edilmiş harita ekranı.
@@ -46,25 +47,59 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   ApiVenue? _selectedVenue;
+  ApiEvent? _selectedEvent;
   final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   LatLng? _currentLocation;
+  Timer? _searchDebounce;
+  Timer? _cameraIdleDebounce;
   bool _dialogOpen = false;
   bool _mapReady = false;
   bool _userMovedMap = false;
   bool _loadingLocation = false;
   bool _refreshingMap = false;
+  bool _searchOverlayOpen = false;
+  String _searchQuery = '';
+  String? _activityCategorySlug;
+  String? _activitySlug;
+  String? _activityLabel;
   String? _lastAutoFitKey;
+  String? _lastCameraRefreshKey;
+  String? _cachedMarkerKey;
+  List<Marker> _cachedMarkers = const [];
 
   @override
   void initState() {
     super.initState();
+    _activityCategorySlug = _clean(widget.activityCategorySlug);
+    _activitySlug = _clean(widget.activitySlug);
+    _activityLabel = _activitySlug;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadLocationIfAlreadyAllowed();
     });
   }
 
   @override
+  void didUpdateWidget(covariant MapScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activityCategorySlug != widget.activityCategorySlug ||
+        oldWidget.activitySlug != widget.activitySlug) {
+      _activityCategorySlug = _clean(widget.activityCategorySlug);
+      _activitySlug = _clean(widget.activitySlug);
+      _activityLabel = _activitySlug;
+      _selectedVenue = null;
+      _selectedEvent = null;
+      _lastAutoFitKey = null;
+    }
+  }
+
+  @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _cameraIdleDebounce?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -298,9 +333,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       citySlug: _clean(widget.citySlug) ?? selectedCity?.slug,
       districtSlug: _clean(widget.districtSlug),
       neighborhoodSlug: _clean(widget.neighborhoodSlug),
-      activityCategorySlug: _clean(widget.activityCategorySlug),
+      activityCategorySlug: _activityCategorySlug,
       activitySubCategorySlug: _clean(widget.activitySubCategorySlug),
-      activitySlug: _clean(widget.activitySlug),
+      activitySlug: _activitySlug,
       tagSlug: _clean(widget.tagSlug),
       q: _clean(widget.q),
       hasCoordinates: true,
@@ -335,6 +370,142 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    setState(() => _searchOverlayOpen = true);
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      final query = value.trim();
+      if (query != _searchQuery) setState(() => _searchQuery = query);
+    });
+  }
+
+  void _closeSearchOverlay({bool clear = false}) {
+    _searchDebounce?.cancel();
+    _searchFocusNode.unfocus();
+    setState(() {
+      _searchOverlayOpen = false;
+      if (clear) {
+        _searchController.clear();
+        _searchQuery = '';
+      }
+    });
+  }
+
+  void _selectActivity(ApiSearchTaxonomyItem activity) {
+    _searchDebounce?.cancel();
+    _searchFocusNode.unfocus();
+    _searchController.clear();
+    setState(() {
+      _searchOverlayOpen = false;
+      _searchQuery = '';
+      _activityCategorySlug = null;
+      _activitySlug = activity.slug;
+      _activityLabel = activity.name;
+      _selectedVenue = null;
+      _selectedEvent = null;
+      _lastAutoFitKey = null;
+    });
+  }
+
+  void _selectCategory(ApiCategory? category) {
+    _searchFocusNode.unfocus();
+    setState(() {
+      _searchOverlayOpen = false;
+      _activityCategorySlug = category?.slug;
+      _activitySlug = null;
+      _activityLabel = null;
+      _selectedVenue = null;
+      _selectedEvent = null;
+      _lastAutoFitKey = null;
+    });
+  }
+
+  Future<void> _selectVenueResult(ApiSearchVenueItem result) async {
+    _closeSearchOverlay(clear: true);
+    try {
+      final venue = await ref.read(venueDetailProvider(result.slug).future);
+      if (!mounted) return;
+      final point = _venuePoint(venue);
+      if (point == null) {
+        _showMapMessage('Bu mekanın harita konumu bulunmuyor.');
+        return;
+      }
+      setState(() {
+        _selectedVenue = venue;
+        _selectedEvent = null;
+      });
+      _mapController.move(point, 15);
+    } on Object catch (error) {
+      if (mounted) {
+        _showMapMessage(
+          friendlyErrorMessage(
+            error,
+            fallback: 'Mekan bilgisi şu anda yüklenemedi.',
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _selectEventResult(ApiSearchEventItem result) async {
+    _closeSearchOverlay(clear: true);
+    try {
+      final event = await ref.read(eventDetailProvider(result.slug).future);
+      final venueSummary = event.venue;
+      if (venueSummary == null || venueSummary.slug.isEmpty) {
+        if (mounted) _showMapMessage('Bu etkinliğin mekan bilgisi bulunmuyor.');
+        return;
+      }
+      final venue = await ref.read(
+        venueDetailProvider(venueSummary.slug).future,
+      );
+      if (!mounted) return;
+      final point = _venuePoint(venue);
+      if (point == null) {
+        _showMapMessage('Etkinlik mekanının harita konumu bulunmuyor.');
+        return;
+      }
+      setState(() {
+        _selectedVenue = venue;
+        _selectedEvent = event;
+      });
+      _mapController.move(point, 15);
+    } on Object catch (error) {
+      if (mounted) {
+        _showMapMessage(
+          friendlyErrorMessage(
+            error,
+            fallback: 'Etkinlik bilgisi şu anda yüklenemedi.',
+          ),
+        );
+      }
+    }
+  }
+
+  void _showMapMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _scheduleCameraRefresh(LatLng center, double zoom) {
+    _cameraIdleDebounce?.cancel();
+    _cameraIdleDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      if (_refreshingMap) {
+        _scheduleCameraRefresh(center, zoom);
+        return;
+      }
+      final key =
+          '${(center.latitude * 500).round()}|'
+          '${(center.longitude * 500).round()}|${(zoom * 2).round()}';
+      if (_lastCameraRefreshKey == key) return;
+      _lastCameraRefreshKey = key;
+      _refreshMap();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final layout = context.layout;
@@ -347,13 +518,36 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     // The visual target remains 126–148 px at the default text size. Larger
     // accessibility text gets bounded extra room instead of overflowing the
     // fixed collapsed-sheet constraint.
-    final sheetHeight = (baseSheetHeight + textHeightAllowance)
-        .clamp(126.0, mediaQuery.size.height * .34)
-        .toDouble();
+    final previewDetailAllowance =
+        (_activitySlug != null || _selectedEvent != null)
+        ? 20 + ((textScale - 1).clamp(0.0, .5) * 20)
+        : 0;
+    final sheetHeight =
+        (baseSheetHeight + textHeightAllowance + previewDetailAllowance)
+            .clamp(126.0, mediaQuery.size.height * .34)
+            .toDouble();
     final selectedCity = ref.watch(selectedCityProvider).value;
     final filters = _buildVenueFilters(selectedCity);
     final filterKey = _filterKey(filters);
     final venuesAsync = ref.watch(mapVenuesProvider(filters));
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final categories = categoriesAsync.when(
+      data: (items) => items,
+      error: (_, _) => const <ApiCategory>[],
+      loading: () => const <ApiCategory>[],
+    );
+    final searchProvider = _searchQuery.length < 2
+        ? null
+        : searchResultsProvider(
+            SearchFilters(
+              query: _searchQuery,
+              citySlug: selectedCity?.slug,
+              limit: 8,
+            ),
+          );
+    final searchAsync = searchProvider == null
+        ? null
+        : ref.watch(searchProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -392,12 +586,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 if (mounted) setState(() => _mapReady = true);
               },
               onPositionChanged: (camera, hasGesture) {
-                if (hasGesture) _userMovedMap = true;
+                if (hasGesture) {
+                  _userMovedMap = true;
+                  _scheduleCameraRefresh(camera.center, camera.zoom);
+                }
               },
               onTap: (tapPosition, point) {
-                if (_selectedVenue != null) {
+                if (_selectedVenue != null || _searchOverlayOpen) {
+                  _searchFocusNode.unfocus();
                   setState(() {
                     _selectedVenue = null;
+                    _selectedEvent = null;
+                    _searchOverlayOpen = false;
                   });
                 }
               },
@@ -412,7 +612,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 loading: () => const MarkerLayer(markers: []),
                 error: (err, _) => const MarkerLayer(markers: []),
                 data: (result) {
-                  final validVenues = result.venues
+                  final validVenues = _withSelectedVenue(result.venues)
                       .where((venue) => venue.hasValidCoordinates)
                       .toList(growable: false);
                   _syncSelectedVenue(validVenues);
@@ -484,77 +684,113 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
           ),
 
-          // Üst Bilgilendirme Bandı
+          // Compact map search and category filters.
           Positioned(
             top: 8,
             left: layout.screenPadding,
             right: layout.screenPadding,
-            child: IgnorePointer(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(layout.cardRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: layout.searchHeight,
+                  child: TextField(
+                    key: const ValueKey('map-search-field'),
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.search,
+                    onTap: () {
+                      if (!_searchOverlayOpen) {
+                        setState(() => _searchOverlayOpen = true);
+                      }
+                    },
+                    onChanged: _onSearchChanged,
+                    onSubmitted: (value) {
+                      _searchDebounce?.cancel();
+                      setState(() {
+                        _searchQuery = value.trim();
+                        _searchOverlayOpen = true;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search activity, venue or event',
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 42,
+                        minHeight: 40,
+                      ),
+                      suffixIcon: _searchController.text.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'Aramayı temizle',
+                              onPressed: () {
+                                _searchDebounce?.cancel();
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                  _searchOverlayOpen = true;
+                                });
+                              },
+                              icon: const Icon(Icons.close, size: 18),
+                            ),
+                      suffixIconConstraints: const BoxConstraints(
+                        minWidth: 42,
+                        minHeight: 40,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
-                  ],
+                  ),
                 ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.explore_outlined, color: BiCikalimTheme.primary),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Haritada gezerek yakındaki mekanları keşfedin.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: BiCikalimTheme.textPrimary,
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: AppLayout.minTouchTarget,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      AppFilterChip(
+                        label: 'All',
+                        isSelected:
+                            _activityCategorySlug == null &&
+                            _activitySlug == null,
+                        onTap: () => _selectCategory(null),
+                      ),
+                      if (_activitySlug != null)
+                        AppFilterChip(
+                          key: const ValueKey('map-active-activity-filter'),
+                          label: '${_activityLabel ?? _activitySlug} ×',
+                          isSelected: true,
+                          onTap: () => _selectCategory(null),
+                        ),
+                      ...categories.map(
+                        (category) => AppFilterChip(
+                          label: category.name,
+                          isSelected: _activityCategorySlug == category.slug,
+                          onTap: () => _selectCategory(category),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
 
-          // Alt Mekan Detay Kartı
-          Positioned(
-            top: 62,
-            left: layout.screenPadding,
-            right: layout.screenPadding,
-            child: venuesAsync.when(
-              loading: () => _buildMapInfoCard(
-                icon: Icons.hourglass_top_rounded,
-                title: 'Mekânlar yükleniyor',
-                message: 'Koordinatlı mekânlar haritaya ekleniyor.',
-              ),
-              error: (error, _) => _buildMapErrorCard(error, filters),
-              data: (result) {
-                if (result.venues.isEmpty) return _buildMapEmptyCard(filters);
-                return _buildMapInfoCard(
-                  icon: Icons.location_on_outlined,
-                  title: '${result.venues.length} mekân haritada',
-                  message: result.loadedCount == result.venues.length
-                      ? 'Seçili filtrelere uygun koordinatlı mekânlar gösteriliyor.'
-                      : '${result.loadedCount - result.venues.length} mekân geçersiz koordinat nedeniyle gösterilmedi.',
-                  compact: true,
-                );
-              },
+          if (venuesAsync.hasError ||
+              (venuesAsync.hasValue && venuesAsync.value!.venues.isEmpty))
+            Positioned(
+              top: layout.searchHeight + 62,
+              left: layout.screenPadding,
+              right: layout.screenPadding,
+              child: venuesAsync.hasError
+                  ? _buildMapErrorCard(venuesAsync.error!, filters)
+                  : _buildMapEmptyCard(filters),
             ),
-          ),
 
           if (_loadingLocation || _refreshingMap || venuesAsync.isLoading)
             Positioned(
-              top: 76,
+              top: layout.searchHeight + 62,
               left: layout.screenPadding,
               right: layout.screenPadding,
               child: _MapLoadingBanner(
@@ -602,7 +838,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    _selectedVenue!.name,
+                                    _selectedEvent?.title ??
+                                        _selectedVenue!.name,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -619,45 +856,83 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                     tooltip: 'Kapat',
                                     padding: EdgeInsets.zero,
                                     icon: const Icon(Icons.close, size: 17),
-                                    onPressed: () =>
-                                        setState(() => _selectedVenue = null),
+                                    onPressed: () => setState(() {
+                                      _selectedVenue = null;
+                                      _selectedEvent = null;
+                                    }),
                                   ),
                                 ),
                               ],
                             ),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.star,
-                                  color: BiCikalimTheme.primary,
-                                  size: 13,
-                                ),
-                                const SizedBox(width: 2),
-                                Flexible(
-                                  child: Text(
-                                    _ratingText(_selectedVenue!),
+                            _selectedEvent == null
+                                ? Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.star,
+                                        color: BiCikalimTheme.primary,
+                                        size: 13,
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Flexible(
+                                        child: Text(
+                                          _compactRatingText(_selectedVenue!),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: layout.metadataSize,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          _distanceOrLocation(_selectedVenue!),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: layout.metadataSize,
+                                            color: BiCikalimTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    _selectedVenue!.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: layout.metadataSize,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    _shortLocation(_selectedVenue!),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: layout.metadataSize,
+                                      fontWeight: FontWeight.w700,
                                       color: BiCikalimTheme.textSecondary,
                                     ),
                                   ),
+                            if (_activitySlug != null &&
+                                _selectedEvent == null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                _activityVenueText(_selectedVenue!),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: layout.metadataSize,
+                                  color: BiCikalimTheme.textSecondary,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ] else if (_selectedEvent != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                _eventPreviewText(_selectedEvent!),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: layout.metadataSize,
+                                  color: BiCikalimTheme.textSecondary,
+                                ),
+                              ),
+                            ],
                             const Spacer(),
                             Row(
                               children: [
@@ -676,10 +951,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                       visualDensity: VisualDensity.compact,
                                     ),
                                     onPressed: () => context.push(
-                                      '/venues/${_selectedVenue!.slug}',
+                                      _selectedEvent == null
+                                          ? '/venues/${_selectedVenue!.slug}'
+                                          : '/events/${_selectedEvent!.slug}',
                                     ),
                                     child: Text(
-                                      'Detay',
+                                      _selectedEvent == null
+                                          ? 'Detay'
+                                          : 'Etkinlik',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -704,10 +983,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                           MaterialTapTargetSize.padded,
                                       visualDensity: VisualDensity.compact,
                                     ),
-                                    onPressed: () =>
-                                        _openDirections(_selectedVenue!),
+                                    onPressed: _selectedEvent == null
+                                        ? () => _openDirections(_selectedVenue!)
+                                        : () => context.push(
+                                            '/venues/${_selectedVenue!.slug}',
+                                          ),
                                     child: Text(
-                                      'Yol Tarifi',
+                                      _selectedEvent == null
+                                          ? 'Yol Tarifi'
+                                          : 'Mekan',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -789,13 +1073,150 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ],
             ),
           ),
+          if (_searchOverlayOpen)
+            Positioned(
+              top: layout.searchHeight + 58,
+              left: layout.screenPadding,
+              right: layout.screenPadding,
+              child: _buildSearchOverlay(searchAsync),
+            ),
         ],
       ),
     );
   }
 
+  Widget _buildSearchOverlay(AsyncValue<ApiSearchResult>? searchAsync) {
+    final maxHeight = (MediaQuery.sizeOf(context).height * .46)
+        .clamp(180.0, 340.0)
+        .toDouble();
+    return Container(
+      key: const ValueKey('map-search-overlay'),
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: _overlayDecoration(),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        type: MaterialType.transparency,
+        child: searchAsync == null
+            ? const Padding(
+                padding: EdgeInsets.all(14),
+                child: Text(
+                  'Aramak için en az iki karakter yaz.',
+                  style: TextStyle(
+                    color: BiCikalimTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              )
+            : searchAsync.when(
+                loading: () => const SizedBox(
+                  height: 76,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  ),
+                ),
+                error: (error, _) => Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Text(
+                    friendlyErrorMessage(
+                      error,
+                      fallback: 'Arama şu anda yapılamadı.',
+                    ),
+                    style: const TextStyle(
+                      color: BiCikalimTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                data: _buildSearchResults,
+              ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResults(ApiSearchResult result) {
+    final activities = result.taxonomy
+        .where((item) {
+          final type = item.type.toLowerCase();
+          return type != 'category' &&
+              type != 'activity_category' &&
+              type != 'sub_category' &&
+              type != 'subcategory' &&
+              type != 'activity_sub_category';
+        })
+        .toList(growable: false);
+    if (activities.isEmpty && result.venues.isEmpty && result.events.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(14),
+        child: Text(
+          'Aramana uygun sonuç bulunamadı.',
+          style: TextStyle(color: BiCikalimTheme.textSecondary, fontSize: 12),
+        ),
+      );
+    }
+
+    return ListView(
+      key: const ValueKey('map-search-results'),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      shrinkWrap: true,
+      children: [
+        if (activities.isNotEmpty) ...[
+          const _MapSearchSectionTitle('Activities'),
+          ...activities.map(
+            (activity) => _MapSearchResultTile(
+              icon: Icons.local_activity_outlined,
+              title: activity.name,
+              onTap: () => _selectActivity(activity),
+            ),
+          ),
+        ],
+        if (result.venues.isNotEmpty) ...[
+          const _MapSearchSectionTitle('Venues'),
+          ...result.venues.map(
+            (venue) => _MapSearchResultTile(
+              icon: Icons.storefront_outlined,
+              title: venue.name,
+              subtitle: venue.shortDescription ?? venue.city.name,
+              onTap: () => _selectVenueResult(venue),
+            ),
+          ),
+        ],
+        if (result.events.isNotEmpty) ...[
+          const _MapSearchSectionTitle('Events'),
+          ...result.events.map(
+            (event) => _MapSearchResultTile(
+              icon: Icons.event_outlined,
+              title: event.title,
+              subtitle: event.city.name,
+              onTap: () => _selectEventResult(event),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<ApiVenue> _withSelectedVenue(List<ApiVenue> venues) {
+    final selected = _selectedVenue;
+    if (selected == null ||
+        !selected.hasValidCoordinates ||
+        venues.any((venue) => venue.id == selected.id)) {
+      return venues;
+    }
+    return [...venues, selected];
+  }
+
   List<Marker> _buildVenueMarkers(List<ApiVenue> venues) {
-    return venues
+    final markerKey = [
+      _selectedVenue?.id ?? '',
+      for (final venue in venues)
+        '${venue.id}:${venue.latitude}:${venue.longitude}:${venue.name}:'
+            '${venue.activitySummary.isEmpty ? '' : venue.activitySummary.first.activitySlug}:'
+            '${venue.tags.isEmpty ? '' : venue.tags.first.slug}',
+    ].join('|');
+    if (_cachedMarkerKey == markerKey) return _cachedMarkers;
+
+    _cachedMarkerKey = markerKey;
+    _cachedMarkers = venues
         .map((venue) {
           final point = _venuePoint(venue)!;
           final isSelected = _selectedVenue?.id == venue.id;
@@ -815,7 +1236,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               label: '${venue.name} marker',
               child: GestureDetector(
                 onTap: () {
-                  setState(() => _selectedVenue = venue);
+                  setState(() {
+                    _selectedVenue = venue;
+                    _selectedEvent = null;
+                  });
                   _mapController.move(point, _mapController.camera.zoom);
                 },
                 child: Column(
@@ -882,6 +1306,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           );
         })
         .toList(growable: false);
+    return _cachedMarkers;
   }
 
   LatLng? _venuePoint(ApiVenue venue) {
@@ -935,54 +1360,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         setState(() => _selectedVenue = null);
       }
     });
-  }
-
-  Widget _buildMapInfoCard({
-    required IconData icon,
-    required String title,
-    required String message,
-    bool compact = false,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: compact ? 10 : 12,
-      ),
-      decoration: _overlayDecoration(),
-      child: Row(
-        children: [
-          Icon(icon, color: BiCikalimTheme.primary, size: compact ? 19 : 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: BiCikalimTheme.textPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                if (!compact) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      color: BiCikalimTheme.textSecondary,
-                      fontSize: 11,
-                      height: 1.25,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildMapErrorCard(Object error, VenueFilters filters) {
@@ -1123,12 +1500,66 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  String _ratingText(ApiVenue venue) {
+  String _compactRatingText(ApiVenue venue) {
     final rating = venue.ratingAverage;
-    if (rating == null || rating <= 0 || venue.reviewCount <= 0) {
-      return 'Henüz değerlendirme yok';
+    if (rating == null || rating <= 0) return 'Yeni';
+    return rating.toStringAsFixed(1).replaceAll('.', ',');
+  }
+
+  String _distanceOrLocation(ApiVenue venue) {
+    final current = _currentLocation;
+    if (current == null || !venue.hasValidCoordinates) {
+      return _shortLocation(venue);
     }
-    return '${rating.toStringAsFixed(1).replaceAll('.', ',')} · ${venue.reviewCount} yorum';
+    final meters = Geolocator.distanceBetween(
+      current.latitude,
+      current.longitude,
+      venue.latitude!,
+      venue.longitude!,
+    );
+    if (meters < 1000) return '${meters.round()} m';
+    return '${(meters / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+  }
+
+  String _activityVenueText(ApiVenue venue) {
+    ApiVenueActivitySummary? activity;
+    for (final item in venue.activitySummary) {
+      if (item.activitySlug == _activitySlug) {
+        activity = item;
+        break;
+      }
+    }
+    final name = activity?.activityName.trim().isNotEmpty == true
+        ? activity!.activityName
+        : (_activityLabel ?? _activitySlug ?? 'Aktivite');
+    if (activity == null) return name;
+    final String? availability = switch (activity.availability.toLowerCase()) {
+      'available' || 'active' => 'Uygun',
+      'unavailable' || 'inactive' => 'Uygun değil',
+      'reservation_required' => null,
+      _ => activity.availability.trim().isEmpty ? null : activity.availability,
+    };
+    final price = activity.price == null
+        ? activity.isFree
+              ? 'Ücretsiz'
+              : null
+        : '${_formatPrice(activity.price!)} ${activity.priceUnit ?? 'TRY'}';
+    return [name, availability, ?price].join(' · ');
+  }
+
+  String _formatPrice(double value) {
+    return value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(2).replaceAll('.', ',');
+  }
+
+  String _eventPreviewText(ApiEvent event) {
+    final date = event.startAt.toLocal();
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    final dateLabel = '${date.day}.${date.month} $hour:$minute';
+    if (!event.hasPublicPriceInfo) return dateLabel;
+    return '$dateLabel · ${event.priceInfo}';
   }
 
   String _shortLocation(ApiVenue venue) {
@@ -1205,6 +1636,67 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (tag.contains('karaoke')) return Icons.mic;
     if (tag.contains('saha')) return Icons.sports_soccer;
     return Icons.store;
+  }
+}
+
+class _MapSearchSectionTitle extends StatelessWidget {
+  final String title;
+
+  const _MapSearchSectionTitle(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: BiCikalimTheme.textPrimary,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _MapSearchResultTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  const _MapSearchResultTile({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      minTileHeight: AppLayout.minTouchTarget,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+      leading: Icon(icon, color: BiCikalimTheme.primary, size: 20),
+      title: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+      subtitle: subtitle == null || subtitle!.trim().isEmpty
+          ? null
+          : Text(
+              subtitle!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10.5),
+            ),
+      onTap: onTap,
+    );
   }
 }
 

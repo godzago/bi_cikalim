@@ -24,6 +24,17 @@ class AppNetworkImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final trimmedUrl = imageUrl.trim();
+
+    if (trimmedUrl.isEmpty) {
+      return _wrapSemantics(
+        _ImageFallback(
+          width: width,
+          height: height,
+          borderRadius: borderRadius,
+        ),
+      );
+    }
 
     final image = LayoutBuilder(
       builder: (context, constraints) {
@@ -35,7 +46,7 @@ class AppNetworkImage extends StatelessWidget {
             : _finitePositiveDimension(height!);
 
         return CachedNetworkImage(
-          imageUrl: imageUrl,
+          imageUrl: trimmedUrl,
           width: width,
           height: height,
           fit: fit,
@@ -77,11 +88,15 @@ class AppNetworkImage extends StatelessWidget {
         ? image
         : ClipRRect(borderRadius: borderRadius!, child: image);
 
+    return _wrapSemantics(clipped);
+  }
+
+  Widget _wrapSemantics(Widget child) {
     if (semanticLabel == null || semanticLabel!.trim().isEmpty) {
-      return ExcludeSemantics(child: clipped);
+      return ExcludeSemantics(child: child);
     }
 
-    return Semantics(image: true, label: semanticLabel, child: clipped);
+    return Semantics(image: true, label: semanticLabel, child: child);
   }
 
   static double? _finitePositiveDimension(double dimension) {
@@ -110,5 +125,27 @@ class AppNetworkImage extends StatelessWidget {
         .ceil()
         .clamp(1, _maximumMemoryCacheDimension)
         .toInt();
+  }
+}
+
+class _ImageFallback extends StatelessWidget {
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+
+  const _ImageFallback({this.width, this.height, this.borderRadius});
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      width: width,
+      height: height,
+      color: Colors.grey.shade200,
+      alignment: Alignment.center,
+      child: Icon(Icons.image_outlined, color: Colors.grey.shade500, size: 24),
+    );
+
+    if (borderRadius == null) return content;
+    return ClipRRect(borderRadius: borderRadius!, child: content);
   }
 }
