@@ -6,6 +6,14 @@ Bi Çıkalım; kullanıcıların şehirlerindeki etkinlikleri, aktiviteleri ve m
 
 Uygulama klasik bir mekân rehberinden farklı olarak “Nereye gidelim?” sorusunun yanında “Bugün ne yapabiliriz?” sorusuna da cevap vermeyi amaçlar. Kullanıcılar aktivite türüne göre arama yapabilir, yaklaşan etkinlikleri inceleyebilir ve ilgilendikleri içerikleri daha sonra erişmek üzere kaydedebilir.
 
+## Uygulamadan Görüntü
+
+<p align="center">
+  <img src="docs/screenshots/bi-cikalim-event-swipe.png" alt="Bi Çıkalım etkinlik öneri ekranı" width="320">
+</p>
+
+<p align="center"><em>“Bu Akşam Ne Yapsak?” etkinlik öneri deneyimi</em></p>
+
 ## Neler Yapılabilir?
 
 - Şehir, kategori ve aktivite bazında mekân keşfetme
