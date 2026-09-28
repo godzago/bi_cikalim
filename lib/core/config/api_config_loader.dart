@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 class ApiConfigLoader {
   ApiConfigLoader._();
 
-  static String _baseUrl = 'https://api.169.58.108.163.sslip.io/api/v1';
+  static String _baseUrl = 'http://localhost:8000/api/v1';
   static String _environment = 'local';
 
   /// Uygulamanın kullandığı API base URL'i.

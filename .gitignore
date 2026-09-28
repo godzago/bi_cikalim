@@ -122,3 +122,18 @@ app.*.symbols
 # GSD Core
 .agents/
 gsd-core/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.keystore
+*.mobileprovision
+secrets/
+credentials/
+api_config.local.json
+google-services.json
+GoogleService-Info.plist
