@@ -1,8 +1,8 @@
-# BiÇıkalım Yasal Bilgilendirme
+# Demirdoven Yasal Bilgilendirme
 
-BiÇıkalım uygulamasına ait yasal metinlere aşağıdaki bağlantılardan ulaşabilirsiniz.
+Demirdoven tarafından yayınlanan uygulamalara ait yasal metinlere aşağıdaki bağlantılardan ulaşabilirsiniz.
 
 - [Gizlilik Politikası](./GIZLILIK-POLITIKASI.md)
 - [Hesap ve Veri Silme](./HESAP-SILME.md)
 
-Sorularınız için: [destek@bicikalim.com](mailto:destek@bicikalim.com)
+Sorularınız için: [demirdovenulas@gmail.com](mailto:demirdovenulas@gmail.com)

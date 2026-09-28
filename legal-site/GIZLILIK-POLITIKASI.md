@@ -1,8 +1,8 @@
-# BiÇıkalım Gizlilik Politikası
+# Demirdoven Gizlilik Politikası
 
 **Son güncelleme:** 26 Ağustos 2026
 
-Bu politika, BiÇıkalım uygulamasını kullandığınızda hangi bilgilerin işlenebileceğini ve bu bilgileri neden kullandığımızı açıklar.
+Bu politika, Demirdoven tarafından yayınlanan uygulamaları kullandığınızda hangi bilgilerin işlenebileceğini ve bu bilgileri neden kullandığımızı açıklar.
 
 ## İşleyebileceğimiz bilgiler
 
@@ -24,7 +24,7 @@ Bu bilgileri aşağıdaki amaçlarla kullanabiliriz:
 - Favori ve yorum özelliklerini çalıştırmak
 - İlginizi çekebilecek etkinlikleri göstermek
 - Uygulamanın güvenliğini sağlamak
-- BiÇıkalım'ın performansını geliştirmek
+- Uygulamalarımızın performansını geliştirmek
 
 ## Paylaşım ve saklama
 
@@ -34,10 +34,10 @@ Kişisel veriler, ilgili amaç için gerekli olduğu veya mevzuatın gerektirdi�
 
 ## Tercihleriniz ve haklarınız
 
-Verilerinize ilişkin bilgi almak, düzeltme istemek veya hesabınızın ve hesabınıza bağlı verilerin silinmesini talep etmek için [destek@bicikalim.com](mailto:destek@bicikalim.com) adresine yazabilirsiniz.
+Verilerinize ilişkin bilgi almak, düzeltme istemek veya hesabınızın ve hesabınıza bağlı verilerin silinmesini talep etmek için [demirdovenulas@gmail.com](mailto:demirdovenulas@gmail.com) adresine yazabilirsiniz.
 
 Hesap silme adımları için [Hesap ve Veri Silme](./HESAP-SILME.md) belgesini inceleyebilirsiniz.
 
 ## İletişim
 
-Bu politika veya kişisel verilerinizle ilgili sorularınız için [destek@bicikalim.com](mailto:destek@bicikalim.com) adresinden bize ulaşabilirsiniz.
+Bu politika veya kişisel verilerinizle ilgili sorularınız için [demirdovenulas@gmail.com](mailto:demirdovenulas@gmail.com) adresinden bize ulaşabilirsiniz.
